@@ -74,10 +74,8 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 		m_fields->m_currentLevel = level;
 
 		auto menu = getChildByIDRecursive("left-side-menu");
-		auto spr = CircleButtonSprite::create(
-			CCSprite::createWithSpriteFrameName("GJ_bigStar_001.png"),
-			CircleBaseColor::Blue
-		);
+		auto spr = CCSprite::create("button_add_1.png"_spr);
+		spr->setScale(0.847f);
 
 		auto addLevelBtn = CCMenuItemSpriteExtra::create(
 			spr,

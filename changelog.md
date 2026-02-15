@@ -1,2 +1,2 @@
-# 1.0.0
-- Edit this file to change your mod's changelog.
+# 0.7.2-beta
+- Published in index, added all basic functionality.

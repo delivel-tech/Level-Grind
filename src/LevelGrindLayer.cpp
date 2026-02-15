@@ -864,7 +864,7 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 
 				auto search = GJSearchObject::create(SearchType::Type19, uncLevelIDs);
 
-				auto browser = GrindBrowserLayer::create("Grinding Levels", search);
+				auto browser = GrindBrowserLayer::create(fmt::format("Grinding Levels ({} found)", uncompletedIDs.size()).c_str(), search);
 
 				auto scene = CCScene::create();
 			    scene->addChild(browser);
@@ -894,7 +894,7 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 
 			auto search = GJSearchObject::create(SearchType::Type19, levelIDs);
 
-			auto browser = GrindBrowserLayer::create("Grinding Levels", search);
+			auto browser = GrindBrowserLayer::create(fmt::format("Grinding Levels ({} found)", ids.size()).c_str(), search);
 
 			auto scene = CCScene::create();
 			scene->addChild(browser);

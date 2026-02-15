@@ -1,18 +1,28 @@
 #include "GrindBrowserLayer.hpp"
+#include "Geode/c++stl/string.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
+#include "Geode/cocos/particle_nodes/CCParticleExamples.h"
+#include "Geode/cocos/particle_nodes/CCParticleSystemQuad.h"
+#include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/cocos/sprite_nodes/CCSpriteFrameCache.h"
+#include "Geode/cocos/textures/CCTexture2D.h"
+#include "Geode/cocos/textures/CCTextureCache.h"
 #include <Geode/binding/GJSearchObject.hpp>
 #include <Geode/binding/LevelBrowserLayer.hpp>
 #include <Geode/modify/LevelBrowserLayer.hpp>
+
+gd::string browserTitle;
 
 GrindBrowserLayer* GrindBrowserLayer::create(const char *title, GJSearchObject *search) {
     auto ret = new GrindBrowserLayer;
     if (ret && ret->init(search)) {
         ret->autorelease();
+        browserTitle = title;
         return ret;
     }
     delete ret;
-    return nullptr;
     browserTitle = title;
+    return nullptr;
 }
 
 class $modify(GrindBrowserLayerHook, LevelBrowserLayer) {
@@ -63,6 +73,18 @@ class $modify(GrindBrowserLayerHook, LevelBrowserLayer) {
 	        this->addChild(m_fields->m_bg1, -100);
 	        this->addChild(m_fields->m_bg2, -100);
             this->schedule(schedule_selector(GrindBrowserLayerHook::updateBg));
+
+            if (Mod::get()->getSettingValue<bool>("disable-star-particles")) return true;
+
+            auto grindParticles = CCParticleSnow::create();
+            auto texture = CCTextureCache::sharedTextureCache()->addImage("GJ_bigStar_noShadow.png"_spr, true);
+            grindParticles->m_fStartSpin = 0.f;
+            grindParticles->m_fEndSpin = 180.f;
+            grindParticles->m_fStartSize = 6.f;
+            grindParticles->m_fEndSize = 3.f;
+            grindParticles->setTexture(texture);
+
+            this->addChild(grindParticles, -30);
         }
 
         return true;
@@ -84,7 +106,7 @@ class $modify(GrindBrowserLayerHook, LevelBrowserLayer) {
 
     gd::string getSearchTitle() {
         if (auto grind = typeinfo_cast<GrindBrowserLayer*>(this)) {
-            return "Grinding Levels";
+            return browserTitle;
         }
         return LevelBrowserLayer::getSearchTitle();
     }

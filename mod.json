@@ -1,5 +1,5 @@
 {
-	"geode": "5.0.0-alpha.2",
+	"geode": "5.0.0-beta.1",
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v0.0.1",
+	"version": "v0.7.2-beta",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -17,7 +17,10 @@
 	"resources": {
 		"sprites": [
 			"resources/grinding_btn.png",
-			"resources/lg-logo.png"
+			"resources/lg-logo.png",
+			"resources/GJ_bigStar_noShadow.png",
+			"resources/button_add_1.png",
+			"resources/button_add_2.png"
 		]
 	},
 	"settings": {
@@ -75,6 +78,24 @@
 			"description": "Shows only uncompleted levels",
 			"type": "bool",
 			"default": false
+		},
+		"disable-star-particles": {
+			"name" : "Disable Star Particles",
+			"description": "Disables star particles at the background of grinding levels layer.",
+			"type": "bool",
+			"default": false
 		}
-	}
+	},
+	"links": {
+		"source": "https://github.com/delivel-tech/Level-Grind",
+		"homepage": "https://delivel.tech",
+		"community": "https://discord.gg/tmf5xtCX5y"
+	},
+	"tags": [
+		"interface",
+		"utility",
+		"universal",
+		"enhancement",
+		"content"
+	]
 }
