@@ -10,6 +10,7 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/cocos/sprite_nodes/CCSpriteFrameCache.h"
 #include "Geode/loader/Log.hpp"
+#include "Geode/platform/windows.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/async.hpp"
@@ -107,7 +108,7 @@ bool LevelGrindLayer::init() {
 	logoSpr->setScale(1.2f);
 
 	this->addChild(logoSpr);
-	logoSpr->setPosition({ winSize.width / 2, 260.f });
+	logoSpr->setPosition({ winSize.width / 2, (winSize.height / 4) * 3.3f });
 
 	auto panel = CCScale9Sprite::create("GJ_square01.png");
 	panel->setID("buttons-panel");
@@ -398,13 +399,13 @@ bool LevelGrindLayer::init() {
 	versionsPanel->setContentSize({ 30.f, winSize.height / 2.3f });
 	versionsPanel->setID("versions-panel");
 	this->addChild(versionsPanel);
-	versionsPanel->setPosition({ 157.f, winSize.height / 2 });
+	versionsPanel->setPosition({ (winSize.width / 2) - 128.f, winSize.height / 2 });
 
 	auto versionsMenu = CCMenu::create();
 	versionsMenu->setLayout(ColumnLayout::create()->setGap(25.f)->setAxisReverse(true));
 	versionsMenu->setID("versions-menu");
 	versionsMenu->setScale(0.4f);
-	versionsMenu->setPosition({ 157.f, winSize.height / 2 });
+	versionsMenu->setPosition({ (winSize.width / 2) - 128.f, winSize.height / 2 });
 	this->addChild(versionsMenu);
 
 	auto ver22Off = CCLabelBMFont::create("2.2", "bigFont.fnt");
@@ -475,17 +476,19 @@ bool LevelGrindLayer::init() {
 	versionsMenu->updateLayout();
 	versionsPanel->setOpacity(100);
 
-	auto demonsPanel = CCScale9Sprite::create("square02_small.png");
+	demonsPanel = CCScale9Sprite::create("square02_small.png");
 	demonsPanel->setContentSize({ 30.f, winSize.height / 2.3f });
-	demonsPanel->setPosition({ 412.f, winSize.height / 2 });
+	demonsPanel->setPosition({ (winSize.width / 2) + 128.f, winSize.height / 2 });
 	demonsPanel->setID("demons-panel");
+	demonsPanel->setVisible(false);
 	this->addChild(demonsPanel);
 
-	auto demonsMenu = CCMenu::create();
+	demonsMenu = CCMenu::create();
 	demonsMenu->setLayout(ColumnLayout::create()->setGap(25.f)->setAxisReverse(true));
 	demonsMenu->setScale(0.4f);
-	demonsMenu->setPosition({ 412.f, winSize.height / 2 });
+	demonsMenu->setPosition({ (winSize.width / 2) + 128.f, winSize.height / 2 });
 	demonsMenu->setID("demons-menu");
+	demonsMenu->setVisible(false);
 	this->addChild(demonsMenu);
 
 	auto easyDOff = CCSprite::createWithSpriteFrameName("diffIcon_07_btn_001.png");
@@ -581,22 +584,25 @@ void LevelGrindLayer::onReq(CCObject* sender) {
 	auto upopup = UploadActionPopup::create(nullptr, "Loading...");
 	upopup->show();
 
+	Ref<UploadActionPopup> popupRef = upopup;
+
 	m_listener.spawn(
 		req.post("https://delivel.tech/grindapi/check_helper"),
-		[upopup](web::WebResponse res) {
+		[popupRef](web::WebResponse res) {
+			if (!popupRef) return;
 			if (!res.ok()) {
 				log::error("req failed");
-				upopup->showFailMessage("Request failed! Try again later.");
+				popupRef->showFailMessage("Request failed! Try again later.");
 				Mod::get()->setSavedValue("isHelper", false);
 				return;
 			}
-			auto json = res.json().unwrap();
-			auto isHelper = json["ok"].asBool().unwrap();
+			auto json = res.json().unwrapOrDefault();
+			auto isHelper = json["ok"].asBool().unwrapOrDefault();
 			if (isHelper) {
-				upopup->showSuccessMessage("Success! Helper granted.");
+				popupRef->showSuccessMessage("Success! Helper granted.");
 				Mod::get()->setSavedValue("isHelper", true);
 			} else {
-				upopup->showFailMessage("Failed! User is not a helper.");
+				popupRef->showFailMessage("Failed! User is not a helper.");
 				Mod::get()->setSavedValue("isHelper", false);
 			}
 		}
@@ -819,30 +825,41 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 
 	web::WebRequest req;
 	req.bodyJSON(body);
+
+	Ref<LoadingCircle> loadingR = loading;
+	auto searchBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
+	searchBtn->setEnabled(false); // turning off to prevent spamming
+	Ref<CCMenuItemSpriteExtra> searchRef = searchBtn;
 	
 	m_listener.spawn(
 		req.post("https://delivel.tech/grindapi/get_levels"),
-		[loading](web::WebResponse res) {
+		[loadingR, searchRef](web::WebResponse res) {
+			if (!loadingR || !searchRef) return;
+			searchRef->setEnabled(true);
 			if (!res.ok()) {
 				log::error("bad web request");
 				Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
-				loading->fadeAndRemove();
+				loadingR->fadeAndRemove();
 				return;
 			}
 			std::vector<int> ids;
-			auto response = res.json().unwrap();
+			auto response = res.json().unwrapOrDefault();
 
-			if (response["count"].asInt().unwrap() == 0) {
+			if (response["count"].asInt().unwrapOrDefault() == 0) {
 				Notification::create("No levels found", NotificationIcon::Info)->show();
-				loading->fadeAndRemove();
+				loadingR->fadeAndRemove();
 				return;
 			}
 
-			auto arrRes = response["ids"].asArray().unwrap();
+			auto arrRes = response["ids"].asArray();
+			if (!arrRes) {
+				log::error("arrRes not found");
+				return;
+			}
 			std::vector<int> uncompletedIDs;
 
 			if (Mod::get()->getSettingValue<bool>("only-uncompleted")) {
-				for (auto id : arrRes) {
+				for (auto id : arrRes.unwrap()) {
 				    auto isCompleted = GameStatsManager::sharedState()->hasCompletedOnlineLevel(id.asInt().unwrapOrDefault());
 				    if (!isCompleted) {
 					    auto uncID = id.asInt().unwrapOrDefault();
@@ -852,8 +869,12 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 
 				if (uncompletedIDs.empty()) {
 					Notification::create("No uncompleted levels found", NotificationIcon::Info)->show();
-					loading->fadeAndRemove();
+					loadingR->fadeAndRemove();
 					return;
+				}
+
+				if (uncompletedIDs.size() >= 100) {
+					uncompletedIDs.resize(99);
 				}
 
 				std::string uncLevelIDs = numToString(uncompletedIDs[0]);
@@ -870,19 +891,23 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 			    scene->addChild(browser);
 
 			    auto transition = CCTransitionFade::create(0.5f, scene);
-			    loading->fadeAndRemove();
+			    loadingR->fadeAndRemove();
 			    CCDirector::sharedDirector()->pushScene(transition);
 				return;
 			}
 
-			for (auto lvl : arrRes) {
+			if (arrRes.unwrap().size() >= 100) {
+				arrRes.unwrap().resize(99);
+			}
+
+			for (auto lvl : arrRes.unwrap()) {
 				int id = lvl.asInt().unwrapOrDefault();
 				ids.push_back(id);
 			}
 
 			if (ids.empty()) {
 				Notification::create("No levels found", NotificationIcon::Info)->show();
-				loading->fadeAndRemove();
+				loadingR->fadeAndRemove();
 				return;
 			}
 
@@ -900,7 +925,7 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 			scene->addChild(browser);
 
 			auto transition = CCTransitionFade::create(0.5f, scene);
-			loading->fadeAndRemove();
+			loadingR->fadeAndRemove();
 			CCDirector::sharedDirector()->pushScene(transition);
 		}
 	);
@@ -941,8 +966,12 @@ void LevelGrindLayer::onDemonSwitcher(CCObject* sender) {
 	bool isToggled = !toggler->isToggled();
 	if (isToggled) {
 		grindTypes.push_back("demon");
+		demonsMenu->setVisible(true);
+		demonsPanel->setVisible(true);
 	} else {
 		grindTypes.erase(std::find(grindTypes.begin(), grindTypes.end(), "demon"));
+		demonsMenu->setVisible(false);
+		demonsPanel->setVisible(false);
 	}
 }
 

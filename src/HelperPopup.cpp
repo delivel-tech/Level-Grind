@@ -164,17 +164,23 @@ bool HelperPopup::init(GJGameLevel* level) {
     web::WebRequest req;
     req.bodyJSON(body);
 
+    Ref<LoadingSpinner> spinnerRef = checkLoading;
+    Ref<HelperPopup> layerRef = this;
+
     m_listener2.spawn(
         req.post("https://delivel.tech/grindapi/check_level"),
-        [checkLoading, this](web::WebResponse res) {
+        [spinnerRef, layerRef](web::WebResponse res) {
+            if (!spinnerRef) return;
             if (!res.ok()) {
                 auto spr = CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png");
-                m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
-                checkLoading->removeFromParent();
+                layerRef->m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
+                spinnerRef->removeFromParent();
+                return;
             } else {
                 auto spr = CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png");
-                m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
-                checkLoading->removeFromParent();
+                layerRef->m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
+                spinnerRef->removeFromParent();
+                return;
             }
         }
     );
@@ -209,15 +215,18 @@ void HelperPopup::onAddButton(CCObject* sender) {
     auto upopup = UploadActionPopup::create(nullptr, "Adding level...");
     upopup->show();
 
+    Ref<UploadActionPopup> popupRef = upopup;
+
     m_listener.spawn(
         req.post("https://delivel.tech/grindapi/new_level"),
-        [upopup](web::WebResponse res) {
+        [popupRef](web::WebResponse res) {
+            if (!popupRef) return;
             if (!res.ok()) {
-                upopup->showFailMessage("Adding level failed. Try again later.");
+                popupRef->showFailMessage("Adding level failed. Try again later.");
                 log::error("failed adding level");
                 return;
             }
-            upopup->showSuccessMessage("Success! Level added.");
+            popupRef->showSuccessMessage("Success! Level added.");
         }
     );
 }
@@ -234,15 +243,18 @@ void HelperPopup::onDeleteBtn(CCObject* sender) {
     web::WebRequest req;
     req.bodyJSON(body);
 
+    auto popupRef = Ref(upopup);
+
     m_listener.spawn(
         req.post("https://delivel.tech/grindapi/delete_level"),
-        [upopup](web::WebResponse res) {
+        [popupRef](web::WebResponse res) {
+            if (!popupRef) return;
             if (!res.ok()) {
                 log::error("req failed");
-                upopup->showFailMessage("Deleting level failed. Try again later.");
+                popupRef->showFailMessage("Deleting level failed. Try again later.");
                 return;
             }
-            upopup->showSuccessMessage("Success! Level deleted.");
+            popupRef->showSuccessMessage("Success! Level deleted.");
         }
     );
 }

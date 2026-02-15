@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v0.7.2-beta",
+	"version": "v0.7.3-beta",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {

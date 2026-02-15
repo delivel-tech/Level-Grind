@@ -1,3 +1,4 @@
+#include "GUI/CCControlExtension/CCScale9Sprite.h"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h"
 #include "Geode/utils/async.hpp"
@@ -5,6 +6,8 @@
 #include <vector>
 #include <Geode/utils/web.hpp>
 #pragma once
+
+using namespace geode::prelude;
 
 class LevelGrindLayer : public cocos2d::CCLayer {
 public:
@@ -54,6 +57,10 @@ public:
     std::vector<int> demonDifficulties;
 
     std::vector<int> versions;
+
+    cocos2d::CCMenu* demonsMenu;
+    CCScale9Sprite* demonsPanel;
+    
 
 private:
     cocos2d::CCSprite* m_bg1 = nullptr;
