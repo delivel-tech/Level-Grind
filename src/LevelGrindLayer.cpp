@@ -10,7 +10,6 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/cocos/sprite_nodes/CCSpriteFrameCache.h"
 #include "Geode/loader/Log.hpp"
-#include "Geode/platform/windows.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/async.hpp"
