@@ -10,7 +10,6 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/cocos/sprite_nodes/CCSpriteFrameCache.h"
 #include "Geode/loader/Log.hpp"
-#include "Geode/platform/windows.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/async.hpp"
@@ -31,6 +30,8 @@
 #include <string>
 #include <Geode/utils/web.hpp>
 #include "GrindBrowserLayer.hpp"
+
+#include "LGLevelBrowserLayer.hpp"
 
 using namespace geode::prelude;
 
@@ -812,123 +813,21 @@ void LevelGrindLayer::onInsane(CCObject* sender) {
   }
 }
 
-
 void LevelGrindLayer::onSearchBtn(CCObject* sender) {
-	matjson::Value body;
-	if (!difficulties.empty()) body["difficulties"] = difficulties;
-	if (!lengths.empty()) body["lengths"] = lengths;
-	if (!demonDifficulties.empty()) body["demonDifficulties"] = demonDifficulties;
-	if (!grindTypes.empty()) body["grindTypes"] = grindTypes;
-	if (!versions.empty()) body["versions"] = versions;
-	auto loading = LoadingCircle::create();
-	loading->show();
-
-	web::WebRequest req;
-	req.bodyJSON(body);
-
-	Ref<LoadingCircle> loadingR = loading;
-	auto searchBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
-	searchBtn->setEnabled(false); // turning off to prevent spamming
-	Ref<CCMenuItemSpriteExtra> searchRef = searchBtn;
-	
-	m_listener.spawn(
-		req.post("https://delivel.tech/grindapi/get_levels"),
-		[loadingR, searchRef](web::WebResponse res) {
-			if (!loadingR || !searchRef) return;
-			searchRef->setEnabled(true);
-			if (!res.ok()) {
-				log::error("bad web request");
-				Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
-				loadingR->fadeAndRemove();
-				return;
-			}
-			std::vector<int> ids;
-			auto response = res.json().unwrapOrDefault();
-
-			if (response["count"].asInt().unwrapOrDefault() == 0) {
-				Notification::create("No levels found", NotificationIcon::Info)->show();
-				loadingR->fadeAndRemove();
-				return;
-			}
-
-			auto arrRes = response["ids"].asArray();
-			if (!arrRes) {
-				log::error("arrRes not found");
-				return;
-			}
-			std::vector<int> uncompletedIDs;
-
-			if (Mod::get()->getSettingValue<bool>("only-uncompleted")) {
-				for (auto id : arrRes.unwrap()) {
-				    auto isCompleted = GameStatsManager::sharedState()->hasCompletedOnlineLevel(id.asInt().unwrapOrDefault());
-				    if (!isCompleted) {
-					    auto uncID = id.asInt().unwrapOrDefault();
-					    uncompletedIDs.push_back(uncID);
-				    }
-			    }
-
-				if (uncompletedIDs.empty()) {
-					Notification::create("No uncompleted levels found", NotificationIcon::Info)->show();
-					loadingR->fadeAndRemove();
-					return;
-				}
-
-				if (uncompletedIDs.size() >= 100) {
-					uncompletedIDs.resize(99);
-				}
-
-				std::string uncLevelIDs = numToString(uncompletedIDs[0]);
-
-				for (size_t i = 1; i < uncompletedIDs.size(); ++i) {
-				    uncLevelIDs += "," + numToString(uncompletedIDs[i]);
-                }
-
-				auto search = GJSearchObject::create(SearchType::Type19, uncLevelIDs);
-
-				auto browser = GrindBrowserLayer::create(fmt::format("Grinding Levels ({} found)", uncompletedIDs.size()).c_str(), search);
-
-				auto scene = CCScene::create();
-			    scene->addChild(browser);
-
-			    auto transition = CCTransitionFade::create(0.5f, scene);
-			    loadingR->fadeAndRemove();
-			    CCDirector::sharedDirector()->pushScene(transition);
-				return;
-			}
-
-			if (arrRes.unwrap().size() >= 100) {
-				arrRes.unwrap().resize(99);
-			}
-
-			for (auto lvl : arrRes.unwrap()) {
-				int id = lvl.asInt().unwrapOrDefault();
-				ids.push_back(id);
-			}
-
-			if (ids.empty()) {
-				Notification::create("No levels found", NotificationIcon::Info)->show();
-				loadingR->fadeAndRemove();
-				return;
-			}
-
-			std::string levelIDs = numToString(ids[0]);
-
-            for (size_t i = 1; i < ids.size(); ++i) {
-				levelIDs += "," + numToString(ids[i]);
-            }
-
-			auto search = GJSearchObject::create(SearchType::Type19, levelIDs);
-
-			auto browser = GrindBrowserLayer::create(fmt::format("Grinding Levels ({} found)", ids.size()).c_str(), search);
-
-			auto scene = CCScene::create();
-			scene->addChild(browser);
-
-			auto transition = CCTransitionFade::create(0.5f, scene);
-			loadingR->fadeAndRemove();
-			CCDirector::sharedDirector()->pushScene(transition);
-		}
+	auto layer = LGLevelBrowserLayer::create(
+		difficulties,
+		lengths,
+		grindTypes,
+		demonDifficulties,
+		versions
 	);
+
+	auto scene = CCScene::create();
+	scene->addChild(layer);
+
+	auto transition = CCTransitionFade::create(0.5f, scene);
+
+	CCDirector::sharedDirector()->pushScene(transition);
 }
 
 void LevelGrindLayer::onStarSwitcher(CCObject* sender) {

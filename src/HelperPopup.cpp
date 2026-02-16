@@ -41,7 +41,7 @@ bool HelperPopup::init(GJGameLevel* level) {
     if (levelDifficulty == 10) {
         demonDifficulty = level->m_demonDifficulty;
     }
-    log::info("Level Difficulty: {}", levelDifficulty);
+    
     levelLength = level->m_levelLength;
 
     this->setTitle("Helper: Add Level", "bigFont.fnt");

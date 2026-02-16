@@ -74,17 +74,17 @@ class $modify(GrindBrowserLayerHook, LevelBrowserLayer) {
 	        this->addChild(m_fields->m_bg2, -100);
             this->schedule(schedule_selector(GrindBrowserLayerHook::updateBg));
 
-            if (Mod::get()->getSettingValue<bool>("disable-star-particles")) return true;
+            if (!Mod::get()->getSettingValue<bool>("disable-star-particles")) {
+                auto grindParticles = CCParticleSnow::create();
+                auto texture = CCTextureCache::sharedTextureCache()->addImage("GJ_bigStar_noShadow.png"_spr, true);
+                grindParticles->m_fStartSpin = 0.f;
+                grindParticles->m_fEndSpin = 180.f;
+                grindParticles->m_fStartSize = 6.f;
+                grindParticles->m_fEndSize = 3.f;
+                grindParticles->setTexture(texture);
 
-            auto grindParticles = CCParticleSnow::create();
-            auto texture = CCTextureCache::sharedTextureCache()->addImage("GJ_bigStar_noShadow.png"_spr, true);
-            grindParticles->m_fStartSpin = 0.f;
-            grindParticles->m_fEndSpin = 180.f;
-            grindParticles->m_fStartSize = 6.f;
-            grindParticles->m_fEndSize = 3.f;
-            grindParticles->setTexture(texture);
-
-            this->addChild(grindParticles, -30);
+            this->addChild(grindParticles);
+            }
         }
 
         return true;
