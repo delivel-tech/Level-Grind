@@ -29,7 +29,6 @@
 #include <matjson.hpp>
 #include <string>
 #include <Geode/utils/web.hpp>
-#include "GrindBrowserLayer.hpp"
 
 #include "LGLevelBrowserLayer.hpp"
 
