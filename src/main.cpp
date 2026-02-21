@@ -121,7 +121,7 @@ class $modify(UserManage, ProfilePage) {
 			menu_selector(UserManage::onManageBtn)
 		);
 
-		if (!Mod::get()->getSavedValue<bool>("isAdmin", true)) return;
+		if (!Mod::get()->getSavedValue<bool>("isAdmin")) return;
 
 		leftMenu->addChild(manageBtn);
 		leftMenu->updateLayout();
