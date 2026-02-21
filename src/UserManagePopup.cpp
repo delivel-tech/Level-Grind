@@ -10,7 +10,6 @@
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/loader/Log.hpp"
-#include "Geode/platform/windows.hpp"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
