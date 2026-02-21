@@ -14,6 +14,8 @@
 #include "LevelGrindLayer.hpp"
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include "HelperPopup.hpp"
+#include "UserManagePopup.hpp"
+#include <Geode/modify/ProfilePage.hpp>
 
 using namespace geode::prelude;
 
@@ -83,7 +85,7 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 			menu_selector(LevelGrinding::onAddBtn)
 		);
 
-		if (Mod::get()->getSavedValue<bool>("isHelper")) {
+		if (Mod::get()->getSavedValue<bool>("isHelper") || Mod::get()->getSavedValue<bool>("isAdmin")) {
 			menu->addChild(addLevelBtn);
 		    menu->updateLayout();
 		}
@@ -93,5 +95,39 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 
 	void onAddBtn(CCObject* sender) {
 		HelperPopup::create(m_fields->m_currentLevel)->show();
+	}
+};
+
+class $modify(UserManage, ProfilePage) {
+	struct Fields {
+		int m_targetAccountID;
+		const char* m_username;
+	};
+	void loadPageFromUserInfo(GJUserScore* score) {
+		ProfilePage::loadPageFromUserInfo(score);
+
+		m_fields->m_targetAccountID = score->m_accountID;
+		m_fields->m_username = score->m_userName.c_str();
+
+		auto leftMenu = getChildByIDRecursive("left-menu");
+		if (!leftMenu) return;
+
+		auto spr = CCSprite::create("button_add_2.png"_spr);
+		spr->setScale(0.55f);
+
+		auto manageBtn = CCMenuItemSpriteExtra::create(
+			spr,
+			this,
+			menu_selector(UserManage::onManageBtn)
+		);
+
+		if (!Mod::get()->getSavedValue<bool>("isAdmin", true)) return;
+
+		leftMenu->addChild(manageBtn);
+		leftMenu->updateLayout();
+	}
+
+	void onManageBtn(CCObject* sender) {
+		UserManagePopup::create(m_fields->m_targetAccountID, m_fields->m_username)->show();
 	}
 };

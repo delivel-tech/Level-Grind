@@ -587,23 +587,30 @@ void LevelGrindLayer::onReq(CCObject* sender) {
 	Ref<UploadActionPopup> popupRef = upopup;
 
 	m_listener.spawn(
-		req.post("https://delivel.tech/grindapi/check_helper"),
+		req.post("https://delivel.tech/grindapi/check_helper_new"),
 		[popupRef](web::WebResponse res) {
 			if (!popupRef) return;
 			if (!res.ok()) {
 				log::error("req failed");
 				popupRef->showFailMessage("Request failed! Try again later.");
 				Mod::get()->setSavedValue("isHelper", false);
+				Mod::get()->setSavedValue("isAdmin", false);
 				return;
 			}
 			auto json = res.json().unwrapOrDefault();
-			auto isHelper = json["ok"].asBool().unwrapOrDefault();
-			if (isHelper) {
+			auto position = json["pos"].asInt().unwrapOrDefault();
+			if (position == 1) {
 				popupRef->showSuccessMessage("Success! Helper granted.");
 				Mod::get()->setSavedValue("isHelper", true);
+				Mod::get()->setSavedValue("isAdmin", false);
+			} else if (position == 2) {
+				popupRef->showSuccessMessage("Success! Admin granted.");
+				Mod::get()->setSavedValue("isAdmin", true);
+				Mod::get()->setSavedValue("isHelper", false);
 			} else {
 				popupRef->showFailMessage("Failed! User is not a helper.");
 				Mod::get()->setSavedValue("isHelper", false);
+				Mod::get()->setSavedValue("isAdmin", false);
 			}
 		}
 	);
