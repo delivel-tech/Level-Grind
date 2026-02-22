@@ -106,6 +106,8 @@ class $modify(UserManage, ProfilePage) {
 	void loadPageFromUserInfo(GJUserScore* score) {
 		ProfilePage::loadPageFromUserInfo(score);
 
+		if (auto mngBtn = getChildByIDRecursive("lg-manage-btn")) mngBtn->removeFromParent();
+
 		m_fields->m_targetAccountID = score->m_accountID;
 		m_fields->m_username = score->m_userName.c_str();
 
@@ -120,6 +122,7 @@ class $modify(UserManage, ProfilePage) {
 			this,
 			menu_selector(UserManage::onManageBtn)
 		);
+		manageBtn->setID("lg-manage-btn");
 
 		if (!Mod::get()->getSavedValue<bool>("isAdmin")) return;
 
