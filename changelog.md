@@ -1,3 +1,6 @@
+# 0.8.7-beta
+- Fixed argon authentification bug on Android. Minor update.
+
 # 0.8.5-beta
 - Added new role: "Admin". These people can promote / demote other helpers.
 
