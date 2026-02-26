@@ -207,7 +207,7 @@ void HelperPopup::onAddButton(CCObject* sender) {
     if (coin) body["coin"] = coin;
     if (demon) body["demon"] = demon;
 
-    body["added_by"] = GJAccountManager::sharedState()->m_username;
+    body["added_by"] = GJAccountManager::sharedState()->m_username.c_str();
 
     web::WebRequest req;
 
