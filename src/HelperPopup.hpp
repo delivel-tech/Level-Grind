@@ -2,6 +2,7 @@
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/ui/Popup.hpp"
 #include <Geode/Geode.hpp>
+#include <Geode/binding/CCMenuItemToggler.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
 
 class HelperPopup : public geode::Popup {

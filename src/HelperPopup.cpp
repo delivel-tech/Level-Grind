@@ -44,9 +44,30 @@ bool HelperPopup::init(GJGameLevel* level) {
     
     levelLength = level->m_levelLength;
 
-    this->setTitle("Helper: Add Level", "bigFont.fnt");
+    if (level->isPlatformer()) {
+        moon = true;
+    } else {
+        star = true;
+    }
 
-    auto addBtnSpr = ButtonSprite::create("Add");
+    if (level->m_stars.value() == 10) {
+        demon = true;
+    }
+
+    if (Mod::get()->getSavedValue<bool>("isAdmin")) {
+        this->setTitle("Admin: Add Level", "bigFont.fnt");
+    } else {
+        this->setTitle("Helper: Add Level", "bigFont.fnt");
+    }
+
+    auto deleteBtn = CCMenuItemSpriteExtra::create(
+        ButtonSprite::create("Delete", "goldFont.fnt", "GJ_button_06.png"),
+        this,
+        menu_selector(HelperPopup::onDeleteBtn)
+    );
+    deleteBtn->setID("delete-btn");
+
+    auto addBtnSpr = ButtonSprite::create("Add", "goldFont.fnt", "GJ_button_01.png");
     
     auto addBtn = CCMenuItemSpriteExtra::create(
         addBtnSpr,
@@ -57,6 +78,7 @@ bool HelperPopup::init(GJGameLevel* level) {
 
     auto addBtnMenu = CCMenu::create();
     addBtnMenu->setLayout(RowLayout::create()->setGap(15.f));
+    addBtnMenu->addChild(deleteBtn);
     addBtnMenu->addChild(addBtn);
     addBtnMenu->setID("add-btn-menu");
 
@@ -68,62 +90,20 @@ bool HelperPopup::init(GJGameLevel* level) {
 
     m_mainLayer->addChildAtPosition(optionsMenu, Anchor::Center);
 
-    auto starIcon = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
-	auto moonIcon = CCSprite::createWithSpriteFrameName("GJ_moonsIcon_001.png");
 	auto coinIcon = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
-	auto demonIcon = CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png");
-	
-	starIcon->setPosition({ 20.f, 20.f });
-	moonIcon->setPosition({ 20.f, 20.f });
+
 	coinIcon->setPosition({ 20.f, 20.f });
-	demonIcon->setPosition({ 20.f, 20.f });
 
-	auto starIcon2 = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
-	auto moonIcon2 = CCSprite::createWithSpriteFrameName("GJ_moonsIcon_001.png");
 	auto coinIcon2 = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
-	auto demonIcon2 = CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png");
 
-	starIcon2->setPosition({ 20.f, 20.f });
-	moonIcon2->setPosition({ 20.f, 20.f });
 	coinIcon2->setPosition({ 20.f, 20.f });
-	demonIcon2->setPosition({ 20.f, 20.f });
 
-	auto starBtnSprOff = CCSprite::create("GJ_button_04.png");
-	auto moonBtnSprOff = CCSprite::create("GJ_button_04.png");
 	auto coinBtnSprOff = CCSprite::create("GJ_button_04.png");
-	auto demonBtnSprOff = CCSprite::create("GJ_button_04.png");
 
-	auto starBtnSprOn = CCSprite::create("GJ_button_02.png");
-	auto moonBtnSprOn = CCSprite::create("GJ_button_02.png");
 	auto coinBtnSprOn = CCSprite::create("GJ_button_02.png");
-	auto demonBtnSprOn = CCSprite::create("GJ_button_02.png");
 
-	starBtnSprOn->addChild(starIcon2);
-	moonBtnSprOn->addChild(moonIcon2);
 	coinBtnSprOn->addChild(coinIcon2);
-	demonBtnSprOn->addChild(demonIcon2);
-	starBtnSprOff->addChild(starIcon);
-	moonBtnSprOff->addChild(moonIcon);
 	coinBtnSprOff->addChild(coinIcon);
-	demonBtnSprOff->addChild(demonIcon);
-
-	auto starSwitcher = CCMenuItemToggler::create(
-		starBtnSprOff,
-		starBtnSprOn,
-		this,
-		menu_selector(HelperPopup::onStarSwitcher)
-	);
-	starSwitcher->setID("star-switcher");
-	optionsMenu->addChild(starSwitcher);
-
-	auto moonSwitcher = CCMenuItemToggler::create(
-		moonBtnSprOff,
-		moonBtnSprOn,
-		this,
-		menu_selector(HelperPopup::onMoonSwitcher)
-	);
-	moonSwitcher->setID("moon-switcher");
-	optionsMenu->addChild(moonSwitcher);
 
 	auto coinSwitcher = CCMenuItemToggler::create(
 		coinBtnSprOff,
@@ -134,24 +114,7 @@ bool HelperPopup::init(GJGameLevel* level) {
 	coinSwitcher->setID("coin-switcher");
 	optionsMenu->addChild(coinSwitcher);
 
-	auto demonSwitcher = CCMenuItemToggler::create(
-		demonBtnSprOff,
-		demonBtnSprOn,
-		this,
-		menu_selector(HelperPopup::onDemonSwitcher)
-	);
-	demonSwitcher->setID("demon-switcher");
-	optionsMenu->addChild(demonSwitcher);
-
 	optionsMenu->updateLayout();
-
-    auto deleteBtn = CCMenuItemSpriteExtra::create(
-        ButtonSprite::create("Delete"),
-        this,
-        menu_selector(HelperPopup::onDeleteBtn)
-    );
-    deleteBtn->setID("delete-btn");
-    addBtnMenu->addChild(deleteBtn);
 
     addBtnMenu->updateLayout();
 
@@ -166,12 +129,27 @@ bool HelperPopup::init(GJGameLevel* level) {
 
     Ref<LoadingSpinner> spinnerRef = checkLoading;
     Ref<HelperPopup> layerRef = this;
+    Ref<CCMenuItemToggler> coinSwitcherRef = coinSwitcher;
+    Ref<CCMenuItemSpriteExtra> addBtnRef = addBtn;
 
     m_listener2.spawn(
         req.post("https://delivel.tech/grindapi/check_level"),
-        [spinnerRef, layerRef](web::WebResponse res) {
+        [spinnerRef, layerRef, coinSwitcherRef, addBtnRef](web::WebResponse res) {
             if (!spinnerRef) return;
-            if (!res.ok()) {
+            auto json = res.json().unwrap();
+
+            auto isOK = json["ok"].asBool().unwrapOrDefault();
+
+            if (!isOK) {
+                auto spr = CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png");
+                layerRef->m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
+                spinnerRef->removeFromParent();
+                return;
+            }
+
+            auto exists = json["exists"].asBool().unwrapOrDefault();
+
+            if (!exists) {
                 auto spr = CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png");
                 layerRef->m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
                 spinnerRef->removeFromParent();
@@ -180,7 +158,28 @@ bool HelperPopup::init(GJGameLevel* level) {
                 auto spr = CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png");
                 layerRef->m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
                 spinnerRef->removeFromParent();
-                return;
+
+                auto parent = addBtnRef->getParent();
+                addBtnRef->removeFromParent();
+
+                auto readdBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Re-Add", "goldFont.fnt", "GJ_button_01.png"),
+                    layerRef,
+                    menu_selector(HelperPopup::onAddButton)
+                );
+                readdBtn->setID("readd-btn");
+                parent->addChild(readdBtn);
+                parent->updateLayout();
+            }
+
+            auto coin = json["coin"].asInt().unwrapOrDefault();
+
+            if (coin == 1) {
+                coinSwitcherRef->toggle(true);
+                coin = true;
+            } else {
+                coinSwitcherRef->toggle(false);
+                coin = false;
             }
         }
     );
@@ -207,6 +206,8 @@ void HelperPopup::onAddButton(CCObject* sender) {
     if (moon) body["moon"] = moon;
     if (coin) body["coin"] = coin;
     if (demon) body["demon"] = demon;
+
+    body["added_by"] = GJAccountManager::sharedState()->m_username;
 
     web::WebRequest req;
 
@@ -259,26 +260,6 @@ void HelperPopup::onDeleteBtn(CCObject* sender) {
     );
 }
 
-void HelperPopup::onStarSwitcher(CCObject* sender) {
-    auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
-	bool isToggled = !toggler->isToggled();
-	if (isToggled) {
-		star = true;
-	} else {
-		star = false;
-	}
-}
-
-void HelperPopup::onMoonSwitcher(CCObject* sender) {
-    auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
-	bool isToggled = !toggler->isToggled();
-	if (isToggled) {
-		moon = true;
-	} else {
-		moon = false;
-	}
-}
-
 void HelperPopup::onCoinSwitcher(CCObject* sender) {
     auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
 	bool isToggled = !toggler->isToggled();
@@ -286,15 +267,5 @@ void HelperPopup::onCoinSwitcher(CCObject* sender) {
 		coin = true;
 	} else {
 		coin = false;
-	}
-}
-
-void HelperPopup::onDemonSwitcher(CCObject* sender) {
-    auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
-	bool isToggled = !toggler->isToggled();
-	if (isToggled) {
-		demon = true;
-	} else {
-		demon = false;
 	}
 }

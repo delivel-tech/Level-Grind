@@ -1,10 +1,8 @@
 #include "GUI/CCControlExtension/CCScale9Sprite.h"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h"
-#include "Geode/utils/async.hpp"
 #include <Geode/Geode.hpp>
 #include <vector>
-#include <Geode/utils/web.hpp>
 #pragma once
 
 using namespace geode::prelude;
@@ -49,8 +47,6 @@ public:
     void onInsaneD(cocos2d::CCObject* sender);
     void onExtremeD(cocos2d::CCObject* sender);
 
-    void onReq(cocos2d::CCObject* sender);
-
     std::vector<int> difficulties;
     std::vector<int> lengths;
     std::vector<std::string> grindTypes;
@@ -67,7 +63,4 @@ private:
     cocos2d::CCSprite* m_bg2 = nullptr;
     float m_bgWidth = 0.f;
     float m_speed = 30.f;
-
-protected:
-    geode::async::TaskHolder<geode::utils::web::WebResponse> m_listener;
 };

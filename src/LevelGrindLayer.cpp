@@ -1,6 +1,5 @@
 #include "LevelGrindLayer.hpp"
 #include "GUI/CCControlExtension/CCScale9Sprite.h"
-#include "Geode/c++stl/string.hpp"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
@@ -11,9 +10,6 @@
 #include "Geode/cocos/sprite_nodes/CCSpriteFrameCache.h"
 #include "Geode/loader/Log.hpp"
 #include "Geode/ui/Layout.hpp"
-#include "Geode/ui/Notification.hpp"
-#include "Geode/utils/async.hpp"
-#include "Geode/utils/general.hpp"
 #include <Geode/Enums.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
@@ -24,11 +20,8 @@
 #include <Geode/binding/LevelBrowserLayer.hpp>
 #include <Geode/binding/LevelFeatureLayer.hpp>
 #include <Geode/binding/LoadingCircle.hpp>
-#include <Geode/binding/UploadActionPopup.hpp>
 #include <Geode/ui/GeodeUI.hpp>
-#include <matjson.hpp>
 #include <string>
-#include <Geode/utils/web.hpp>
 
 #include "LGLevelBrowserLayer.hpp"
 
@@ -558,62 +551,10 @@ bool LevelGrindLayer::init() {
 
 	demonsMenu->updateLayout();
 	demonsPanel->setOpacity(100);
-
-	auto reqBtn = CCMenuItemSpriteExtra::create(
-		ButtonSprite::create("Req", "goldFont.fnt", "GJ_button_04.png"),
-		this,
-		menu_selector(LevelGrindLayer::onReq)
-	);
-
-	auto searchBtnFound = getChildByIDRecursive("search-btn");
-	searchBtnMenu->insertBefore(reqBtn, searchBtnFound);
 	searchBtnMenu->updateLayout();
 	searchBtnMenu->setScale(0.8f);
 
     return true;
-}
-
-void LevelGrindLayer::onReq(CCObject* sender) {
-	matjson::Value body;
-	body["account_id"] = GJAccountManager::get()->m_accountID;
-	body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
-
-	web::WebRequest req;
-	req.bodyJSON(body);
-
-	auto upopup = UploadActionPopup::create(nullptr, "Loading...");
-	upopup->show();
-
-	Ref<UploadActionPopup> popupRef = upopup;
-
-	m_listener.spawn(
-		req.post("https://delivel.tech/grindapi/check_helper_new"),
-		[popupRef](web::WebResponse res) {
-			if (!popupRef) return;
-			if (!res.ok()) {
-				log::error("req failed");
-				popupRef->showFailMessage("Request failed! Try again later.");
-				Mod::get()->setSavedValue("isHelper", false);
-				Mod::get()->setSavedValue("isAdmin", false);
-				return;
-			}
-			auto json = res.json().unwrapOrDefault();
-			auto position = json["pos"].asInt().unwrapOrDefault();
-			if (position == 1) {
-				popupRef->showSuccessMessage("Success! Helper granted.");
-				Mod::get()->setSavedValue("isHelper", true);
-				Mod::get()->setSavedValue("isAdmin", false);
-			} else if (position == 2) {
-				popupRef->showSuccessMessage("Success! Admin granted.");
-				Mod::get()->setSavedValue("isAdmin", true);
-				Mod::get()->setSavedValue("isHelper", false);
-			} else {
-				popupRef->showFailMessage("Failed! User is not a helper.");
-				Mod::get()->setSavedValue("isHelper", false);
-				Mod::get()->setSavedValue("isAdmin", false);
-			}
-		}
-	);
 }
 
 void LevelGrindLayer::update(float dt) {
@@ -825,7 +766,8 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 		lengths,
 		grindTypes,
 		demonDifficulties,
-		versions
+		versions,
+		Mod::get()->getSettingValue<bool>("newer-first")
 	);
 
 	auto scene = CCScene::create();

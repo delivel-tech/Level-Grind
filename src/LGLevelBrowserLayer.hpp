@@ -18,7 +18,8 @@ public:
         std::vector<int> lengths,
         std::vector<std::string> grindTypes,
         std::vector<int> demonDifficulties,
-        std::vector<int> versions
+        std::vector<int> versions,
+        bool newerFirst
     );
     bool init(GJSearchObject* object);
     void keyBackClicked() override;
@@ -35,6 +36,7 @@ public:
     std::vector<int> m_lengths;
     std::vector<std::string> m_grindTypes;
     std::vector<int> m_demonDifficulties;
+    bool m_isNewerFirst;
 
     std::vector<int> m_versions;
 

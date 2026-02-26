@@ -3,9 +3,11 @@
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCScene.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCTransition.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/platform/windows.hpp"
 #include "Geode/ui/BasedButtonSprite.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <Geode/binding/CCTextInputNode.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/binding/FLAlertLayer.hpp>
@@ -15,11 +17,14 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include "HelperPopup.hpp"
 #include "UserManagePopup.hpp"
+#include "ReqButtonSetting.hpp"
 #include <Geode/modify/ProfilePage.hpp>
 
 using namespace geode::prelude;
 
 $on_mod(Loaded) {
+	registerReqButtonSettingType();
+
 	async::spawn(
         argon::startAuth(),
         [](Result<std::string> res) {
@@ -57,6 +62,10 @@ class $modify(LevelGrind, LevelSearchLayer) {
 	}
 
 	void onGrindingBtn(CCObject*) {
+		auto searchBar = typeinfo_cast<CCTextInputNode*>(getChildByIDRecursive("search-bar"));
+		if (searchBar) {
+			searchBar->onClickTrackNode(false);
+		}
 		auto scene = CCScene::create();
 		auto grindingLayer = LevelGrindLayer::create();
 		scene->addChild(grindingLayer);
@@ -69,6 +78,7 @@ class $modify(LevelGrind, LevelSearchLayer) {
 class $modify(LevelGrinding, LevelInfoLayer) {
 	struct Fields {
 		GJGameLevel* m_currentLevel;
+		bool isRated = false;
 	};
 	bool init(GJGameLevel* level, bool challenge) {
 		if (!LevelInfoLayer::init(level, challenge)) return false;
@@ -85,6 +95,14 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 			menu_selector(LevelGrinding::onAddBtn)
 		);
 
+		if (m_fields->m_currentLevel->m_stars.value() > 0) {
+			m_fields->isRated = true;
+		}
+
+		if (!m_fields->isRated) {
+			addLevelBtn->setColor({ 128, 128, 128 });
+		}
+
 		if (Mod::get()->getSavedValue<bool>("isHelper") || Mod::get()->getSavedValue<bool>("isAdmin")) {
 			menu->addChild(addLevelBtn);
 		    menu->updateLayout();
@@ -94,7 +112,15 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 	}
 
 	void onAddBtn(CCObject* sender) {
-		HelperPopup::create(m_fields->m_currentLevel)->show();
+		if (m_fields->isRated) {
+			HelperPopup::create(m_fields->m_currentLevel)->show();
+		} else {
+			FLAlertLayer::create(
+				"Level Not Rated",
+				"This level <cr>has not been rated</c>. You cannot add unrated levels to the <cy>Level Grind</c>.",
+				"OK"
+			)->show();
+		}
 	}
 };
 

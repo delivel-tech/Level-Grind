@@ -1,5 +1,5 @@
 {
-	"geode": "5.0.0-beta.3",
+	"geode": "5.0.1",
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v0.8.7-beta",
+	"version": "v0.9.0-beta",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -78,6 +78,27 @@
 			"description": "Shows only uncompleted levels",
 			"type": "bool",
 			"default": false
+		},
+		"only-completed": {
+			"name": "Only Completed",
+			"description": "Shows only completed levels",
+			"type": "bool",
+			"default": false
+		},
+		"newer-first": {
+			"name": "Newer First",
+			"description": "Sorts levels by upload date, newer first.",
+			"type": "bool",
+			"default": false
+		},
+		"other-settings-title": {
+			"type": "title",
+			"name": "Other Settings"
+		},
+		"req-helper-check": {
+			"type": "custom:req-button",
+			"name": "Request Staff Access",
+			"description": "Gives you Helper / Admin perms if you're a staff member."
 		},
 		"disable-star-particles": {
 			"name" : "Disable Star Particles",

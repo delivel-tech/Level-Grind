@@ -30,7 +30,8 @@ LGLevelBrowserLayer* LGLevelBrowserLayer::create(
     std::vector<int> lengths, 
     std::vector<std::string> grindTypes, 
     std::vector<int> demonDifficulties, 
-    std::vector<int> versions
+    std::vector<int> versions,
+    bool newerFirst
 ) {
     auto ret = new LGLevelBrowserLayer;
 
@@ -39,6 +40,7 @@ LGLevelBrowserLayer* LGLevelBrowserLayer::create(
     ret->m_grindTypes = grindTypes;
     ret->m_demonDifficulties = demonDifficulties;
     ret->m_versions = versions;
+    ret->m_isNewerFirst = newerFirst;
 
     if (ret && ret->init(nullptr)) {
         ret->autorelease();
@@ -563,6 +565,11 @@ void LGLevelBrowserLayer::performFetchLevels() {
     if (!m_demonDifficulties.empty()) body["demonDifficulties"] = m_demonDifficulties;
     if (!m_grindTypes.empty()) body["grindTypes"] = m_grindTypes;
     if (!m_versions.empty()) body["versions"] = m_versions;
+    if (m_isNewerFirst) {
+        body["newerFirst"] = true;
+    } else {
+        body["newerFirst"] = false;
+    }
     
     auto req = web::WebRequest();
     req.bodyJSON(body);
@@ -645,9 +652,11 @@ void LGLevelBrowserLayer::performFetchLevels() {
             
             std::vector<int> filteredIDs;
             bool onlyUncompleted = false;
+            bool onlyCompleted = false;
             
             if (auto mod = Mod::get()) {
                 onlyUncompleted = mod->getSettingValue<bool>("only-uncompleted");
+                onlyCompleted = mod->getSettingValue<bool>("only-completed");
             }
             
             if (onlyUncompleted) {
@@ -678,7 +687,36 @@ void LGLevelBrowserLayer::performFetchLevels() {
                     return;
                 }
             } else {
-                filteredIDs = allIDs;
+                if (onlyCompleted) {
+                    auto gsm = GameStatsManager::sharedState();
+                    if (gsm) {
+                        for (auto id : allIDs) {
+                            auto isCompleted = gsm->hasCompletedOnlineLevel(id);
+                            if (isCompleted) {
+                                filteredIDs.push_back(id);
+                            }
+                        }
+                    } else {
+                        filteredIDs = allIDs;
+                    }
+                    
+                    if (filteredIDs.empty()) {
+                        Notification::create("No completed levels found", NotificationIcon::Info)->show();
+                        self->stopLoading();
+                        
+                        if (self->m_scrollLayer && self->m_scrollLayer->m_contentLayer) {
+                            self->m_scrollLayer->m_contentLayer->removeAllChildrenWithCleanup(true);
+                        }
+                        
+                        self->m_levelsLabel->setString("0 to 0 of 0");
+                        self->m_totalLevels = 0;
+                        self->m_totalPages = 1;
+                        self->updatePageButton();
+                        return;
+                    }
+                } else {
+                    filteredIDs = allIDs;
+                }
             }
             
             self->m_allLevelIDs = filteredIDs;
