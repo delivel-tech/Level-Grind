@@ -1,3 +1,9 @@
+# 0.9.0-beta
+- Added Newer First and Only Completed filters.
+- Reworked Helper's add level panel.
+- Server side changes.
+- Minor bugfixes.
+
 # 0.8.7-beta
 - Fixed argon authentification bug on Android. Minor update.
 
