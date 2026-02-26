@@ -3,7 +3,6 @@
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCScene.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCTransition.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
-#include "Geode/platform/windows.hpp"
 #include "Geode/ui/BasedButtonSprite.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
