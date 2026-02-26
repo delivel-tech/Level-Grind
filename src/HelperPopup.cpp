@@ -216,7 +216,7 @@ void HelperPopup::onAddButton(CCObject* sender) {
     auto upopup = UploadActionPopup::create(nullptr, "Adding level...");
     upopup->show();
 
-    WeakRef<UploadActionPopup> popupRef = upopup;
+    Ref<UploadActionPopup> popupRef = upopup;
 
     m_listener.spawn(
         req.post("https://delivel.tech/grindapi/new_level"),
