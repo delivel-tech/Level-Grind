@@ -1,6 +1,5 @@
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCScene.h"
-#include "Geode/platform/windows.hpp"
 #include "LGLevelBrowserLayer.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/LevelCell.hpp>
