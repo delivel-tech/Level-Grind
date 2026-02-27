@@ -18,10 +18,11 @@ and we hope you will find this mod a <cy>great place</c> to evolve your <cr>acco
 
 ### <cp>Want to become a Helper?</c>
 
-* DM <cy>@delivelgd</c> in <cb>Discord</c> and say who you are and why you want to be a <cp>Helper</c>.
-* I may <cg>give</c> or <cr>not give</c> you <co>Helper perms</c> based off of different aspects.
+* DM <cy>@delivelgd</c> or other <cp>admins</c> (can be found in the discord server) in <cb>Discord</c> and say who you are and why you want to be a <cp>Helper</c>.
+* We may <cg>give</c> or <cr>not give</c> you <co>Helper perms</c> based off of different aspects.
+* Keep in mind that it may take a while to make a decision after you applied, please be patient!
 
 ### <cy>Credits:</c>
 
 * <cp>Mod logo & sprites</c> - <cy>iDust</c>
-* A lot of <cg>levels</c> in the database - <cp>our helpers</c> :3
+* A lot of <cg>levels</c> in the database - <cp>our helpers</c> <3

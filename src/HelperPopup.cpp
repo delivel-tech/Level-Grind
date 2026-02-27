@@ -135,6 +135,7 @@ bool HelperPopup::init(GJGameLevel* level) {
     m_listener2.spawn(
         req.post("https://delivel.tech/grindapi/check_level"),
         [spinnerRef, layerRef, coinSwitcherRef, addBtnRef](web::WebResponse res) {
+            if (!res.ok()) return;
             if (!spinnerRef) return;
             auto json = res.json().unwrap();
 

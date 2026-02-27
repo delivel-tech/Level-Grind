@@ -1,3 +1,7 @@
+# 0.9.1-beta
+- Added repeating background to Level Info Layer if it's opened from Level Grind.
+
+
 # 0.9.0-beta
 - Added Newer First and Only Completed filters.
 - Reworked Helper's add level panel.

@@ -19,6 +19,7 @@
 #include <Geode/binding/GameStatsManager.hpp>
 #include <Geode/binding/LevelBrowserLayer.hpp>
 #include <Geode/binding/LevelFeatureLayer.hpp>
+#include <Geode/binding/LevelInfoLayer.hpp>
 #include <Geode/binding/LoadingCircle.hpp>
 #include <Geode/ui/GeodeUI.hpp>
 #include <string>

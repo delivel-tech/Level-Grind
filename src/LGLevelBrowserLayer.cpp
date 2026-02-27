@@ -470,8 +470,7 @@ void LGLevelBrowserLayer::populateFromArray(CCArray* levels) {
     for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(levels)) {
         if (!level) continue;
         
-        auto cell = new LevelCell("LGLevelCell", 356.f, cellH);
-        cell->autorelease();
+        auto cell = LevelCell::create(356.f, cellH);
         cell->loadFromLevel(level);
         cell->setContentSize({356.f, cellH});
         cell->setAnchorPoint({0.0f, 1.0f});
