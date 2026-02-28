@@ -13,7 +13,7 @@
 #include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/binding/UploadActionPopup.hpp>
-#include <Geode/binding/UploadMessageDelegate.hpp>
+#include <Geode/binding/UploadPopupDelegate.hpp>
 #include <matjson.hpp>
 
 using namespace geode::prelude;
@@ -216,7 +216,7 @@ void HelperPopup::onAddButton(CCObject* sender) {
 
     req.bodyJSON(body);
 
-    auto upopup = UploadActionPopup::create(nullptr, "Adding level...");
+    auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Adding level...");
     upopup->show();
 
     Ref<UploadActionPopup> popupRef = upopup;
@@ -241,7 +241,7 @@ void HelperPopup::onDeleteBtn(CCObject* sender) {
     body["account_id"] = GJAccountManager::get()->m_accountID;
     body["id"] = levelID;
 
-    auto upopup = UploadActionPopup::create(nullptr, "Deleting level...");
+    auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Deleting level...");
     upopup->show();
 
     web::WebRequest req;
@@ -271,4 +271,14 @@ void HelperPopup::onCoinSwitcher(CCObject* sender) {
 	} else {
 		coin = false;
 	}
+}
+
+void HelperPopup::onClosePopup(::UploadActionPopup* popup) {
+    if (popup) {
+        popup->m_delegate = nullptr;
+        if (popup->getParent()) {
+            popup->closePopup();
+        }
+    }
+    this->onClose(nullptr);
 }

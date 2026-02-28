@@ -4,8 +4,9 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
+#include <Geode/binding/UploadPopupDelegate.hpp>
 
-class HelperPopup : public geode::Popup {
+class HelperPopup : public geode::Popup, public ::UploadPopupDelegate {
 protected:
     bool init(GJGameLevel* level);
 
@@ -29,6 +30,7 @@ public:
     void onCoinSwitcher(cocos2d::CCObject* sender);
     void onDemonSwitcher(cocos2d::CCObject* sender);
     void onDeleteBtn(cocos2d::CCObject* sender);
+    void onClosePopup(::UploadActionPopup* popup) override;
 
 protected:
     geode::async::TaskHolder<geode::utils::web::WebResponse> m_listener;

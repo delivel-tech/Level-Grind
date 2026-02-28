@@ -1,5 +1,6 @@
 # 0.9.6-beta
 - Added customization to backgrounds.
+- Helper Popup changes.
 
 # 0.9.5-beta
 - Added Discord server button.
