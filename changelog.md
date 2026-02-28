@@ -1,6 +1,8 @@
+# 0.9.2-beta
+- Fixed bug which used to lead to problems with adding levels for helpers.
+
 # 0.9.1-beta
 - Added repeating background to Level Info Layer if it's opened from Level Grind.
-
 
 # 0.9.0-beta
 - Added Newer First and Only Completed filters.

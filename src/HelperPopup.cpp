@@ -36,7 +36,7 @@ bool HelperPopup::init(GJGameLevel* level) {
     coin = false;
 
     levelID = level->m_levelID;
-    levelName = level->m_levelName.c_str();
+    levelName = level->m_levelName;
     levelDifficulty = level->m_stars.value();
     if (levelDifficulty == 10) {
         demonDifficulty = level->m_demonDifficulty;
@@ -173,14 +173,14 @@ bool HelperPopup::init(GJGameLevel* level) {
                 parent->updateLayout();
             }
 
-            auto coin = json["coin"].asInt().unwrapOrDefault();
+            auto coinValue = json["coin"].asInt().unwrapOrDefault();
 
-            if (coin == 1) {
+            if (coinValue == 1) {
                 coinSwitcherRef->toggle(true);
-                coin = true;
+                layerRef->coin = true;
             } else {
                 coinSwitcherRef->toggle(false);
-                coin = false;
+                layerRef->coin = false;
             }
         }
     );
@@ -190,9 +190,10 @@ bool HelperPopup::init(GJGameLevel* level) {
 
 void HelperPopup::onAddButton(CCObject* sender) {
     matjson::Value body;
+    auto finalLevelName = levelName.empty() ? std::string("blank name") : levelName;
 
     body["id"] = levelID;
-    body["name"] = levelName;
+    body["name"] = finalLevelName;
     body["difficulty"] = levelDifficulty;
     body["length"] = levelLength;
 

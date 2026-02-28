@@ -20,7 +20,7 @@ public:
     int demonDifficulty = 0;
 
     int levelID = 0;
-    const char* levelName = "";
+    std::string levelName = "";
     int levelDifficulty = 0;
     int levelLength = 0;
 
