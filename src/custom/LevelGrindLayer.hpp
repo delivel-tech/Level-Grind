@@ -14,7 +14,6 @@ public:
 
     void onBack(cocos2d::CCObject*);
     void keyBackClicked() override;
-    void update(float dt) override;
 
     void onShort(cocos2d::CCObject* sender);
     void onMedium(cocos2d::CCObject* sender);
@@ -59,11 +58,4 @@ public:
 
     cocos2d::CCMenu* demonsMenu;
     CCScale9Sprite* demonsPanel;
-    
-
-private:
-    cocos2d::CCSprite* m_bg1 = nullptr;
-    cocos2d::CCSprite* m_bg2 = nullptr;
-    float m_bgWidth = 0.f;
-    float m_speed = 30.f;
 };

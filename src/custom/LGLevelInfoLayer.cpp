@@ -29,12 +29,16 @@ bool LGLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
         }
         bg->removeFromParent();
 
-        auto newBg = cue::RepeatingBackground::create("game_bg_01_001.png", 1.0f, cue::RepeatMode::X);
-        newBg->setSpeed(0.5f);
-        newBg->setColor({ 34, 60, 110 });
-
-        parent->addChild(newBg);
-        parent->updateLayout();
+        if (Mod::get()->getSettingValue<bool>("disable-custom-background")) {
+		    auto bg = createLayerBG();
+		    bg->setColor({ 0, 102, 255 });
+            addChild(bg, -2);
+	    } else {
+		    auto customBg = cue::RepeatingBackground::create("game_bg_01_001.png", 1.0f, cue::RepeatMode::X);
+		    customBg->setColor(Mod::get()->getSettingValue<cocos2d::ccColor3B>("rgbBackground"));
+		    customBg->setSpeed(Mod::get()->getSettingValue<float>("background-speed"));
+		    addChild(customBg, -2);
+	    }
 
         if (!Mod::get()->getSettingValue<bool>("disable-star-particles")) {
             auto grindParticles = CCParticleSnow::create();

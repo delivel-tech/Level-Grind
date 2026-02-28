@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v0.9.5-beta",
+	"version": "v0.9.6-beta",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -103,6 +103,26 @@
 		"disable-star-particles": {
 			"name" : "Disable Star Particles",
 			"description": "Disables star particles at the background of grinding levels layer.",
+			"type": "bool",
+			"default": false
+		},
+		"rgbBackground": {
+			"type": "rgb",
+			"name": "Background Color",
+			"default": [32, 69, 125],
+			"description": "Customize the background color of the **Main Page**, **Browser Layer** and **Level Info Layer**!"
+		},
+		"background-speed": {
+			"name": "Background Speed",
+			"description": "Changes the speed of the background in the Main Page, Browser Layer and Level Info Layer. Default is 0.5, lower is slower, higher is faster.",
+			"type": "float",
+			"default": 0.5,
+			"min": 0.0,
+			"max": 5.0
+		},
+		"disable-custom-background": {
+			"name": "Disable Custom Background",
+			"description": "Disables the custom background color and sets it to default.",
 			"type": "bool",
 			"default": false
 		}

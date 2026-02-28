@@ -68,10 +68,16 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
     
     m_searchObject = object;
 
-    auto bg = cue::RepeatingBackground::create("game_bg_01_001.png", 1.0f, cue::RepeatMode::X);
-    bg->setColor({34, 60, 110});
-    
-    this->addChild(bg);
+    if (Mod::get()->getSettingValue<bool>("disable-custom-background")) {
+		auto bg = createLayerBG();
+		bg->setColor({ 0, 102, 255 });
+        addChild(bg, -1);
+	} else {
+		auto customBg = cue::RepeatingBackground::create("game_bg_01_001.png", 1.0f, cue::RepeatMode::X);
+		customBg->setColor(Mod::get()->getSettingValue<cocos2d::ccColor3B>("rgbBackground"));
+		customBg->setSpeed(Mod::get()->getSettingValue<float>("background-speed"));
+		addChild(customBg, -1);
+	}
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 

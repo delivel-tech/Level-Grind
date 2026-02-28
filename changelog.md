@@ -1,3 +1,6 @@
+# 0.9.6-beta
+- Added customization to backgrounds.
+
 # 0.9.5-beta
 - Added Discord server button.
 - Added Staff credits.

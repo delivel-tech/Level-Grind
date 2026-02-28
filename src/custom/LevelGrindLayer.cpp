@@ -9,6 +9,7 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/cocos/sprite_nodes/CCSpriteFrameCache.h"
 #include "Geode/loader/Log.hpp"
+#include "Geode/ui/General.hpp"
 #include "Geode/ui/Layout.hpp"
 #include <Geode/Enums.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
@@ -22,6 +23,7 @@
 #include <Geode/binding/LevelInfoLayer.hpp>
 #include <Geode/binding/LoadingCircle.hpp>
 #include <Geode/ui/GeodeUI.hpp>
+#include <cue/RepeatingBackground.hpp>
 #include <string>
 
 #include "Geode/ui/Popup.hpp"
@@ -54,38 +56,16 @@ bool LevelGrindLayer::init() {
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
-    const char* bgFile = "game_bg_01_001.png";
-
-    m_bg1 = CCSprite::create(bgFile);
-	m_bg2 = CCSprite::create(bgFile);
-
-    m_bg1->setID("bg-1");
-    m_bg2->setID("bg-2");
-
-	m_bg1->setColor({ 34, 60, 110 });
-	m_bg2->setColor({34, 60, 110});
-
-    if (!m_bg1 || !m_bg2) {
-		return false;
+	if (Mod::get()->getSettingValue<bool>("disable-custom-background")) {
+		auto bg = createLayerBG();
+		bg->setColor({ 0, 102, 255 });
+        addChild(bg, -1);
+	} else {
+		auto customBg = cue::RepeatingBackground::create("game_bg_01_001.png", 1.0f, cue::RepeatMode::X);
+		customBg->setColor(Mod::get()->getSettingValue<cocos2d::ccColor3B>("rgbBackground"));
+		customBg->setSpeed(Mod::get()->getSettingValue<float>("background-speed"));
+		addChild(customBg, -1);
 	}
-
-    m_bg1->setAnchorPoint({ 0.f, 0.f });
-	m_bg2->setAnchorPoint({ 0.f, 0.f });
-
-	float scaleY = winSize.height / m_bg1->getContentSize().height;
-	float scaleX = winSize.width / m_bg1->getContentSize().width;
-	float scale = std::max(scaleY, scaleX);
-	m_bg1->setScale(scale);
-	m_bg2->setScale(scale);
-
-    m_bgWidth = m_bg1->boundingBox().size.width;
-
-	m_bg1->setPosition({ 0.f, 0.f });
-	m_bg2->setPosition({ m_bgWidth - 1.f, 0.f });
-
-	this->addChild(m_bg1, -100);
-	this->addChild(m_bg2, -100);
-    this->scheduleUpdate();
 
     auto backBtn = CCMenuItemSpriteExtra::create(
 		CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png"), this, menu_selector(LevelGrindLayer::onBack)
@@ -604,19 +584,6 @@ void LevelGrindLayer::onDiscordBtn(CCObject* sender) {
 			}
 		}
 	);
-}
-
-void LevelGrindLayer::update(float dt) {
-	float dx = m_speed * dt;
-
-	m_bg1->setPositionX(m_bg1->getPositionX() - dx);
-	m_bg2->setPositionX(m_bg2->getPositionX() - dx);
-	if (m_bg1->getPositionX() <= -m_bgWidth) {
-		m_bg1->setPositionX(m_bg2->getPositionX() + m_bgWidth - 1.f);
-	}
-	if (m_bg2->getPositionX() <= -m_bgWidth) {
-		m_bg2->setPositionX(m_bg1->getPositionX() + m_bgWidth - 1.f);
-	}
 }
 
 void LevelGrindLayer::onBack(CCObject*) {
