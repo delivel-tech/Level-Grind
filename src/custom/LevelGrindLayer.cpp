@@ -24,7 +24,11 @@
 #include <Geode/ui/GeodeUI.hpp>
 #include <string>
 
-#include "LGLevelBrowserLayer.hpp"
+#include "Geode/ui/Popup.hpp"
+#include "Geode/utils/web.hpp"
+
+#include "../custom/LGLevelBrowserLayer.hpp"
+#include "../popups/LGCreditsPopup.hpp"
 
 using namespace geode::prelude;
 
@@ -555,7 +559,51 @@ bool LevelGrindLayer::init() {
 	searchBtnMenu->updateLayout();
 	searchBtnMenu->setScale(0.8f);
 
+	auto rightBtnMenu = CCMenu::create();
+	rightBtnMenu->setLayout(ColumnLayout::create()->setGap(10.f));
+
+	this->addChild(rightBtnMenu);
+	rightBtnMenu->setPosition({ winSize.width - 23.f, 45.f });
+	rightBtnMenu->setScale(0.8f);
+
+	auto discordSpr = CCSprite::createWithSpriteFrameName("gj_discordIcon_001.png");
+	discordSpr->setScale(1.4f);
+
+	auto discordBtn = CCMenuItemSpriteExtra::create(
+		discordSpr,
+		this,
+		menu_selector(LevelGrindLayer::onDiscordBtn)
+	);
+
+	rightBtnMenu->addChild(discordBtn);
+	rightBtnMenu->updateLayout();
+
+	auto creditsBtn = CCMenuItemSpriteExtra::create(
+		CCSprite::createWithSpriteFrameName("accountBtn_friends_001.png"),
+		this,
+		menu_selector(LevelGrindLayer::onCreditsBtn)
+	);
+	rightBtnMenu->addChild(creditsBtn);
+	rightBtnMenu->updateLayout();
+
     return true;
+}
+
+void LevelGrindLayer::onCreditsBtn(CCObject* sender) {
+	LGCreditsPopup::create()->show();
+}
+
+void LevelGrindLayer::onDiscordBtn(CCObject* sender) {
+	createQuickPopup(
+		"Discord Server",
+		"Join our <cp>Discord Server</c> to follow the Level Grind <cy>updates</c> and chat with our beatiful community!",
+		"Cancel", "Join",
+		[](auto, bool btn2) {
+			if (btn2) {
+				web::openLinkInBrowser("https://discord.gg/tmf5xtCX5y");
+			}
+		}
+	);
 }
 
 void LevelGrindLayer::update(float dt) {

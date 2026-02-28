@@ -1,4 +1,4 @@
-#include "LGLevelInfoLayer.hpp"
+#include "../custom/LGLevelInfoLayer.hpp"
 #include <cue/RepeatingBackground.hpp>
 
 using namespace geode::prelude;

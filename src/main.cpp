@@ -7,17 +7,20 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/CCTextInputNode.hpp>
+#include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
+#include <Geode/binding/GameLevelManager.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <argon/argon.hpp>
 #include <fmt/format.h>
-#include "LevelGrindLayer.hpp"
 #include <Geode/modify/LevelInfoLayer.hpp>
-#include "HelperPopup.hpp"
-#include "UserManagePopup.hpp"
-#include "ReqButtonSetting.hpp"
 #include <Geode/modify/ProfilePage.hpp>
+
+#include "custom/LevelGrindLayer.hpp"
+#include "other/ReqButtonSetting.hpp"
+#include "popups/UserManagePopup.hpp"
+#include "popups/HelperPopup.hpp"
 
 using namespace geode::prelude;
 
@@ -127,6 +130,10 @@ class $modify(UserManage, ProfilePage) {
 	struct Fields {
 		int m_targetAccountID;
 		const char* m_username;
+		int m_targetIcon;
+		int m_targetColor1;
+		int m_targetColor2;
+		int m_targetColor3;
 	};
 	void loadPageFromUserInfo(GJUserScore* score) {
 		ProfilePage::loadPageFromUserInfo(score);
@@ -135,6 +142,10 @@ class $modify(UserManage, ProfilePage) {
 
 		m_fields->m_targetAccountID = score->m_accountID;
 		m_fields->m_username = score->m_userName.c_str();
+		m_fields->m_targetIcon = score->m_playerCube;
+		m_fields->m_targetColor1 = score->m_color1;
+		m_fields->m_targetColor2 = score->m_color2;
+		m_fields->m_targetColor3 = score->m_color3;
 
 		auto leftMenu = getChildByIDRecursive("left-menu");
 		if (!leftMenu) return;
@@ -156,6 +167,13 @@ class $modify(UserManage, ProfilePage) {
 	}
 
 	void onManageBtn(CCObject* sender) {
-		UserManagePopup::create(m_fields->m_targetAccountID, m_fields->m_username)->show();
+		UserManagePopup::create(
+			m_fields->m_targetAccountID, 
+			m_fields->m_username, 
+			m_fields->m_targetIcon, 
+			m_fields->m_targetColor1, 
+			m_fields->m_targetColor2, 
+			m_fields->m_targetColor3
+		)->show();
 	}
 };

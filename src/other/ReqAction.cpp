@@ -1,4 +1,4 @@
-#include "ReqAction.hpp"
+#include "../other/ReqAction.hpp"
 
 #include <Geode/Geode.hpp>
 #include <Geode/binding/GJAccountManager.hpp>

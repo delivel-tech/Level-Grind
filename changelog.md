@@ -1,3 +1,8 @@
+# 0.9.5-beta
+- Added Discord server button.
+- Added Staff credits.
+- Bug fixes.
+
 # 0.9.2-beta
 - Fixed bug which used to lead to problems with adding levels for helpers.
 

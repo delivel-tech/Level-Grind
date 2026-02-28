@@ -1,10 +1,11 @@
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCScene.h"
-#include "LGLevelBrowserLayer.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/LevelCell.hpp>
 #include <Geode/modify/LevelCell.hpp>
-#include "LGLevelInfoLayer.hpp"
+
+#include "../custom/LGLevelBrowserLayer.hpp"
+#include "../custom/LGLevelInfoLayer.hpp"
 
 using namespace geode::prelude;
 

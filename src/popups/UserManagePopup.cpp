@@ -6,7 +6,6 @@
 #include <Geode/binding/LoadingCircle.hpp>
 #include <Geode/binding/UploadActionPopup.hpp>
 #include <matjson.hpp>
-#include "UserManagePopup.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/loader/Log.hpp"
@@ -16,11 +15,13 @@
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/web.hpp"
 
+#include "../popups/UserManagePopup.hpp"
+
 using namespace geode::prelude;
 
-UserManagePopup* UserManagePopup::create(int accountID, const char* username) {
+UserManagePopup* UserManagePopup::create(int accountID, const char* username, int icon, int color1, int color2, int color3) {
     auto ret = new UserManagePopup;
-    if (ret && ret->init(accountID, username)) {
+    if (ret && ret->init(accountID, username, icon, color1, color2, color3)) {
         ret->autorelease();
         return ret;
     }
@@ -28,11 +29,15 @@ UserManagePopup* UserManagePopup::create(int accountID, const char* username) {
     return nullptr;
 }
 
-bool UserManagePopup::init(int targetAccountID, const char* username) {
+bool UserManagePopup::init(int targetAccountID, const char* username, int icon, int color1, int color2, int color3) {
     if (!Popup::init(240.f, 180.f)) return false;
 
     m_targetAccountID = targetAccountID;
     m_username = username;
+    m_targetIcon = icon;
+    m_targetColor1 = color1;
+    m_targetColor2 = color2;
+    m_targetColor3 = color3;
 
     addSideArt(m_mainLayer, SideArt::All, SideArtStyle::PopupGold, false);
 
@@ -196,6 +201,7 @@ void UserManagePopup::onDemoteBtn(CCObject* sender) {
     auto demoteBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
 
     body["targetAccountID"] = m_targetAccountID;
+
     body["accountID"] = GJAccountManager::sharedState()->m_accountID;
     body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
 
@@ -253,9 +259,14 @@ void UserManagePopup::onPromoteBtn(CCObject* sender) {
     auto promoteBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
 
     body["targetAccountID"] = m_targetAccountID;
+    body["targetUsername"] = m_username;
+    body["targetIcon"] = m_targetIcon;
+    body["targetColor1"] = m_targetColor1;
+    body["targetColor2"] = m_targetColor2;
+    body["targetColor3"] = m_targetColor3;
+
     body["accountID"] = GJAccountManager::sharedState()->m_accountID;
     body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
-    body["targetUsername"] = m_username;
 
     web::WebRequest req;
     req.bodyJSON(body);
@@ -311,9 +322,14 @@ void UserManagePopup::onPromoteAdminBtn(CCObject* sender) {
     auto promoteBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
 
     body["targetAccountID"] = m_targetAccountID;
+    body["targetUsername"] = m_username;
+    body["targetIcon"] = m_targetIcon;
+    body["targetColor1"] = m_targetColor1;
+    body["targetColor2"] = m_targetColor2;
+    body["targetColor3"] = m_targetColor3;
+
     body["accountID"] = GJAccountManager::sharedState()->m_accountID;
     body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
-    body["targetUsername"] = m_username;
 
     web::WebRequest req;
     req.bodyJSON(body);

@@ -1,4 +1,5 @@
-#include "HelperPopup.hpp"
+#include "../popups/HelperPopup.hpp"
+
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/loader/Log.hpp"
