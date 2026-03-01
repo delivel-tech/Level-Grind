@@ -26,6 +26,7 @@
 #include <cue/RepeatingBackground.hpp>
 #include <string>
 
+#include "Geode/ui/MDPopup.hpp"
 #include "Geode/ui/Popup.hpp"
 #include "Geode/utils/web.hpp"
 
@@ -279,6 +280,7 @@ bool LevelGrindLayer::init() {
 	searchBtnMenu->setID("search-btn-menu");
 
 	auto typeBtnMenu = CCMenu::create();
+	typeBtnMenu->setID("type-btn-menu");
 	typeBtnMenu->setLayout(RowLayout::create()->setGap(15.f));
 	this->addChild(typeBtnMenu);
 	typeBtnMenu->setPosition({ winSize.width / 2, (winSize.height / 4) * 2.05f });
@@ -543,7 +545,7 @@ bool LevelGrindLayer::init() {
 	rightBtnMenu->setLayout(ColumnLayout::create()->setGap(10.f));
 
 	this->addChild(rightBtnMenu);
-	rightBtnMenu->setPosition({ winSize.width - 23.f, 45.f });
+	rightBtnMenu->setPosition({ winSize.width - 23.f, 55.f });
 	rightBtnMenu->setScale(0.8f);
 
 	auto discordSpr = CCSprite::createWithSpriteFrameName("gj_discordIcon_001.png");
@@ -554,6 +556,7 @@ bool LevelGrindLayer::init() {
 		this,
 		menu_selector(LevelGrindLayer::onDiscordBtn)
 	);
+	discordBtn->setID("discord-btn");
 
 	rightBtnMenu->addChild(discordBtn);
 	rightBtnMenu->updateLayout();
@@ -563,10 +566,37 @@ bool LevelGrindLayer::init() {
 		this,
 		menu_selector(LevelGrindLayer::onCreditsBtn)
 	);
+	creditsBtn->setID("credits-btn");
 	rightBtnMenu->addChild(creditsBtn);
 	rightBtnMenu->updateLayout();
 
+	rightBtnMenu->setID("right-btn-menu");
+
+	auto infoButton = CCMenuItemSpriteExtra::create(
+		CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"),
+		this,
+		menu_selector(LevelGrindLayer::onInfoBtn)
+	);
+	infoButton->setID("info-btn");
+	rightBtnMenu->addChild(infoButton);
+	rightBtnMenu->updateLayout();
+
     return true;
+}
+
+void LevelGrindLayer::onInfoBtn(CCObject* sender) {
+	MDPopup::create(
+		"Level Grind Info",
+		"<cp>Level Grind</c> is a mod that allows you to search for <cy>grinding worthy levels</c> based on various criteria, such as <cg>length</c>, <cj>difficulty</c>, and <co>type</c>. " \
+		"As well, it offers additional <cl>filters</c> and options to narrow down your search and find the perfect level to grind.\n\n" \
+		"<ca>Searching options explanations</c>:\n\n" \
+		"<cy>Star</c>: searching for classic levels.\n\n" \
+		"<cp>Moon</c>: searching for platformer levels.\n\n" \
+		"<co>Coin</c>: searching for levels with easy or free coins.\n\n" \
+		"<cr>Demon</c>: searching for demon levels.\n\n" \
+		"Other settings are quite self-explanatory, but if you need more info, feel free to join our [<cp>Discord server</c>](https://discord.gg/tmf5xtCX5y) by clicking the Discord button at the bottom right corner of this menu!",
+		"OK"
+	)->show();
 }
 
 void LevelGrindLayer::onCreditsBtn(CCObject* sender) {

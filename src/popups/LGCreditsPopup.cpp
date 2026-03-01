@@ -61,6 +61,11 @@ bool LGCreditsPopup::init() {
         m_spinner = spinner;
     }
 
+    auto scrollbar = Scrollbar::create(m_scrollLayer);
+    scrollbar->setPosition({ m_mainLayer->getContentSize().width - 12.f, (m_mainLayer->getContentSize().height / 2.f) - 5.f});
+    scrollbar->setScale(0.9f);
+    m_mainLayer->addChild(scrollbar);
+
     Ref<LGCreditsPopup> self = this;
 
     web::WebRequest req;

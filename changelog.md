@@ -1,3 +1,9 @@
+# 1.0.0-beta
+- Added new textures.
+- Added badges for Staff.
+- Added info button on the main layer.
+- Minor improvements.
+
 # 0.9.6-beta
 - Added customization to backgrounds.
 - Helper Popup changes.

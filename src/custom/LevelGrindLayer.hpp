@@ -49,6 +49,8 @@ public:
     void onDiscordBtn(cocos2d::CCObject* sender);
     void onCreditsBtn(cocos2d::CCObject* sender);
 
+    void onInfoBtn(cocos2d::CCObject* sender);
+
     std::vector<int> difficulties;
     std::vector<int> lengths;
     std::vector<std::string> grindTypes;

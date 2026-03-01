@@ -1,9 +1,7 @@
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "Geode/cocos/layers_scenes_transitions_nodes/CCScene.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCTransition.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
-#include "Geode/ui/BasedButtonSprite.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/CCTextInputNode.hpp>
@@ -17,12 +15,14 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/modify/ProfilePage.hpp>
 
-#include "custom/LevelGrindLayer.hpp"
+#include "Geode/utils/cocos.hpp"
+#include "Geode/utils/web.hpp"
 #include "other/ReqButtonSetting.hpp"
 #include "popups/UserManagePopup.hpp"
-#include "popups/HelperPopup.hpp"
 
 using namespace geode::prelude;
+
+std::unordered_map<int, int> staffs; // accountId, role (1 owner, 2 admin)
 
 $on_mod(Loaded) {
 	registerReqButtonSettingType();
@@ -35,96 +35,51 @@ $on_mod(Loaded) {
 			Mod::get()->setSavedValue("argon_token", token);
         }
     );
+
+	web::WebRequest req;
+
+	async::spawn(
+		req.get("https://delivel.tech/grindapi/get_staff"),
+		[](web::WebResponse res) {
+			if (!res.ok()) {
+				log::warn("get_staff returned non-ok status: {}", res.code());
+				return;
+			}
+
+			auto jsonRes = res.json();
+			if (!jsonRes) {
+				log::warn("Failed to parse get_staff JSON");
+				return;
+			}
+
+			auto json = jsonRes.unwrap();
+
+			bool isOK = json["ok"].asBool().unwrapOrDefault();
+			if (!isOK) {
+				log::warn("Server returned ok=false for get_staff");
+				return;
+			}
+
+			auto staff = json["staff"].asArray();
+
+			if (!staff) {
+				log::warn("get_staff JSON does not contain staff array");
+				return;
+			}
+
+			for (auto const& val : staff.unwrap()) {
+				auto accountID = val["accountID"].asInt();
+				auto role = val["role"].asInt();
+
+				if (!accountID || !role) {
+					continue;
+				}
+
+				staffs[accountID.unwrap()] = role.unwrap();
+			}
+		}
+	);
 }
-
-class $modify(LevelGrind, LevelSearchLayer) {
-	bool init(int type) {
-		if (!LevelSearchLayer::init(type)) return false;
-		
-		auto menu = getChildByIDRecursive("other-filter-menu");
-		
-		auto spr  = CircleButtonSprite::create(
-			CCSprite::createWithSpriteFrameName("GJ_bigStar_001.png")
-		);
-
-		spr->setScale(0.8f);
-
-		auto grindingBtn = CCMenuItemSpriteExtra::create(
-			spr,
-			this,
-			menu_selector(LevelGrind::onGrindingBtn)
-		);
-
-		grindingBtn->setID("level-grind-btn");
-		
-		menu->addChild(grindingBtn);
-		menu->updateLayout();
-
-		return true;
-	}
-
-	void onGrindingBtn(CCObject*) {
-		auto searchBar = typeinfo_cast<CCTextInputNode*>(getChildByIDRecursive("search-bar"));
-		if (searchBar) {
-			searchBar->onClickTrackNode(false);
-		}
-		auto scene = CCScene::create();
-		auto grindingLayer = LevelGrindLayer::create();
-		scene->addChild(grindingLayer);
-
-		auto transition = CCTransitionFade::create(0.5f, scene);
-		CCDirector::sharedDirector()->pushScene(transition);
-	}
-};
-
-class $modify(LevelGrinding, LevelInfoLayer) {
-	struct Fields {
-		GJGameLevel* m_currentLevel;
-		bool isRated = false;
-	};
-	bool init(GJGameLevel* level, bool challenge) {
-		if (!LevelInfoLayer::init(level, challenge)) return false;
-
-		m_fields->m_currentLevel = level;
-
-		auto menu = getChildByIDRecursive("left-side-menu");
-		auto spr = CCSprite::create("button_add_1.png"_spr);
-		spr->setScale(0.847f);
-
-		auto addLevelBtn = CCMenuItemSpriteExtra::create(
-			spr,
-			this,
-			menu_selector(LevelGrinding::onAddBtn)
-		);
-
-		if (m_fields->m_currentLevel->m_stars.value() > 0) {
-			m_fields->isRated = true;
-		}
-
-		if (!m_fields->isRated) {
-			addLevelBtn->setColor({ 128, 128, 128 });
-		}
-
-		if (Mod::get()->getSavedValue<bool>("isHelper") || Mod::get()->getSavedValue<bool>("isAdmin")) {
-			menu->addChild(addLevelBtn);
-		    menu->updateLayout();
-		}
-
-		return true;
-	}
-
-	void onAddBtn(CCObject* sender) {
-		if (m_fields->isRated) {
-			HelperPopup::create(m_fields->m_currentLevel)->show();
-		} else {
-			FLAlertLayer::create(
-				"Level Not Rated",
-				"This level <cr>has not been rated</c>. You cannot add unrated levels to the <cy>Level Grind</c>.",
-				"OK"
-			)->show();
-		}
-	}
-};
 
 class $modify(UserManage, ProfilePage) {
 	struct Fields {
@@ -134,11 +89,15 @@ class $modify(UserManage, ProfilePage) {
 		int m_targetColor1;
 		int m_targetColor2;
 		int m_targetColor3;
+		bool m_staffFound = false;
+		int m_staffRole = 0;
 	};
 	void loadPageFromUserInfo(GJUserScore* score) {
 		ProfilePage::loadPageFromUserInfo(score);
 
 		if (auto mngBtn = getChildByIDRecursive("lg-manage-btn")) mngBtn->removeFromParent();
+		if (auto badgeBtn = getChildByIDRecursive("grind-helper-badge")) badgeBtn->removeFromParent();
+		if (auto badgeBtn = getChildByIDRecursive("grind-admin-badge")) badgeBtn->removeFromParent();
 
 		m_fields->m_targetAccountID = score->m_accountID;
 		m_fields->m_username = score->m_userName.c_str();
@@ -160,6 +119,53 @@ class $modify(UserManage, ProfilePage) {
 		);
 		manageBtn->setID("lg-manage-btn");
 
+		if (!Mod::get()->getSettingValue<bool>("disable-badges")) {
+			m_fields->m_staffFound = false;
+		    m_fields->m_staffRole = 0;
+
+		    auto it = staffs.find(score->m_accountID);
+		    if (it != staffs.end()) {
+			    m_fields->m_staffFound = true;
+			    m_fields->m_staffRole = it->second;
+
+				auto usernameMenu = getChildByIDRecursive("username-menu");
+				bool hasModBadge = getChildByIDRecursive("mod-badge") != nullptr;
+				bool noBadgeForMods = Mod::get()->getSettingValue<bool>("no-badge-for-mods");
+				bool shouldSkipStaffBadge = noBadgeForMods && hasModBadge;
+
+			    if (m_fields->m_staffRole == 1) {
+				    auto badgeSpr = CCSprite::create("badge_helper.png"_spr);
+
+				    auto badgeBtn = CCMenuItemSpriteExtra::create(
+					    badgeSpr,
+					    this,
+					    menu_selector(UserManage::onHelperBadge)
+				    );
+
+				    badgeBtn->setID("grind-helper-badge");
+
+				    if (usernameMenu && !shouldSkipStaffBadge) {
+					    usernameMenu->addChild(badgeBtn);
+					    usernameMenu->updateLayout();
+				    }
+			    } else if (m_fields->m_staffRole == 2) {
+				    auto badgeSpr = CCSprite::create("badge_admin.png"_spr);
+				    auto badgeBtn = CCMenuItemSpriteExtra::create(
+					    badgeSpr,
+					    this,
+					    menu_selector(UserManage::onAdminBadge)
+				    );
+
+				    badgeBtn->setID("grind-admin-badge");
+
+				    if (usernameMenu && !shouldSkipStaffBadge) {
+					    usernameMenu->addChild(badgeBtn);
+					    usernameMenu->updateLayout();
+				    }
+			    }
+		    }
+		}
+
 		if (!Mod::get()->getSavedValue<bool>("isAdmin")) return;
 
 		leftMenu->addChild(manageBtn);
@@ -174,6 +180,24 @@ class $modify(UserManage, ProfilePage) {
 			m_fields->m_targetColor1, 
 			m_fields->m_targetColor2, 
 			m_fields->m_targetColor3
+		)->show();
+	}
+
+	void onHelperBadge(CCObject* sender) {
+		FLAlertLayer::create(
+			"Grind Helper",
+			"This user is a <cg>Helper</c> on the <cp>Level Grind</c> mod. " \
+			"They <cj>help</c> add <cr>delete</c> levels on the <cp>Level Grind</c> database.",
+			"OK"
+		)->show();
+	}
+
+	void onAdminBadge(CCObject* sender) {
+		FLAlertLayer::create(
+			"Grind Admin",
+			"This user is an <cg>Admin</c> on the <cp>Level Grind</c> mod. " \
+			"They can do everything a <cj>Helper</c> can do, but they can also manage the staff team on the <cp>Level Grind</c> mod.",
+			"OK"
 		)->show();
 	}
 };

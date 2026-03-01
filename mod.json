@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v0.9.6-beta",
+	"version": "v1.0.0-beta",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -20,7 +20,10 @@
 			"resources/lg-logo.png",
 			"resources/GJ_bigStar_noShadow.png",
 			"resources/button_add_1.png",
-			"resources/button_add_2.png"
+			"resources/button_add_2.png",
+			"resources/badge_helper.png",
+			"resources/badge_admin.png",
+			"resources/search_btn_1.png"
 		]
 	},
 	"settings": {
@@ -91,14 +94,18 @@
 			"type": "bool",
 			"default": false
 		},
-		"other-settings-title": {
+		"staff-title": {
 			"type": "title",
-			"name": "Other Settings"
+			"name": "Staff Settings"
 		},
 		"req-helper-check": {
 			"type": "custom:req-button",
 			"name": "Request Staff Access",
 			"description": "Gives you Helper / Admin perms if you're a staff member."
+		},
+		"bg-settings-title": {
+			"type": "title",
+			"name": "Background Settings"
 		},
 		"disable-star-particles": {
 			"name" : "Disable Star Particles",
@@ -123,6 +130,22 @@
 		"disable-custom-background": {
 			"name": "Disable Custom Background",
 			"description": "Disables the custom background color and sets it to default.",
+			"type": "bool",
+			"default": false
+		},
+		"badges-title": {
+			"type": "title",
+			"name": "Badge Settings"
+		},
+		"no-badge-for-mods": {
+			"name": "No Badges for GD Mods",
+			"description": "Hides the badge for GD Staff Team.",
+			"type": "bool",
+			"default": true
+		},
+		"disable-badges": {
+			"name": "Disable Badges",
+			"description": "Hides all badges added by the mod.",
 			"type": "bool",
 			"default": false
 		}
