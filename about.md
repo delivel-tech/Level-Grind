@@ -18,7 +18,7 @@ and we hope you will find this mod a <cy>great place</c> to evolve your <cr>acco
 
 ### <cp>Want to become a Helper?</c>
 
-* DM <cy>@delivelgd</c> or other <cp>admins</c> (can be found in the discord server) in <cb>Discord</c> and say who you are and why you want to be a <cp>Helper</c>.
+* Fill out an [<cy>application form</c>](https://docs.google.com/forms/d/e/1FAIpQLScOUeCa13hvgnaWoJzkK1DXdOOhoNWwDmepYV4Tg2zj1prmMQ/viewform?usp=publish-editor).
 * We may <cg>give</c> or <cr>not give</c> you <co>Helper perms</c> based off of different aspects.
 * Keep in mind that it may take a while to make a decision after you applied, please be patient!
 

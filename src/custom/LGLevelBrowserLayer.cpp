@@ -3,6 +3,7 @@
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
+#include "Geode/cocos/misc_nodes/CCProgressTimer.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/ScrollLayer.hpp"
@@ -60,11 +61,17 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
     m_scrollLayer = nullptr;
     m_circle = nullptr;
     m_levelsLabel = nullptr;
+    m_completionInfoLabel = nullptr;
     m_pageButtonLabel = nullptr;
     m_pageButton = nullptr;
     m_refreshBtn = nullptr;
     m_prevButton = nullptr;
     m_nextButton = nullptr;
+    m_progressBarBack = nullptr;
+    m_progressBar = nullptr;
+    m_completedLevels = 0;
+    m_shouldShowProgressBar = false;
+    m_completionPercent = 0.f;
     
     m_searchObject = object;
 
@@ -155,6 +162,14 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
     m_levelsLabel->setScale(0.45f);
     this->addChild(m_levelsLabel, 10);
 
+    m_completionInfoLabel = CCLabelBMFont::create("Completed 0 from 0", "goldFont.fnt");
+    if (m_completionInfoLabel) {
+        m_completionInfoLabel->setPosition({ winSize.width / 2.f, winSize.height - 5.f });
+        m_completionInfoLabel->setAnchorPoint({ 0.5f, 1.f });
+        m_completionInfoLabel->setScale(0.45f);
+        this->addChild(m_completionInfoLabel, 10);
+    }
+
     auto pageBtnSpr = CCSprite::create("GJ_button_02.png");
     pageBtnSpr->setScale(0.7f);
     if (pageBtnSpr) {
@@ -228,6 +243,54 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
 
     if (m_nextButton) m_nextButton->setVisible(false);
 
+    auto progressBarBack = CCSprite::create("GJ_progressBar_001.png");
+    auto progressBarFill = CCSprite::create("GJ_progressBar_001.png");
+
+    if (progressBarBack && progressBarFill) {
+        progressBarBack->setOpacity(50);
+        progressBarBack->setColor({0, 0, 0});
+        progressBarFill->setColor({0, 255, 0});
+        progressBarBack->setScale(0.6f);
+
+        progressBarBack->setRotation(90.f);
+
+        m_progressBar = CCProgressTimer::create(progressBarFill);
+        if (m_progressBar) {
+            m_progressBar->setType(kCCProgressTimerTypeBar);
+            m_progressBar->setMidpoint({0.f, 0.5f});
+            m_progressBar->setBarChangeRate({1.f, 0.f});
+            m_progressBar->setReverseProgress(false);
+            m_progressBar->setRotation(-90.f);
+            m_progressBar->setPercentage(0.f);
+
+            constexpr float gapFromList = 20.f;
+            float listLeftX = m_listLayer->getPositionX();
+            float listCenterY = m_listLayer->getPositionY() + m_listLayer->getScaledContentSize().height * 0.5f;
+            float barHalfThickness = progressBarBack->getScaledContentSize().height * 0.5f;
+
+            CCPoint barPos = {
+                listLeftX - gapFromList - barHalfThickness,
+                listCenterY
+            };
+
+            progressBarBack->setPosition(barPos);
+            m_progressBar->setPosition(barPos);
+            m_progressBar->setScaleX(progressBarBack->getScale() * 0.95f);
+            m_progressBar->setScaleY(progressBarBack->getScale() * 0.65f);
+
+            m_progressBarBack = progressBarBack;
+            addChild(progressBarBack);
+            addChild(m_progressBar);
+
+            m_progressBarBack->setVisible(false);
+            m_progressBar->setVisible(false);
+        } else {
+            log::error("failed to create progress timer");
+        }
+    } else {
+        log::error("failed to create progress bar sprites");
+    }
+
     m_circle = nullptr;
 
     auto glm = GameLevelManager::get();
@@ -292,22 +355,74 @@ void LGLevelBrowserLayer::hideUIElements() {
     if (m_refreshBtn) m_refreshBtn->setVisible(false);
     if (m_pageButton) m_pageButton->setVisible(false);
     if (m_levelsLabel) m_levelsLabel->setVisible(false);
+    if (m_completionInfoLabel) m_completionInfoLabel->setVisible(false);
+    if (m_progressBarBack) m_progressBarBack->setVisible(false);
+    if (m_progressBar) m_progressBar->setVisible(false);
 }
 
 void LGLevelBrowserLayer::showUIElements() {
+    bool hideBar = false;
+    bool hideCompletionInfo = false;
+    if (auto mod = Mod::get()) {
+        hideBar = mod->getSettingValue<bool>("hide-bar");
+        hideCompletionInfo = mod->getSettingValue<bool>("hide-completion-info");
+    }
+
     if (m_refreshBtn) m_refreshBtn->setVisible(true);
     if (m_levelsLabel) m_levelsLabel->setVisible(true);
+    if (m_completionInfoLabel) m_completionInfoLabel->setVisible(!hideCompletionInfo);
+    if (m_progressBarBack) m_progressBarBack->setVisible(m_shouldShowProgressBar && !hideBar);
+    if (m_progressBar) m_progressBar->setVisible(m_shouldShowProgressBar && !hideBar);
     
     if (m_prevButton) m_prevButton->setVisible(m_page > 0);
     if (m_nextButton) m_nextButton->setVisible(m_page + 1 < m_totalPages);
     if (m_pageButton) m_pageButton->setVisible(m_totalPages > 1);
 }
 
-void LGLevelBrowserLayer::refreshLevels(bool force) {
+void LGLevelBrowserLayer::recalculateCompletionProgress() {
+    m_completedLevels = 0;
+    m_completionPercent = 0.f;
+
+    if (m_allLevelIDs.empty()) {
+        if (m_progressBar) {
+            m_progressBar->setPercentage(m_completionPercent);
+        }
+        if (m_completionInfoLabel) {
+            m_completionInfoLabel->setString(
+                fmt::format("Completed {} from {}", m_completedLevels, m_totalLevels).c_str()
+            );
+        }
+        return;
+    }
+
+    auto gsm = GameStatsManager::sharedState();
+    if (gsm) {
+        for (auto levelID : m_allLevelIDs) {
+            if (gsm->hasCompletedOnlineLevel(levelID)) {
+                m_completedLevels++;
+            }
+        }
+    }
+
+    if (m_totalLevels > 0) {
+        float percent = static_cast<float>(m_completedLevels) / static_cast<float>(m_totalLevels);
+        m_completionPercent = std::clamp(percent * 100.f, 0.f, 100.f);
+    }
+
+    if (m_progressBar) {
+        m_progressBar->setPercentage(m_completionPercent);
+    }
+    if (m_completionInfoLabel) {
+        m_completionInfoLabel->setString(
+            fmt::format("Completed {} from {}", m_completedLevels, m_totalLevels).c_str()
+        );
+    }
+}
+
+void LGLevelBrowserLayer::refreshLevels() {
     if (m_loading) return;
     
     m_allLevelIDs.clear(); 
-    m_levelCache.clear();
     
     this->hideUIElements();
     
@@ -323,7 +438,6 @@ void LGLevelBrowserLayer::onNextPage(CCObject* sender) {
     if (m_loading) return;
     if (m_page + 1 < m_totalPages) {
         m_page++;
-        m_levelCache.clear();
         
         this->hideUIElements();
         
@@ -336,7 +450,6 @@ void LGLevelBrowserLayer::onPrevPage(CCObject* sender) {
     if (m_loading) return;
     if (m_page > 0) {
         m_page--;
-        m_levelCache.clear();
         
         this->hideUIElements();
         
@@ -346,7 +459,7 @@ void LGLevelBrowserLayer::onPrevPage(CCObject* sender) {
 
 void LGLevelBrowserLayer::onRefresh(CCObject* sender) {
     if (!this->getParent() || !this->isRunning()) return;
-    this->refreshLevels(false);
+    this->refreshLevels();
 }
 
 void LGLevelBrowserLayer::loadPageFromStoredIDs() {
@@ -442,11 +555,6 @@ void LGLevelBrowserLayer::loadLevelsFinished(CCArray* levels, char const* key, i
         return;
     }
     
-    for (auto lvlObj : CCArrayExt<GJGameLevel*>(levels)) {
-        if (!lvlObj) continue;
-        m_levelCache[lvlObj->m_levelID] = lvlObj;
-    }
-    
     populateFromArray(levels);
     m_scrollLayer->setVisible(true);
     stopLoading();
@@ -514,7 +622,6 @@ void LGLevelBrowserLayer::setIDPopupClosed(SetIDPopup* popup, int value) {
     int newPage = value - 1;
     if (newPage != m_page) {
         m_page = newPage;
-        m_levelCache.clear();
         this->updatePageButton();
         this->loadPageFromStoredIDs(); 
     }
@@ -524,6 +631,7 @@ void LGLevelBrowserLayer::onEnter() {
     CCLayer::onEnter();
     this->setTouchEnabled(true);
     this->scheduleUpdate();
+    this->recalculateCompletionProgress();
 }
 
 void LGLevelBrowserLayer::onExit() {
@@ -623,6 +731,15 @@ void LGLevelBrowserLayer::performFetchLevels() {
                 self->m_levelsLabel->setString("0 to 0 of 0");
                 self->m_totalLevels = 0;
                 self->m_totalPages = 1;
+                self->m_shouldShowProgressBar = false;
+                self->m_completedLevels = 0;
+                self->m_completionPercent = 0.f;
+                if (self->m_progressBar) {
+                    self->m_progressBar->setPercentage(0.f);
+                }
+                if (self->m_completionInfoLabel) {
+                    self->m_completionInfoLabel->setString("Completed 0 from 0");
+                }
                 self->updatePageButton();
                 return;
             }
@@ -651,6 +768,15 @@ void LGLevelBrowserLayer::performFetchLevels() {
                 self->m_levelsLabel->setString("0 to 0 of 0");
                 self->m_totalLevels = 0;
                 self->m_totalPages = 1;
+                self->m_shouldShowProgressBar = false;
+                self->m_completedLevels = 0;
+                self->m_completionPercent = 0.f;
+                if (self->m_progressBar) {
+                    self->m_progressBar->setPercentage(0.f);
+                }
+                if (self->m_completionInfoLabel) {
+                    self->m_completionInfoLabel->setString("Completed 0 from 0");
+                }
                 self->updatePageButton();
                 return;
             }
@@ -688,6 +814,15 @@ void LGLevelBrowserLayer::performFetchLevels() {
                     self->m_levelsLabel->setString("0 to 0 of 0");
                     self->m_totalLevels = 0;
                     self->m_totalPages = 1;
+                    self->m_shouldShowProgressBar = false;
+                    self->m_completedLevels = 0;
+                    self->m_completionPercent = 0.f;
+                    if (self->m_progressBar) {
+                        self->m_progressBar->setPercentage(0.f);
+                    }
+                    if (self->m_completionInfoLabel) {
+                        self->m_completionInfoLabel->setString("Completed 0 from 0");
+                    }
                     self->updatePageButton();
                     return;
                 }
@@ -716,6 +851,15 @@ void LGLevelBrowserLayer::performFetchLevels() {
                         self->m_levelsLabel->setString("0 to 0 of 0");
                         self->m_totalLevels = 0;
                         self->m_totalPages = 1;
+                        self->m_shouldShowProgressBar = false;
+                        self->m_completedLevels = 0;
+                        self->m_completionPercent = 0.f;
+                        if (self->m_progressBar) {
+                            self->m_progressBar->setPercentage(0.f);
+                        }
+                        if (self->m_completionInfoLabel) {
+                            self->m_completionInfoLabel->setString("Completed 0 from 0");
+                        }
                         self->updatePageButton();
                         return;
                     }
@@ -727,6 +871,8 @@ void LGLevelBrowserLayer::performFetchLevels() {
             self->m_allLevelIDs = filteredIDs;
             self->m_totalLevels = static_cast<int>(filteredIDs.size());
             self->m_totalPages = (self->m_totalLevels + PER_PAGE - 1) / PER_PAGE;
+            self->m_shouldShowProgressBar = !onlyUncompleted && !onlyCompleted;
+            self->recalculateCompletionProgress();
             if (self->m_totalPages < 1) {
                 self->m_totalPages = 1;
             }

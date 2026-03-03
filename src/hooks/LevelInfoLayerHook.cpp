@@ -7,13 +7,10 @@ using namespace geode::prelude;
 
 class $modify(LevelGrinding, LevelInfoLayer) {
 	struct Fields {
-		GJGameLevel* m_currentLevel;
 		bool isRated = false;
 	};
 	bool init(GJGameLevel* level, bool challenge) {
 		if (!LevelInfoLayer::init(level, challenge)) return false;
-
-		m_fields->m_currentLevel = level;
 
 		auto menu = getChildByIDRecursive("left-side-menu");
 		auto spr = CCSprite::create("button_add_1.png"_spr);
@@ -25,7 +22,7 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 			menu_selector(LevelGrinding::onAddBtn)
 		);
 
-		if (m_fields->m_currentLevel->m_stars.value() > 0) {
+		if (m_level->m_stars.value() > 0) {
 			m_fields->isRated = true;
 		}
 
@@ -43,7 +40,7 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 
 	void onAddBtn(CCObject* sender) {
 		if (m_fields->isRated) {
-			HelperPopup::create(m_fields->m_currentLevel)->show();
+			HelperPopup::create(m_level)->show();
 		} else {
 			FLAlertLayer::create(
 				"Level Not Rated",

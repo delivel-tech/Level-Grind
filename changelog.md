@@ -1,3 +1,9 @@
+# 1.0.3-beta
+- Removed custom background on Level Info Layer.
+- Fixed bugs.
+- Added completed levels progress bar and how many are completed title.
+- Added Google Form helper application on credits page.
+
 # 1.0.0-beta
 - Added new textures.
 - Added badges for Staff.

@@ -2,6 +2,7 @@
 
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include "Geode/cocos/misc_nodes/CCProgressTimer.h"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/GJSearchObject.hpp>
@@ -23,6 +24,7 @@ public:
     );
     bool init(GJSearchObject* object);
     void keyBackClicked() override;
+    float getCompletionPercent() const { return m_completionPercent; }
     
     ~LGLevelBrowserLayer() {
         m_searchTask.cancel();
@@ -49,8 +51,6 @@ public:
     int m_totalPages = 1;
     bool m_loading = false;
     bool m_needsLayout = false;
-    
-    std::unordered_map<long long, GJGameLevel*> m_levelCache;
 
 protected:
     void onInfoButton(CCObject* sender);
@@ -61,11 +61,12 @@ protected:
     void updatePageButton();
     void onRefresh(CCObject *sender);
 
-    void refreshLevels(bool force);
+    void refreshLevels();
     void startLoading();
     void stopLoading();
     void hideUIElements();
     void showUIElements();
+    void recalculateCompletionProgress();
     void populateFromArray(CCArray* levels);
     void performFetchLevels();
     void loadPageFromStoredIDs(); 
@@ -84,12 +85,20 @@ protected:
 
     LoadingSpinner* m_circle;
     CCLabelBMFont* m_levelsLabel;
+    CCLabelBMFont* m_completionInfoLabel;
     CCLabelBMFont* m_pageButtonLabel;
 
     CCMenuItemSpriteExtra* m_pageButton;
     CCMenuItemSpriteExtra* m_refreshBtn;
     CCMenuItemSpriteExtra* m_prevButton;
     CCMenuItemSpriteExtra* m_nextButton;
+
+    CCSprite* m_progressBarBack;
+    CCProgressTimer* m_progressBar;
+
+    int m_completedLevels = 0;
+    bool m_shouldShowProgressBar = false;
+    float m_completionPercent = 0.f;
 
     int m_page = 0;
 };

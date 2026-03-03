@@ -13,7 +13,7 @@ class $modify(LevelGrind, LevelSearchLayer) {
 		
 		auto spr = CCSprite::create("search_btn_1.png"_spr);
 
-		spr->setScale(0.65f);
+		spr->setScale(0.67f);
 
 		auto grindingBtn = CCMenuItemSpriteExtra::create(
 			spr,

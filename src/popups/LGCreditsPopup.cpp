@@ -1,6 +1,10 @@
 #include "../popups/LGCreditsPopup.hpp"
+#include "Geode/cocos/CCDirector.h"
+#include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/MDPopup.hpp"
+#include "Geode/ui/Popup.hpp"
+#include "Geode/utils/cocos.hpp"
 #include "Geode/utils/web.hpp"
 #include <Geode/binding/ProfilePage.hpp>
 #include <Geode/binding/GameManager.hpp>
@@ -65,6 +69,24 @@ bool LGCreditsPopup::init() {
     scrollbar->setPosition({ m_mainLayer->getContentSize().width - 12.f, (m_mainLayer->getContentSize().height / 2.f) - 5.f});
     scrollbar->setScale(0.9f);
     m_mainLayer->addChild(scrollbar);
+
+    auto joinBtn = CCMenuItemExt::createSpriteExtra(
+        CCSprite::createWithSpriteFrameName("GJ_longBtn05_001.png"),
+        [](CCObject* sender) {
+            createQuickPopup(
+                "Want to be a Helper?",
+                "If you're interested in helping with the <cp>Level Grind</c> project, fill out an <cg>application form</c>.",
+                "Cancel", "Apply",
+                [](auto, bool btn2) {
+                    if (btn2) {
+                        web::openLinkInBrowser("https://docs.google.com/forms/d/e/1FAIpQLScOUeCa13hvgnaWoJzkK1DXdOOhoNWwDmepYV4Tg2zj1prmMQ/viewform?usp=publish-editor");
+                    }
+                }
+            );
+        }
+    );
+    joinBtn->setPositionX(m_mainLayer->getContentSize().width / 2);
+    m_buttonMenu->addChild(joinBtn);
 
     Ref<LGCreditsPopup> self = this;
 
@@ -315,7 +337,7 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
     if (tag == 1) {
         FLAlertLayer::create(
             "Owner",
-            "<co>Owner</c> is the main person in <cp>Level Grind</c>.\n"
+            "<co>Owner</c> is the main person in <cp>Level Grind</c>. " \
             "They are responsible for <cg>development</c>, <cy>leading the project</c>, <cf>making final decisions</c>, and <cl>managing all roles</c>.",
             "OK"
         )->show();
@@ -325,7 +347,7 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
     if (tag == 2) {
         FLAlertLayer::create(
             "Admins",
-            "<cr>Admins</c> have all helper permissions and can also\n"
+            "<cr>Admins</c> have all helper permissions and can also " \
             "<cl>manage helpers</c> to keep the project organized.",
             "OK"
         )->show();
@@ -335,7 +357,7 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
     if (tag == 3) {
         FLAlertLayer::create(
             "Helpers",
-            "<cg>Helpers</c> are responsible for <cf>adding and deleting levels</c>\n"
+            "<cg>Helpers</c> are responsible for <cf>adding and deleting levels</c> " \
             "in the Level Grind project.",
             "OK"
         )->show();
