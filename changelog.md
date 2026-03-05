@@ -1,5 +1,6 @@
 # 1.1.2-beta
 - Added level bans for Grind Admins.
+- Minor improvements.
 
 # 1.1.0-beta
 - Added Recently Added filter.

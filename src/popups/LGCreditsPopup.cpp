@@ -33,10 +33,10 @@ bool LGCreditsPopup::init() {
     auto scrollLayer = ScrollLayer::create({340.f, 195.f});
     scrollLayer->setPosition({20.f, 23.f});
     m_mainLayer->addChild(scrollLayer);
-    addListBorders(m_mainLayer,
-                 {m_mainLayer->getContentSize().width / 2,
-                  m_mainLayer->getContentSize().height / 2 - 5.f},
-                 {340.f, 195.f});
+    auto borders = ListBorders::create();
+    borders->setContentSize({ 340.f, 195.f });
+    borders->setPosition({  m_mainLayer->getContentSize().width / 2.f, m_mainLayer->getContentSize().height / 2.f - 5.f });
+    m_mainLayer->addChild(borders);
 
     m_scrollLayer = scrollLayer;
 
