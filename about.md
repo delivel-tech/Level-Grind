@@ -11,7 +11,7 @@ and we hope you will find this mod a <cy>great place</c> to evolve your <cr>acco
 
 ### <cy>How to use:</c>
 
-* Go to <cg>search layer</c>, find a <cy>star button</c> and click it.
+* Go to <cg>search layer</c>, find a <cy>loupe button</c> and click it.
 * Choose <cp>grinding options</c>, click on <cg>search button</c>.
 * Additionally open <co>settings button</c> and choose more <cy>settings</c>.
 * Enjoy playing <cg>easy</c> and <cy>readable</c> levels!
@@ -24,5 +24,5 @@ and we hope you will find this mod a <cy>great place</c> to evolve your <cr>acco
 
 ### <cy>Credits:</c>
 
-* <cp>Mod logo & sprites</c> - <cy>iDust</c>
+* <cp>Mod logo & sprites</c> - [<cy>iDust</c>](user:20851829)
 * A lot of <cg>levels</c> in the database - <cp>our helpers</c> <3

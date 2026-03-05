@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v1.0.3-beta",
+	"version": "v1.1.0-beta",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -23,7 +23,8 @@
 			"resources/button_add_2.png",
 			"resources/badge_helper.png",
 			"resources/badge_admin.png",
-			"resources/search_btn_1.png"
+			"resources/search_btn_1.png",
+			"resources/discord_popup.png"
 		]
 	},
 	"settings": {
@@ -93,6 +94,12 @@
 			"description": "Sorts levels by upload date, newer first.",
 			"type": "bool",
 			"default": true
+		},
+		"recently-added": {
+			"name": "Recently Added",
+			"description": "Shows recently added into the database levels. Disable Newer First.",
+			"type": "bool",
+			"default": false
 		},
 		"hide-bar": {
 			"name": "Hide Progress Bar",

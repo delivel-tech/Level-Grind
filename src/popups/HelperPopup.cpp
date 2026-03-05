@@ -1,4 +1,5 @@
 #include "../popups/HelperPopup.hpp"
+#include "../other/LGManager.hpp"
 
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
@@ -55,7 +56,7 @@ bool HelperPopup::init(GJGameLevel* level) {
         demon = true;
     }
 
-    if (Mod::get()->getSavedValue<bool>("isAdmin")) {
+    if (LGManager::get()->isAdmin()) {
         this->setTitle("Admin: Add Level", "bigFont.fnt");
     } else {
         this->setTitle("Helper: Add Level", "bigFont.fnt");
@@ -198,7 +199,7 @@ void HelperPopup::onAddButton(CCObject* sender) {
     body["difficulty"] = levelDifficulty;
     body["length"] = levelLength;
 
-    body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
+    body["token"] = LGManager::get()->getArgonToken();
     body["account_id"] = GJAccountManager::get()->m_accountID;
 
     if (levelDifficulty == 10) {
@@ -237,7 +238,7 @@ void HelperPopup::onAddButton(CCObject* sender) {
 
 void HelperPopup::onDeleteBtn(CCObject* sender) {
     matjson::Value body;
-    body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
+    body["token"] = LGManager::get()->getArgonToken();
     body["account_id"] = GJAccountManager::get()->m_accountID;
     body["id"] = levelID;
 

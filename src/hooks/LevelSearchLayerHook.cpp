@@ -1,4 +1,6 @@
+#include "Geode/ui/Notification.hpp"
 #include <Geode/Geode.hpp>
+#include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
 
 using namespace geode::prelude;

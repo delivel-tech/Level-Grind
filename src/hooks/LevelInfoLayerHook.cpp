@@ -2,6 +2,7 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 
 #include "../popups/HelperPopup.hpp"
+#include "../other/LGManager.hpp"
 
 using namespace geode::prelude;
 
@@ -30,7 +31,7 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 			addLevelBtn->setColor({ 128, 128, 128 });
 		}
 
-		if (Mod::get()->getSavedValue<bool>("isHelper") || Mod::get()->getSavedValue<bool>("isAdmin")) {
+		if (LGManager::get()->isHelper() || LGManager::get()->isAdmin()) {
 			menu->addChild(addLevelBtn);
 		    menu->updateLayout();
 		}

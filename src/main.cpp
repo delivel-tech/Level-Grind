@@ -15,70 +15,19 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/modify/ProfilePage.hpp>
 
-#include "Geode/utils/cocos.hpp"
-#include "Geode/utils/web.hpp"
 #include "other/ReqButtonSetting.hpp"
 #include "popups/UserManagePopup.hpp"
 
-using namespace geode::prelude;
+#include "other/LGManager.hpp"
 
-std::unordered_map<int, int> staffs; // accountId, role (1 owner, 2 admin)
+using namespace geode::prelude;
 
 $on_mod(Loaded) {
 	registerReqButtonSettingType();
 
-	async::spawn(
-        argon::startAuth(),
-        [](Result<std::string> res) {
-            if (!res.ok()) return;
-			auto token = std::move(res).unwrap();
-			Mod::get()->setSavedValue("argon_token", token);
-        }
-    );
+	LGManager::get()->authArgon();
 
-	web::WebRequest req;
-
-	async::spawn(
-		req.get("https://delivel.tech/grindapi/get_staff"),
-		[](web::WebResponse res) {
-			if (!res.ok()) {
-				log::warn("get_staff returned non-ok status: {}", res.code());
-				return;
-			}
-
-			auto jsonRes = res.json();
-			if (!jsonRes) {
-				log::warn("Failed to parse get_staff JSON");
-				return;
-			}
-
-			auto json = jsonRes.unwrap();
-
-			bool isOK = json["ok"].asBool().unwrapOrDefault();
-			if (!isOK) {
-				log::warn("Server returned ok=false for get_staff");
-				return;
-			}
-
-			auto staff = json["staff"].asArray();
-
-			if (!staff) {
-				log::warn("get_staff JSON does not contain staff array");
-				return;
-			}
-
-			for (auto const& val : staff.unwrap()) {
-				auto accountID = val["accountID"].asInt();
-				auto role = val["role"].asInt();
-
-				if (!accountID || !role) {
-					continue;
-				}
-
-				staffs[accountID.unwrap()] = role.unwrap();
-			}
-		}
-	);
+	LGManager::get()->fetchStaff();
 }
 
 class $modify(UserManage, ProfilePage) {
@@ -123,8 +72,8 @@ class $modify(UserManage, ProfilePage) {
 			m_fields->m_staffFound = false;
 		    m_fields->m_staffRole = 0;
 
-		    auto it = staffs.find(score->m_accountID);
-		    if (it != staffs.end()) {
+		    auto it = LGManager::get()->getStaff().find(score->m_accountID);
+		    if (it != LGManager::get()->getStaff().end()) {
 			    m_fields->m_staffFound = true;
 			    m_fields->m_staffRole = it->second;
 
@@ -166,7 +115,7 @@ class $modify(UserManage, ProfilePage) {
 		    }
 		}
 
-		if (!Mod::get()->getSavedValue<bool>("isAdmin")) return;
+		if (!LGManager::get()->isAdmin()) return;
 
 		leftMenu->addChild(manageBtn);
 		leftMenu->updateLayout();

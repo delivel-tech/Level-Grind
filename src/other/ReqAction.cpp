@@ -1,4 +1,6 @@
 #include "../other/ReqAction.hpp"
+#include "../other/LGManager.hpp"
+#include "LGManager.hpp"
 
 #include <Geode/Geode.hpp>
 #include <Geode/binding/GJAccountManager.hpp>
@@ -11,7 +13,7 @@ using namespace geode::prelude;
 void lg::runReqCheck() {
     matjson::Value body;
     body["account_id"] = GJAccountManager::get()->m_accountID;
-    body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
+    body["token"] = LGManager::get()->getArgonToken();
 
     web::WebRequest req;
     req.bodyJSON(body);
@@ -28,24 +30,24 @@ void lg::runReqCheck() {
             if (!res.ok()) {
                 log::error("req failed");
                 popupRef->showFailMessage("Request failed! Try again later.");
-                Mod::get()->setSavedValue("isHelper", false);
-                Mod::get()->setSavedValue("isAdmin", false);
+                LGManager::get()->setHelper(false);
+                LGManager::get()->setAdmin(false);
                 return;
             }
             auto json = res.json().unwrapOrDefault();
             auto position = json["pos"].asInt().unwrapOrDefault();
             if (position == 1) {
                 popupRef->showSuccessMessage("Success! Helper granted.");
-                Mod::get()->setSavedValue("isHelper", true);
-                Mod::get()->setSavedValue("isAdmin", false);
+                LGManager::get()->setHelper(true);
+                LGManager::get()->setAdmin(false);
             } else if (position == 2) {
                 popupRef->showSuccessMessage("Success! Admin granted.");
-                Mod::get()->setSavedValue("isAdmin", true);
-                Mod::get()->setSavedValue("isHelper", false);
+                LGManager::get()->setAdmin(true);
+                LGManager::get()->setHelper(false);
             } else {
                 popupRef->showFailMessage("Failed! User is not a helper.");
-                Mod::get()->setSavedValue("isHelper", false);
-                Mod::get()->setSavedValue("isAdmin", false);
+                LGManager::get()->setHelper(false);
+                LGManager::get()->setAdmin(false);
             }
         }
     );

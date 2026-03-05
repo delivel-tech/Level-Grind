@@ -1,3 +1,10 @@
+# 1.1.0-beta
+- Added Recently Added filter.
+- Added new Discord Popup.
+- Changed progress bar design.
+- Fixed bug when completion info showed while loading with Hide Completed Info enabled.
+- Changed some aspects in mod descriptions.
+
 # 1.0.3-beta
 - Removed custom background on Level Info Layer.
 - Fixed bugs.

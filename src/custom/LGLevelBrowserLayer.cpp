@@ -6,6 +6,7 @@
 #include "Geode/cocos/misc_nodes/CCProgressTimer.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/General.hpp"
+#include "Geode/ui/ProgressBar.hpp"
 #include "Geode/ui/ScrollLayer.hpp"
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/FLAlertLayer.hpp>
@@ -32,7 +33,8 @@ LGLevelBrowserLayer* LGLevelBrowserLayer::create(
     std::vector<std::string> grindTypes, 
     std::vector<int> demonDifficulties, 
     std::vector<int> versions,
-    bool newerFirst
+    bool newerFirst,
+    bool recentlyAdded
 ) {
     auto ret = new LGLevelBrowserLayer;
 
@@ -42,6 +44,7 @@ LGLevelBrowserLayer* LGLevelBrowserLayer::create(
     ret->m_demonDifficulties = demonDifficulties;
     ret->m_versions = versions;
     ret->m_isNewerFirst = newerFirst;
+    ret->m_isRecentlyAdded = recentlyAdded;
 
     if (ret && ret->init(nullptr)) {
         ret->autorelease();
@@ -67,7 +70,6 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
     m_refreshBtn = nullptr;
     m_prevButton = nullptr;
     m_nextButton = nullptr;
-    m_progressBarBack = nullptr;
     m_progressBar = nullptr;
     m_completedLevels = 0;
     m_shouldShowProgressBar = false;
@@ -162,11 +164,17 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
     m_levelsLabel->setScale(0.45f);
     this->addChild(m_levelsLabel, 10);
 
+    bool hideCompletionInfo = false;
+    if (auto mod = Mod::get()) {
+        hideCompletionInfo = mod->getSettingValue<bool>("hide-completion-info");
+    }
+
     m_completionInfoLabel = CCLabelBMFont::create("Completed 0 from 0", "goldFont.fnt");
     if (m_completionInfoLabel) {
         m_completionInfoLabel->setPosition({ winSize.width / 2.f, winSize.height - 5.f });
         m_completionInfoLabel->setAnchorPoint({ 0.5f, 1.f });
         m_completionInfoLabel->setScale(0.45f);
+        m_completionInfoLabel->setVisible(!hideCompletionInfo);
         this->addChild(m_completionInfoLabel, 10);
     }
 
@@ -243,46 +251,29 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
 
     if (m_nextButton) m_nextButton->setVisible(false);
 
-    auto progressBarBack = CCSprite::create("GJ_progressBar_001.png");
-    auto progressBarFill = CCSprite::create("GJ_progressBar_001.png");
+    m_progressBar = ProgressBar::create(ProgressBarStyle::Slider);
 
-    if (progressBarBack && progressBarFill) {
-        progressBarBack->setOpacity(50);
-        progressBarBack->setColor({0, 0, 0});
-        progressBarFill->setColor({0, 255, 0});
-        progressBarBack->setScale(0.6f);
+    if (m_progressBar) {
+        m_progressBar->setScale(0.8f);
 
-        progressBarBack->setRotation(90.f);
+        m_progressBar->setRotation(-90.f);
 
-        m_progressBar = CCProgressTimer::create(progressBarFill);
         if (m_progressBar) {
-            m_progressBar->setType(kCCProgressTimerTypeBar);
-            m_progressBar->setMidpoint({0.f, 0.5f});
-            m_progressBar->setBarChangeRate({1.f, 0.f});
-            m_progressBar->setReverseProgress(false);
-            m_progressBar->setRotation(-90.f);
-            m_progressBar->setPercentage(0.f);
 
             constexpr float gapFromList = 20.f;
-            float listLeftX = m_listLayer->getPositionX();
-            float listCenterY = m_listLayer->getPositionY() + m_listLayer->getScaledContentSize().height * 0.5f;
-            float barHalfThickness = progressBarBack->getScaledContentSize().height * 0.5f;
+            float listLeftX = m_listLayer->getPositionX() + 5.f;
+            float listCenterY = winSize.height / 4.f - 10.f;
+            float barHalfThickness = m_progressBar->getScaledContentSize().height * 0.5f;
 
             CCPoint barPos = {
                 listLeftX - gapFromList - barHalfThickness,
                 listCenterY
             };
 
-            progressBarBack->setPosition(barPos);
             m_progressBar->setPosition(barPos);
-            m_progressBar->setScaleX(progressBarBack->getScale() * 0.95f);
-            m_progressBar->setScaleY(progressBarBack->getScale() * 0.65f);
 
-            m_progressBarBack = progressBarBack;
-            addChild(progressBarBack);
             addChild(m_progressBar);
 
-            m_progressBarBack->setVisible(false);
             m_progressBar->setVisible(false);
         } else {
             log::error("failed to create progress timer");
@@ -356,7 +347,6 @@ void LGLevelBrowserLayer::hideUIElements() {
     if (m_pageButton) m_pageButton->setVisible(false);
     if (m_levelsLabel) m_levelsLabel->setVisible(false);
     if (m_completionInfoLabel) m_completionInfoLabel->setVisible(false);
-    if (m_progressBarBack) m_progressBarBack->setVisible(false);
     if (m_progressBar) m_progressBar->setVisible(false);
 }
 
@@ -371,7 +361,6 @@ void LGLevelBrowserLayer::showUIElements() {
     if (m_refreshBtn) m_refreshBtn->setVisible(true);
     if (m_levelsLabel) m_levelsLabel->setVisible(true);
     if (m_completionInfoLabel) m_completionInfoLabel->setVisible(!hideCompletionInfo);
-    if (m_progressBarBack) m_progressBarBack->setVisible(m_shouldShowProgressBar && !hideBar);
     if (m_progressBar) m_progressBar->setVisible(m_shouldShowProgressBar && !hideBar);
     
     if (m_prevButton) m_prevButton->setVisible(m_page > 0);
@@ -385,7 +374,7 @@ void LGLevelBrowserLayer::recalculateCompletionProgress() {
 
     if (m_allLevelIDs.empty()) {
         if (m_progressBar) {
-            m_progressBar->setPercentage(m_completionPercent);
+            m_progressBar->updateProgress(m_completionPercent);
         }
         if (m_completionInfoLabel) {
             m_completionInfoLabel->setString(
@@ -410,7 +399,7 @@ void LGLevelBrowserLayer::recalculateCompletionProgress() {
     }
 
     if (m_progressBar) {
-        m_progressBar->setPercentage(m_completionPercent);
+        m_progressBar->updateProgress(m_completionPercent);
     }
     if (m_completionInfoLabel) {
         m_completionInfoLabel->setString(
@@ -683,6 +672,12 @@ void LGLevelBrowserLayer::performFetchLevels() {
     } else {
         body["newerFirst"] = false;
     }
+
+    if (m_isRecentlyAdded) {
+        body["recentlyAdded"] = true;
+    } else {
+        body["recentlyAdded"] = false;
+    }
     
     auto req = web::WebRequest();
     req.bodyJSON(body);
@@ -735,7 +730,7 @@ void LGLevelBrowserLayer::performFetchLevels() {
                 self->m_completedLevels = 0;
                 self->m_completionPercent = 0.f;
                 if (self->m_progressBar) {
-                    self->m_progressBar->setPercentage(0.f);
+                    self->m_progressBar->updateProgress(0.f);
                 }
                 if (self->m_completionInfoLabel) {
                     self->m_completionInfoLabel->setString("Completed 0 from 0");
@@ -772,7 +767,7 @@ void LGLevelBrowserLayer::performFetchLevels() {
                 self->m_completedLevels = 0;
                 self->m_completionPercent = 0.f;
                 if (self->m_progressBar) {
-                    self->m_progressBar->setPercentage(0.f);
+                    self->m_progressBar->updateProgress(0.f);
                 }
                 if (self->m_completionInfoLabel) {
                     self->m_completionInfoLabel->setString("Completed 0 from 0");
@@ -818,7 +813,7 @@ void LGLevelBrowserLayer::performFetchLevels() {
                     self->m_completedLevels = 0;
                     self->m_completionPercent = 0.f;
                     if (self->m_progressBar) {
-                        self->m_progressBar->setPercentage(0.f);
+                        self->m_progressBar->updateProgress(0.f);
                     }
                     if (self->m_completionInfoLabel) {
                         self->m_completionInfoLabel->setString("Completed 0 from 0");
@@ -855,7 +850,7 @@ void LGLevelBrowserLayer::performFetchLevels() {
                         self->m_completedLevels = 0;
                         self->m_completionPercent = 0.f;
                         if (self->m_progressBar) {
-                            self->m_progressBar->setPercentage(0.f);
+                            self->m_progressBar->updateProgress(0.f);
                         }
                         if (self->m_completionInfoLabel) {
                             self->m_completionInfoLabel->setString("Completed 0 from 0");

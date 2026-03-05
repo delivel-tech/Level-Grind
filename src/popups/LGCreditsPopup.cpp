@@ -1,6 +1,7 @@
 #include "../popups/LGCreditsPopup.hpp"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/cocoa/CCObject.h"
+#include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/MDPopup.hpp"
 #include "Geode/ui/Popup.hpp"
@@ -11,7 +12,6 @@
 #include <Geode/binding/SimplePlayer.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/FLAlertLayer.hpp>
-#include <vector>
 
 using namespace geode::prelude;
 

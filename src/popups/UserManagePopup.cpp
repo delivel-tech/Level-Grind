@@ -16,6 +16,7 @@
 #include "Geode/utils/web.hpp"
 
 #include "../popups/UserManagePopup.hpp"
+#include "../other/LGManager.hpp"
 
 using namespace geode::prelude;
 
@@ -88,7 +89,7 @@ bool UserManagePopup::init(int targetAccountID, const char* username, int icon, 
             } else {
                 spinnerRef->removeFromParent();
 
-                if (GJAccountManager::sharedState()->m_accountID != 13678537) {
+                if (!LGManager::get()->isDelivel()) {
                     if (position == 2) {
                         Notification::create("User is admin, you cannot manage other admins", NotificationIcon::Info)->show();
                     } else {
@@ -113,7 +114,7 @@ bool UserManagePopup::init(int targetAccountID, const char* username, int icon, 
                 }
             }
 
-            if (GJAccountManager::sharedState()->m_accountID == 13678537) {
+            if (LGManager::get()->isDelivel()) {
                 if (position == 2) {
                     auto demoteAdminBtn = CCMenuItemSpriteExtra::create(
                         ButtonSprite::create("Demote Admin", "goldFont.fnt", "GJ_button_02.png"),
@@ -145,7 +146,7 @@ void UserManagePopup::onDemoteAdminBtn(CCObject* sender) {
 
     body["targetAccountID"] = m_targetAccountID;
     body["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
+    body["token"] = LGManager::get()->getArgonToken();
 
     web::WebRequest req;
     req.bodyJSON(body);
@@ -203,7 +204,7 @@ void UserManagePopup::onDemoteBtn(CCObject* sender) {
     body["targetAccountID"] = m_targetAccountID;
 
     body["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
+    body["token"] = LGManager::get()->getArgonToken();
 
     web::WebRequest req;
     req.bodyJSON(body);
@@ -266,7 +267,7 @@ void UserManagePopup::onPromoteBtn(CCObject* sender) {
     body["targetColor3"] = m_targetColor3;
 
     body["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
+    body["token"] = LGManager::get()->getArgonToken();
 
     web::WebRequest req;
     req.bodyJSON(body);
@@ -329,7 +330,7 @@ void UserManagePopup::onPromoteAdminBtn(CCObject* sender) {
     body["targetColor3"] = m_targetColor3;
 
     body["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = Mod::get()->getSavedValue<std::string>("argon_token");
+    body["token"] = LGManager::get()->getArgonToken();
 
     web::WebRequest req;
     req.bodyJSON(body);

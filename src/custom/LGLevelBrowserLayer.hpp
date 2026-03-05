@@ -3,6 +3,7 @@
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/misc_nodes/CCProgressTimer.h"
+#include "Geode/ui/ProgressBar.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/GJSearchObject.hpp>
@@ -20,7 +21,8 @@ public:
         std::vector<std::string> grindTypes,
         std::vector<int> demonDifficulties,
         std::vector<int> versions,
-        bool newerFirst
+        bool newerFirst,
+        bool recentlyAdded
     );
     bool init(GJSearchObject* object);
     void keyBackClicked() override;
@@ -39,6 +41,7 @@ public:
     std::vector<std::string> m_grindTypes;
     std::vector<int> m_demonDifficulties;
     bool m_isNewerFirst;
+    bool m_isRecentlyAdded;
 
     std::vector<int> m_versions;
 
@@ -93,8 +96,7 @@ protected:
     CCMenuItemSpriteExtra* m_prevButton;
     CCMenuItemSpriteExtra* m_nextButton;
 
-    CCSprite* m_progressBarBack;
-    CCProgressTimer* m_progressBar;
+    ProgressBar* m_progressBar;
 
     int m_completedLevels = 0;
     bool m_shouldShowProgressBar = false;

@@ -32,6 +32,7 @@
 
 #include "../custom/LGLevelBrowserLayer.hpp"
 #include "../popups/LGCreditsPopup.hpp"
+#include "../popups/LGDiscordPopup.hpp"
 
 using namespace geode::prelude;
 
@@ -604,16 +605,7 @@ void LevelGrindLayer::onCreditsBtn(CCObject* sender) {
 }
 
 void LevelGrindLayer::onDiscordBtn(CCObject* sender) {
-	createQuickPopup(
-		"Discord Server",
-		"Join our <cp>Discord Server</c> to follow the Level Grind <cy>updates</c> and chat with our beatiful community!",
-		"Cancel", "Join",
-		[](auto, bool btn2) {
-			if (btn2) {
-				web::openLinkInBrowser("https://discord.gg/tmf5xtCX5y");
-			}
-		}
-	);
+	LGDiscordPopup::create()->show();
 }
 
 void LevelGrindLayer::onBack(CCObject*) {
@@ -813,7 +805,8 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 		grindTypes,
 		demonDifficulties,
 		versions,
-		Mod::get()->getSettingValue<bool>("newer-first")
+		Mod::get()->getSettingValue<bool>("newer-first"),
+		Mod::get()->getSettingValue<bool>("recently-added")
 	);
 
 	auto scene = CCScene::create();
