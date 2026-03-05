@@ -12,7 +12,6 @@ protected:
 
 public:
     static HelperPopup* create(GJGameLevel* level);
-    void onAddButton(cocos2d::CCObject* sender);
 
     bool star = false;
     bool moon = false;
@@ -25,11 +24,16 @@ public:
     int levelDifficulty = 0;
     int levelLength = 0;
 
-    void onStarSwitcher(cocos2d::CCObject* sender);
-    void onMoonSwitcher(cocos2d::CCObject* sender);
     void onCoinSwitcher(cocos2d::CCObject* sender);
-    void onDemonSwitcher(cocos2d::CCObject* sender);
+
     void onDeleteBtn(cocos2d::CCObject* sender);
+
+    void onBanBtn(cocos2d::CCObject* sender);
+    void onUnbanBtn(cocos2d::CCObject* sender);
+    void applyBanState(bool isBanned);
+
+    void onAddButton(cocos2d::CCObject* sender);
+
     void onClosePopup(::UploadActionPopup* popup) override;
 
 protected:

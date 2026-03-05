@@ -1,3 +1,6 @@
+# 1.1.2-beta
+- Added level bans for Grind Admins.
+
 # 1.1.0-beta
 - Added Recently Added filter.
 - Added new Discord Popup.

@@ -7,6 +7,7 @@
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/Popup.hpp"
+#include "Geode/utils/cocos.hpp"
 #include "Geode/utils/web.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
@@ -18,6 +19,27 @@
 #include <matjson.hpp>
 
 using namespace geode::prelude;
+
+void HelperPopup::applyBanState(bool isBanned) {
+    if (!LGManager::get()->isAdmin()) return;
+
+    if (isBanned) {
+        auto banBtn = getChildByIDRecursive("ban-btn");
+        banBtn->removeFromParent();
+
+        auto deleteBtn = getChildByIDRecursive("delete-btn");
+
+        auto unbanBtn = CCMenuItemSpriteExtra::create(
+             ButtonSprite::create("Unban", "goldFont.fnt", "GJ_button_06.png"),
+            this,
+            menu_selector(HelperPopup::onUnbanBtn)
+        );
+
+        auto addBtnMenu = getChildByIDRecursive("add-btn-menu");
+        addBtnMenu->insertBefore(unbanBtn, deleteBtn);
+        addBtnMenu->updateLayout();
+    }
+}
 
 HelperPopup* HelperPopup::create(GJGameLevel *level) {
     auto ret = new HelperPopup;
@@ -62,6 +84,24 @@ bool HelperPopup::init(GJGameLevel* level) {
         this->setTitle("Helper: Add Level", "bigFont.fnt");
     }
 
+    auto addBtnMenu = CCMenu::create();
+    addBtnMenu->setLayout(RowLayout::create()->setGap(15.f)->setAutoGrowAxis(true));
+
+    if (LGManager::get()->isAdmin()) {
+        limitNodeSize(addBtnMenu, {235, 100}, 1.0f, 0.7f);
+    }
+
+    auto banBtn = CCMenuItemSpriteExtra::create(
+        ButtonSprite::create("Ban", "goldFont.fnt", "GJ_button_06.png"),
+        this,
+        menu_selector(HelperPopup::onBanBtn)
+    );
+    banBtn->setID("ban-btn");
+
+    if (LGManager::get()->isAdmin()) {
+        addBtnMenu->addChild(banBtn);
+    }
+
     auto deleteBtn = CCMenuItemSpriteExtra::create(
         ButtonSprite::create("Delete", "goldFont.fnt", "GJ_button_06.png"),
         this,
@@ -78,8 +118,6 @@ bool HelperPopup::init(GJGameLevel* level) {
     );
     addBtn->setID("add-btn");
 
-    auto addBtnMenu = CCMenu::create();
-    addBtnMenu->setLayout(RowLayout::create()->setGap(15.f));
     addBtnMenu->addChild(deleteBtn);
     addBtnMenu->addChild(addBtn);
     addBtnMenu->setID("add-btn-menu");
@@ -133,10 +171,11 @@ bool HelperPopup::init(GJGameLevel* level) {
     Ref<HelperPopup> layerRef = this;
     Ref<CCMenuItemToggler> coinSwitcherRef = coinSwitcher;
     Ref<CCMenuItemSpriteExtra> addBtnRef = addBtn;
+    Ref<CCMenuItemSpriteExtra> banBtnRef = banBtn;
 
     m_listener2.spawn(
         req.post("https://delivel.tech/grindapi/check_level"),
-        [spinnerRef, layerRef, coinSwitcherRef, addBtnRef](web::WebResponse res) {
+        [spinnerRef, layerRef, coinSwitcherRef, addBtnRef, banBtnRef](web::WebResponse res) {
             if (!res.ok()) return;
             if (!spinnerRef) return;
             auto json = res.json().unwrap();
@@ -152,11 +191,19 @@ bool HelperPopup::init(GJGameLevel* level) {
 
             auto exists = json["exists"].asBool().unwrapOrDefault();
 
+            int isBanned = json["banned"].asInt().unwrapOrDefault();
+            bool isBannedBool = false;
+
+            if (isBanned == 1) {
+                isBannedBool = true;
+            } else {
+                isBannedBool = false;
+            }
+
             if (!exists) {
                 auto spr = CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png");
                 layerRef->m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
                 spinnerRef->removeFromParent();
-                return;
             } else {
                 auto spr = CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png");
                 layerRef->m_mainLayer->addChildAtPosition(spr, Anchor::Center, {0.f, 40.f});
@@ -184,10 +231,84 @@ bool HelperPopup::init(GJGameLevel* level) {
                 coinSwitcherRef->toggle(false);
                 layerRef->coin = false;
             }
+
+            layerRef->applyBanState(isBannedBool);
         }
     );
 
     return true;
+}
+
+void HelperPopup::onBanBtn(CCObject* sender) {
+    matjson::Value body;
+    auto finalLevelName = levelName.empty() ? std::string("blank name") : levelName;
+
+    body["token"] = LGManager::get()->getArgonToken();
+    body["accountId"] = GJAccountManager::get()->m_accountID;
+    body["levelId"] = levelID;
+    body["levelName"] = finalLevelName;
+    body["bannedBy"] = GJAccountManager::sharedState()->m_username.c_str();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Banning level...");
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+    Ref<HelperPopup> layerRef = this;
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/ban_level"),
+        [popupRef, layerRef](web::WebResponse res) {
+            if (!popupRef) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Banning level failed. Try again later.");
+                log::error("failed banning level");
+                return;
+            }
+            if (layerRef) {
+                layerRef->applyBanState(true);
+            }
+            popupRef->showSuccessMessage("Success! Level banned.");
+        }
+    );
+}
+
+void HelperPopup::onUnbanBtn(CCObject* sender) {
+    matjson::Value body;
+    auto finalLevelName = levelName.empty() ? std::string("blank name") : levelName;
+
+    body["token"] = LGManager::get()->getArgonToken();
+    body["accountId"] = GJAccountManager::get()->m_accountID;
+    body["levelId"] = levelID;
+    body["levelName"] = finalLevelName;
+    body["unbannedBy"] = GJAccountManager::sharedState()->m_username.c_str();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Unbanning level...");
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+    Ref<HelperPopup> layerRef = this;
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/unban_level"),
+        [popupRef, layerRef](web::WebResponse res) {
+            if (!popupRef) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Unbanning level failed. Try again later.");
+                log::error("failed unbanning level");
+                return;
+            }
+            if (layerRef) {
+                layerRef->applyBanState(false);
+            }
+            popupRef->showSuccessMessage("Success! Level unbanned.");
+        }
+    );
 }
 
 void HelperPopup::onAddButton(CCObject* sender) {
