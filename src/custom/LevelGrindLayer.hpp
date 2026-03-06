@@ -51,12 +51,26 @@ public:
 
     void onInfoBtn(cocos2d::CCObject* sender);
 
+    void onDiffSelectorBtn(cocos2d::CCObject* sender);
+    void updateDiffSelectorButtonVisibility();
+
+    bool isSplitDifficultySelected(int difficulty) const;
+    void setSplitDifficultySelected(int difficulty, bool selected);
+    void refreshSplitDifficultyFilters();
+
     std::vector<int> difficulties;
     std::vector<int> lengths;
     std::vector<std::string> grindTypes;
     std::vector<int> demonDifficulties;
 
     std::vector<int> versions;
+
+    bool m_splitHard4 = false;
+    bool m_splitHard5 = false;
+    bool m_splitHarder6 = false;
+    bool m_splitHarder7 = false;
+    bool m_splitInsane8 = false;
+    bool m_splitInsane9 = false;
 
     cocos2d::CCMenu* demonsMenu;
     CCScale9Sprite* demonsPanel;

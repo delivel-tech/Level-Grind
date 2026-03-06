@@ -27,14 +27,55 @@
 #include <string>
 
 #include "Geode/ui/MDPopup.hpp"
-#include "Geode/ui/Popup.hpp"
-#include "Geode/utils/web.hpp"
 
 #include "../custom/LGLevelBrowserLayer.hpp"
 #include "../popups/LGCreditsPopup.hpp"
 #include "../popups/LGDiscordPopup.hpp"
+#include "../popups/LGDiffSelector.hpp"
 
 using namespace geode::prelude;
+
+namespace {
+bool hasDifficulty(const std::vector<int>& values, int value) {
+	return std::find(values.begin(), values.end(), value) != values.end();
+}
+
+void addDifficultyUnique(std::vector<int>& values, int value) {
+	if (!hasDifficulty(values, value)) {
+		values.push_back(value);
+	}
+}
+
+void removeDifficultyValue(std::vector<int>& values, int value) {
+	auto it = std::find(values.begin(), values.end(), value);
+	if (it != values.end()) {
+		values.erase(it);
+	}
+}
+
+void removeDifficultyPair(std::vector<int>& values, int first, int second) {
+	removeDifficultyValue(values, first);
+	removeDifficultyValue(values, second);
+}
+
+void applyDifficultyPair(std::vector<int>& values, int first, int second, bool firstSelected, bool secondSelected) {
+	removeDifficultyPair(values, first, second);
+
+	if (!firstSelected && !secondSelected) {
+		addDifficultyUnique(values, first);
+		addDifficultyUnique(values, second);
+		return;
+	}
+
+	if (firstSelected) {
+		addDifficultyUnique(values, first);
+	}
+
+	if (secondSelected) {
+		addDifficultyUnique(values, second);
+	}
+}
+}
 
 LevelGrindLayer* LevelGrindLayer::create() {
     auto ret = new LevelGrindLayer();
@@ -255,6 +296,18 @@ bool LevelGrindLayer::init() {
 	ratingsMenu->addChild(insaneFace);
 
 	ratingsMenu->updateLayout();
+
+	auto diffSelectorBtn = CCMenuItemSpriteExtra::create(
+		CCSprite::createWithSpriteFrameName("GJ_plus2Btn_001.png"),
+		this,
+		menu_selector(LevelGrindLayer::onDiffSelectorBtn)
+	);
+
+	auto diffSelMenu = CCMenu::create();
+	diffSelMenu->addChild(diffSelectorBtn);
+	diffSelMenu->setID("diff-selector-menu");
+	this->addChild(diffSelMenu);
+	diffSelMenu->setPosition({ winSize.width / 1.27f, ratingsMenu->getPositionY() });
 
 	auto chooseLabel = CCLabelBMFont::create(
 		"Choose", "bigFont.fnt"
@@ -582,7 +635,75 @@ bool LevelGrindLayer::init() {
 	rightBtnMenu->addChild(infoButton);
 	rightBtnMenu->updateLayout();
 
+	updateDiffSelectorButtonVisibility();
+
     return true;
+}
+
+void LevelGrindLayer::onDiffSelectorBtn(CCObject* sender) {
+	LGDiffSelector::create(this)->show();
+}
+
+void LevelGrindLayer::updateDiffSelectorButtonVisibility() {
+	auto diffSelMenu = getChildByIDRecursive("diff-selector-menu");
+	if (!diffSelMenu) return;
+
+	const bool hasAny =
+		hasDifficulty(difficulties, 4) ||
+		hasDifficulty(difficulties, 5) ||
+		hasDifficulty(difficulties, 6) ||
+		hasDifficulty(difficulties, 7) ||
+		hasDifficulty(difficulties, 8) ||
+		hasDifficulty(difficulties, 9);
+
+	diffSelMenu->setVisible(hasAny);
+}
+
+bool LevelGrindLayer::isSplitDifficultySelected(int difficulty) const {
+	switch (difficulty) {
+		case 4: return m_splitHard4;
+		case 5: return m_splitHard5;
+		case 6: return m_splitHarder6;
+		case 7: return m_splitHarder7;
+		case 8: return m_splitInsane8;
+		case 9: return m_splitInsane9;
+		default: return false;
+	}
+}
+
+void LevelGrindLayer::setSplitDifficultySelected(int difficulty, bool selected) {
+	switch (difficulty) {
+		case 4: m_splitHard4 = selected; break;
+		case 5: m_splitHard5 = selected; break;
+		case 6: m_splitHarder6 = selected; break;
+		case 7: m_splitHarder7 = selected; break;
+		case 8: m_splitInsane8 = selected; break;
+		case 9: m_splitInsane9 = selected; break;
+		default: break;
+	}
+}
+
+void LevelGrindLayer::refreshSplitDifficultyFilters() {
+	auto hardFace = typeinfo_cast<CCMenuItemToggler*>(getChildByIDRecursive("hard-face-switcher"));
+	if (hardFace && hardFace->isToggled()) {
+		applyDifficultyPair(difficulties, 4, 5, m_splitHard4, m_splitHard5);
+	} else {
+		removeDifficultyPair(difficulties, 4, 5);
+	}
+
+	auto harderFace = typeinfo_cast<CCMenuItemToggler*>(getChildByIDRecursive("harder-face-switcher"));
+	if (harderFace && harderFace->isToggled()) {
+		applyDifficultyPair(difficulties, 6, 7, m_splitHarder6, m_splitHarder7);
+	} else {
+		removeDifficultyPair(difficulties, 6, 7);
+	}
+
+	auto insaneFace = typeinfo_cast<CCMenuItemToggler*>(getChildByIDRecursive("insane-face-switcher"));
+	if (insaneFace && insaneFace->isToggled()) {
+		applyDifficultyPair(difficulties, 8, 9, m_splitInsane8, m_splitInsane9);
+	} else {
+		removeDifficultyPair(difficulties, 8, 9);
+	}
 }
 
 void LevelGrindLayer::onInfoBtn(CCObject* sender) {
@@ -706,96 +827,36 @@ void LevelGrindLayer::onNormal(CCObject* sender) {
 }
 
 void LevelGrindLayer::onHard(CCObject* sender) {
-  auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
-  bool isToggled = !toggler->isToggled();
-  if (isToggled) {
-    if (Mod::get()->getSettingValue<bool>("hard-separate")) {
-      int choice = Mod::get()->getSettingValue<int>("hard-choice");
-      difficulties.push_back(choice);
-    } else {
-      difficulties.push_back(4);
-      difficulties.push_back(5);
-    }
+	(void)sender;
+	const bool isEnabled = hasDifficulty(difficulties, 4) || hasDifficulty(difficulties, 5);
+	if (!isEnabled) {
+		applyDifficultyPair(difficulties, 4, 5, m_splitHard4, m_splitHard5);
   } else {
-    if (Mod::get()->getSettingValue<bool>("hard-separate")) {
-      int choice = Mod::get()->getSettingValue<int>("hard-choice");
-      auto it = std::find(difficulties.begin(), difficulties.end(), choice);
-      if (it != difficulties.end()) {
-        difficulties.erase(it);
-      }
-    } else {
-      auto it4 = std::find(difficulties.begin(), difficulties.end(), 4);
-      if (it4 != difficulties.end()) {
-        difficulties.erase(it4);
-      }
-      auto it5 = std::find(difficulties.begin(), difficulties.end(), 5);
-      if (it5 != difficulties.end()) {
-        difficulties.erase(it5);
-      }
-    }
+		removeDifficultyPair(difficulties, 4, 5);
   }
+	updateDiffSelectorButtonVisibility();
 }
 
 void LevelGrindLayer::onHarder(CCObject* sender) {
-  auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
-  bool isToggled = !toggler->isToggled();
-  if (isToggled) {
-    if (Mod::get()->getSettingValue<bool>("harder-separate")) {
-      int choice = Mod::get()->getSettingValue<int>("harder-choice");
-      difficulties.push_back(choice);
-    } else {
-      difficulties.push_back(6);
-      difficulties.push_back(7);
-    }
+	(void)sender;
+	const bool isEnabled = hasDifficulty(difficulties, 6) || hasDifficulty(difficulties, 7);
+	if (!isEnabled) {
+		applyDifficultyPair(difficulties, 6, 7, m_splitHarder6, m_splitHarder7);
   } else {
-    if (Mod::get()->getSettingValue<bool>("harder-separate")) {
-      int choice = Mod::get()->getSettingValue<int>("harder-choice");
-      auto it = std::find(difficulties.begin(), difficulties.end(), choice);
-      if (it != difficulties.end()) {
-        difficulties.erase(it);
-      }
-    } else {
-      auto it6 = std::find(difficulties.begin(), difficulties.end(), 6);
-      if (it6 != difficulties.end()) {
-        difficulties.erase(it6);
-      }
-      auto it7 = std::find(difficulties.begin(), difficulties.end(), 7);
-      if (it7 != difficulties.end()) {
-        difficulties.erase(it7);
-      }
-    }
+		removeDifficultyPair(difficulties, 6, 7);
   }
+	updateDiffSelectorButtonVisibility();
 }
 
 void LevelGrindLayer::onInsane(CCObject* sender) {
-  auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
-  bool isToggled = !toggler->isToggled();
-  if (isToggled) {
-    if (Mod::get()->getSettingValue<bool>("insane-separate")) {
-      int choice = Mod::get()->getSettingValue<int>("insane-choice");
-      difficulties.push_back(choice);
-    } else {
-      difficulties.push_back(8);
-      difficulties.push_back(9);
-    }
+	(void)sender;
+	const bool isEnabled = hasDifficulty(difficulties, 8) || hasDifficulty(difficulties, 9);
+	if (!isEnabled) {
+		applyDifficultyPair(difficulties, 8, 9, m_splitInsane8, m_splitInsane9);
   } else {
-    if (Mod::get()->getSettingValue<bool>("insane-separate")) {
-      int choice = Mod::get()->getSettingValue<int>("insane-choice");
-      auto it = std::find(difficulties.begin(), difficulties.end(), choice);
-      if (it != difficulties.end()) {
-        difficulties.erase(it);
-      }
-    } else {
-      auto it8 = std::find(difficulties.begin(), difficulties.end(), 8);
-      if (it8 != difficulties.end()) {
-        difficulties.erase(it8);
-      }
-      auto it9 = std::find(difficulties.begin(), difficulties.end(), 9);
-      if (it9 != difficulties.end()) {
-        difficulties.erase(it9);
-      }
-    }
+		removeDifficultyPair(difficulties, 8, 9);
   }
+	updateDiffSelectorButtonVisibility();
 }
 
 void LevelGrindLayer::onSearchBtn(CCObject* sender) {

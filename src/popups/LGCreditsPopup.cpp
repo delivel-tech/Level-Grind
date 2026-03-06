@@ -371,7 +371,7 @@ void LGCreditsPopup::onInfo(CCObject* sender) {
         "These <cy>users</c> help with <cp>Level Grind</c>!\n\n" \
         "<cg>Helpers</c> are people who are responsible for <cf>adding / deleting levels</c> in the project.\n" \
         "<cr>Admins</c> are people who have the same permissions as helpers, but also have the <cl>ability to manage helpers</c>!\n" \
-        "Want to become a helper? DM <cr>admins</c> on our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y)!\n\n" \
+        "Want to become a helper? Join our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y) and fill out an [<cy>application form</c>](https://docs.google.com/forms/d/e/1FAIpQLScOUeCa13hvgnaWoJzkK1DXdOOhoNWwDmepYV4Tg2zj1prmMQ/viewform?usp=publish-editor)!\n\n" \
         "Have any <cy>suggestions</c> or want to <cy>report a bug</c>? Join our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y) and let us know!",
         "OK"
     )->show();

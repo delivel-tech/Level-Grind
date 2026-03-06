@@ -1,3 +1,7 @@
+# 1.1.5-beta
+- Reworked difficulty separator to make it more intuitive. Moved it from settings to popup.
+- Minor improvements.
+
 # 1.1.2-beta
 - Added level bans for Grind Admins.
 - Minor improvements.

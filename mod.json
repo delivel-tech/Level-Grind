@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v1.1.2-beta",
+	"version": "v1.1.5-beta",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -31,51 +31,6 @@
 		"lg-title": {
 			"type": "title",
 			"name": "Grind Settings"
-		},
-		"hard-separate": {
-			"type": "bool",
-			"name": "Separate Hard Difficulty",
-			"description": "By turning this on you unlock separating hard difficulty. You can choose either 4 or 5 stars.",
-			"default": false
-		},
-		"hard-choice": {
-			"name": "Hard Difficulty",
-			"description": "Amount of stars for hard difficulty",
-			"type": "int",
-			"default": 4,
-			"min": 4,
-			"max": 5,
-			"enable-if": "hard-separate"
-		},
-		"harder-separate": {
-			"type": "bool",
-			"name": "Separate Harder Difficulty",
-			"description": "By turning this on you unlock separating harder difficulty. You can choose either 6 or 7 stars.",
-			"default": false
-		},
-		"harder-choice": {
-			"name": "Harder Difficulty",
-			"description": "Amount of stars for harder difficulty",
-			"type": "int",
-			"default": 6,
-			"min": 6,
-			"max": 7,
-			"enable-if": "harder-separate"
-		},
-		"insane-separate": {
-			"type": "bool",
-			"name": "Separate Insane Difficulty",
-			"description": "By turning this on you unlock separating insane difficulty. You can choose either 8 or 9 stars.",
-			"default": false
-		},
-		"insane-choice": {
-			"name": "Insane Difficulty",
-			"description": "Amount of stars for insane difficulty",
-			"type": "int",
-			"default": 8,
-			"min": 8,
-			"max": 9,
-			"enable-if": "insane-separate"
 		},
 		"only-uncompleted": {
 			"name": "Only Uncompleted",
