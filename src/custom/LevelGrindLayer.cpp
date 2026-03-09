@@ -8,7 +8,6 @@
 #include "Geode/cocos/menu_nodes/CCMenuItem.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/cocos/sprite_nodes/CCSpriteFrameCache.h"
-#include "Geode/loader/Log.hpp"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/Layout.hpp"
 #include <Geode/Enums.hpp>
@@ -32,6 +31,7 @@
 #include "../popups/LGCreditsPopup.hpp"
 #include "../popups/LGDiscordPopup.hpp"
 #include "../popups/LGDiffSelector.hpp"
+#include "../custom/LGSettingsLayer.hpp"
 
 using namespace geode::prelude;
 
@@ -99,29 +99,32 @@ bool LevelGrindLayer::init() {
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
-	if (Mod::get()->getSettingValue<bool>("disable-custom-background")) {
+	if (Mod::get()->getSavedValue<bool>("disable-custom-background")) {
 		auto bg = createLayerBG();
 		bg->setColor({ 0, 102, 255 });
         addChild(bg, -1);
 	} else {
 		auto customBg = cue::RepeatingBackground::create("game_bg_01_001.png", 1.0f, cue::RepeatMode::X);
-		customBg->setColor(Mod::get()->getSettingValue<cocos2d::ccColor3B>("rgbBackground"));
-		customBg->setSpeed(Mod::get()->getSettingValue<float>("background-speed"));
+		customBg->setColor(Mod::get()->getSavedValue<cocos2d::ccColor3B>("rgbBackground"));
+		customBg->setSpeed(Mod::get()->getSavedValue<float>("background-speed"));
 		addChild(customBg, -1);
 	}
 
-    auto backBtn = CCMenuItemSpriteExtra::create(
-		CCSprite::createWithSpriteFrameName("GJ_arrow_01_001.png"), this, menu_selector(LevelGrindLayer::onBack)
-	);
+	if (!Mod::get()->getSavedValue<bool>("disable-star-particles")) {
+        auto grindParticles = CCParticleSnow::create();
+        auto texture = CCTextureCache::sharedTextureCache()->addImage("GJ_bigStar_noShadow.png"_spr, true);
+        grindParticles->m_fStartSpin = 0.f;
+        grindParticles->m_fEndSpin = 180.f;
+        grindParticles->m_fStartSize = 6.f;
+        grindParticles->m_fEndSize = 3.f;
+        grindParticles->setTexture(texture);
 
-    backBtn->setPosition(25, winSize.height - 25);
-    backBtn->setID("back-btn");
+        this->addChild(grindParticles);
+    }
 
-	auto menu = CCMenu::create();
-    menu->setID("back-btn-menu");
-	menu->addChild(backBtn);
-	menu->setPosition(0, 0);
-	this->addChild(menu);
+	addSideArt(this, SideArt::All, SideArtStyle::Layer, false);
+
+    addBackButton(this, BackButtonStyle::Green);
 
 	auto logoSpr = CCSprite::create("lg-logo.png"_spr);
 	logoSpr->setID("level-grind-logo");
@@ -866,8 +869,8 @@ void LevelGrindLayer::onSearchBtn(CCObject* sender) {
 		grindTypes,
 		demonDifficulties,
 		versions,
-		Mod::get()->getSettingValue<bool>("newer-first"),
-		Mod::get()->getSettingValue<bool>("recently-added")
+		Mod::get()->getSavedValue<bool>("newer-first"),
+		Mod::get()->getSavedValue<bool>("recently-added")
 	);
 
 	auto scene = CCScene::create();
@@ -923,7 +926,13 @@ void LevelGrindLayer::onDemonSwitcher(CCObject* sender) {
 }
 
 void LevelGrindLayer::onSettingsBtn(CCObject* sender) {
-	openSettingsPopup(getMod());
+	auto layer = LGSettingsLayer::create();
+	auto scene = CCScene::create();
+	scene->addChild(layer);
+
+	auto transition = CCTransitionFade::create(0.5f, scene);
+
+	CCDirector::sharedDirector()->pushScene(transition);
 }
 
 void LevelGrindLayer::on22(CCObject* sender) {

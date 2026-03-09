@@ -8,11 +8,12 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v1.1.5-beta",
+	"version": "v1.2.0",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
-		"geode.node-ids": ">=v1.20.0"
+		"geode.node-ids": ">=v1.20.0",
+		"jouca.badgesapi": ">=v1.4.1"
 	},
 	"resources": {
 		"sprites": [
@@ -26,103 +27,6 @@
 			"resources/search_btn_1.png",
 			"resources/discord_popup.png"
 		]
-	},
-	"settings": {
-		"lg-title": {
-			"type": "title",
-			"name": "Grind Settings"
-		},
-		"only-uncompleted": {
-			"name": "Only Uncompleted",
-			"description": "Shows only uncompleted levels",
-			"type": "bool",
-			"default": false
-		},
-		"only-completed": {
-			"name": "Only Completed",
-			"description": "Shows only completed levels",
-			"type": "bool",
-			"default": false
-		},
-		"newer-first": {
-			"name": "Newer First",
-			"description": "Sorts levels by upload date, newer first.",
-			"type": "bool",
-			"default": true
-		},
-		"recently-added": {
-			"name": "Recently Added",
-			"description": "Shows recently added into the database levels. Disable Newer First.",
-			"type": "bool",
-			"default": false
-		},
-		"hide-bar": {
-			"name": "Hide Progress Bar",
-			"description": "Hides the progress bar in the level browser.",
-			"type": "bool",
-			"default": false
-		},
-		"hide-completion-info": {
-			"name": "Hide Completion Info",
-			"description": "Hides the completion info label in the level browser.",
-			"type": "bool",
-			"default": false
-		},
-		"staff-title": {
-			"type": "title",
-			"name": "Staff Settings"
-		},
-		"req-helper-check": {
-			"type": "custom:req-button",
-			"name": "Request Staff Access",
-			"description": "Gives you Helper / Admin perms if you're a staff member."
-		},
-		"bg-settings-title": {
-			"type": "title",
-			"name": "Background Settings"
-		},
-		"disable-star-particles": {
-			"name" : "Disable Star Particles",
-			"description": "Disables star particles at the background of grinding levels layer.",
-			"type": "bool",
-			"default": false
-		},
-		"rgbBackground": {
-			"type": "rgb",
-			"name": "Background Color",
-			"default": [32, 69, 125],
-			"description": "Customize the background color of the **Main Page**, **Browser Layer** and **Level Info Layer**!"
-		},
-		"background-speed": {
-			"name": "Background Speed",
-			"description": "Changes the speed of the background in the Main Page, Browser Layer and Level Info Layer. Default is 0.5, lower is slower, higher is faster.",
-			"type": "float",
-			"default": 0.5,
-			"min": 0.0,
-			"max": 5.0
-		},
-		"disable-custom-background": {
-			"name": "Disable Custom Background",
-			"description": "Disables the custom background color and sets it to default.",
-			"type": "bool",
-			"default": false
-		},
-		"badges-title": {
-			"type": "title",
-			"name": "Badge Settings"
-		},
-		"no-badge-for-mods": {
-			"name": "No Grind Badges for GD Mods",
-			"description": "Hides the Helper / Admin badge for GD Staff Team.",
-			"type": "bool",
-			"default": true
-		},
-		"disable-badges": {
-			"name": "Disable Badges",
-			"description": "Hides all badges added by the mod.",
-			"type": "bool",
-			"default": false
-		}
 	},
 	"links": {
 		"source": "https://github.com/delivel-tech/Level-Grind",

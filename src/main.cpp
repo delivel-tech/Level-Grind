@@ -15,7 +15,6 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/modify/ProfilePage.hpp>
 
-#include "other/ReqButtonSetting.hpp"
 #include "popups/UserManagePopup.hpp"
 
 #include "other/LGManager.hpp"
@@ -23,8 +22,6 @@
 using namespace geode::prelude;
 
 $on_mod(Loaded) {
-	registerReqButtonSettingType();
-
 	LGManager::get()->authArgon();
 
 	LGManager::get()->fetchStaff();
@@ -68,7 +65,7 @@ class $modify(UserManage, ProfilePage) {
 		);
 		manageBtn->setID("lg-manage-btn");
 
-		if (!Mod::get()->getSettingValue<bool>("disable-badges")) {
+		if (!Mod::get()->getSavedValue<bool>("disable-badges")) {
 			m_fields->m_staffFound = false;
 		    m_fields->m_staffRole = 0;
 
@@ -79,7 +76,7 @@ class $modify(UserManage, ProfilePage) {
 
 				auto usernameMenu = getChildByIDRecursive("username-menu");
 				bool hasModBadge = getChildByIDRecursive("mod-badge") != nullptr;
-				bool noBadgeForMods = Mod::get()->getSettingValue<bool>("no-badge-for-mods");
+				bool noBadgeForMods = Mod::get()->getSavedValue<bool>("no-badge-for-mods");
 				bool shouldSkipStaffBadge = noBadgeForMods && hasModBadge;
 
 			    if (m_fields->m_staffRole == 1) {
@@ -136,7 +133,7 @@ class $modify(UserManage, ProfilePage) {
 		FLAlertLayer::create(
 			"Grind Helper",
 			"This user is a <cg>Helper</c> on the <cp>Level Grind</c> mod. " \
-			"They <cj>help</c> add <cr>delete</c> levels on the <cp>Level Grind</c> database.",
+			"They <cj>help</c> with adding and <cr>deleting</c> levels on the <cp>Level Grind</c> database.",
 			"OK"
 		)->show();
 	}

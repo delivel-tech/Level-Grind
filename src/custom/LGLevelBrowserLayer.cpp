@@ -3,7 +3,6 @@
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
-#include "Geode/cocos/misc_nodes/CCProgressTimer.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/ProgressBar.hpp"
@@ -77,14 +76,14 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
     
     m_searchObject = object;
 
-    if (Mod::get()->getSettingValue<bool>("disable-custom-background")) {
+    if (Mod::get()->getSavedValue<bool>("disable-custom-background")) {
 		auto bg = createLayerBG();
 		bg->setColor({ 0, 102, 255 });
         addChild(bg, -1);
 	} else {
 		auto customBg = cue::RepeatingBackground::create("game_bg_01_001.png", 1.0f, cue::RepeatMode::X);
-		customBg->setColor(Mod::get()->getSettingValue<cocos2d::ccColor3B>("rgbBackground"));
-		customBg->setSpeed(Mod::get()->getSettingValue<float>("background-speed"));
+        customBg->setColor(Mod::get()->getSavedValue<cocos2d::ccColor3B>("rgbBackground"));
+        customBg->setSpeed(Mod::get()->getSavedValue<float>("background-speed"));
 		addChild(customBg, -1);
 	}
 
@@ -95,7 +94,7 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
     auto uiMenu = CCMenu::create();
     uiMenu->setPosition({ 0, 0 });
 
-    if (!Mod::get()->getSettingValue<bool>("disable-star-particles")) {
+    if (!Mod::get()->getSavedValue<bool>("disable-star-particles")) {
         auto grindParticles = CCParticleSnow::create();
         auto texture = CCTextureCache::sharedTextureCache()->addImage("GJ_bigStar_noShadow.png"_spr, true);
         grindParticles->m_fStartSpin = 0.f;
@@ -166,7 +165,7 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
 
     bool hideCompletionInfo = false;
     if (auto mod = Mod::get()) {
-        hideCompletionInfo = mod->getSettingValue<bool>("hide-completion-info");
+        hideCompletionInfo = mod->getSavedValue<bool>("hide-completion-info");
     }
 
     m_completionInfoLabel = CCLabelBMFont::create("Completed 0 from 0", "goldFont.fnt");
@@ -354,8 +353,8 @@ void LGLevelBrowserLayer::showUIElements() {
     bool hideBar = false;
     bool hideCompletionInfo = false;
     if (auto mod = Mod::get()) {
-        hideBar = mod->getSettingValue<bool>("hide-bar");
-        hideCompletionInfo = mod->getSettingValue<bool>("hide-completion-info");
+        hideBar = mod->getSavedValue<bool>("hide-bar");
+        hideCompletionInfo = mod->getSavedValue<bool>("hide-completion-info");
     }
 
     if (m_refreshBtn) m_refreshBtn->setVisible(true);
@@ -781,8 +780,8 @@ void LGLevelBrowserLayer::performFetchLevels() {
             bool onlyCompleted = false;
             
             if (auto mod = Mod::get()) {
-                onlyUncompleted = mod->getSettingValue<bool>("only-uncompleted");
-                onlyCompleted = mod->getSettingValue<bool>("only-completed");
+                onlyUncompleted = mod->getSavedValue<bool>("only-uncompleted");
+                onlyCompleted = mod->getSavedValue<bool>("only-completed");
             }
             
             if (onlyUncompleted) {

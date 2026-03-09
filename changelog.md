@@ -1,3 +1,7 @@
+# 1.2.0
+- Added custom settings layer to make options more intuitive.
+- UI improvements.
+
 # 1.1.5-beta
 - Reworked difficulty separator to make it more intuitive. Moved it from settings to popup.
 - Minor improvements.
