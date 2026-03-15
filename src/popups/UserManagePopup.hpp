@@ -10,6 +10,7 @@ class UserManagePopup : public Popup {
 protected:
     bool init(int targetAccountID, const char* username, int icon, int color1, int color2, int color3);
     async::TaskHolder<geode::utils::web::WebResponse> m_listener;
+    ~UserManagePopup() { m_listener.cancel(); }
 
 public:
     static UserManagePopup* create(int accountID, const char* username, int icon, int color1, int color2, int color3);
@@ -19,6 +20,8 @@ public:
 
     void onDemoteAdminBtn(CCObject* sender);
     void onPromoteAdminBtn(CCObject* sender);
+    void onPromoteContributorBtn(CCObject* sender);
+    void onDemoteContributorBtn(CCObject* sender);
 
     int m_targetAccountID;
     const char* m_username;

@@ -1,3 +1,8 @@
+# 1.3.0
+- Reworked Manage Level panel.
+- Added Announcements button.
+- Added Random Level button.
+
 # 1.2.0
 - Added custom settings layer to make options more intuitive.
 - UI improvements.

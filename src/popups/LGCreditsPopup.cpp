@@ -166,6 +166,7 @@ bool LGCreditsPopup::init() {
                 if (text == "Owner") infoTag = 1;
                 else if (text == "Admins") infoTag = 2;
                 else if (text == "Helpers") infoTag = 3;
+                else if (text == "Contributors") infoTag = 4;
                 infoBtn->setTag(infoTag);
 
                 auto labelWidth = label->getContentSize().width * label->getScale();
@@ -303,6 +304,17 @@ bool LGCreditsPopup::init() {
                 }
             }
 
+            if (json.contains("contributors") && json["contributors"].isArray()) {
+                auto contributors = json["contributors"].asArray().unwrap();
+                if (!contributors.empty()) {
+                    hasAny = true;
+                    addHeader("Contributors");
+                    for (auto const& val : contributors) {
+                        addPlayer(val, false, false);
+                    }
+                }
+            }
+
             if (!hasAny) {
                 auto emptyCell = TableViewCell::create();
                 emptyCell->setContentSize({340.f, 40.f});
@@ -363,6 +375,16 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
         )->show();
         return;
     }
+
+    if (tag == 4) {
+        FLAlertLayer::create(
+            "Contributors",
+            "<cy>Contributors</c> help the <cp>Level Grind</c> project through various contributions." \
+            " They may be artists of the mod, people who actively help with testing and so on.",
+            "OK"
+        )->show();
+        return;
+    }
 }
 
 void LGCreditsPopup::onInfo(CCObject* sender) {
@@ -370,6 +392,7 @@ void LGCreditsPopup::onInfo(CCObject* sender) {
         "Credits Info",
         "These <cy>users</c> help with <cp>Level Grind</c>!\n\n" \
         "<cg>Helpers</c> are people who are responsible for <cf>adding / deleting levels</c> in the project.\n" \
+        "<cy>Contributors</c> are people who contribute to the project in other helpful ways.\n" \
         "<cr>Admins</c> are people who have the same permissions as helpers, but also have the <cl>ability to manage helpers</c>!\n" \
         "Want to become a helper? Join our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y) and fill out an [<cy>application form</c>](https://docs.google.com/forms/d/e/1FAIpQLScOUeCa13hvgnaWoJzkK1DXdOOhoNWwDmepYV4Tg2zj1prmMQ/viewform?usp=publish-editor)!\n\n" \
         "Have any <cy>suggestions</c> or want to <cy>report a bug</c>? Join our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y) and let us know!",

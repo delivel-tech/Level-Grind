@@ -2,6 +2,10 @@
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h"
 #include <Geode/Geode.hpp>
+#include <Geode/binding/CCBlockLayer.hpp>
+#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <Geode/binding/LoadingCircle.hpp>
+#include <string>
 #include <vector>
 #pragma once
 
@@ -11,6 +15,7 @@ class LevelGrindLayer : public cocos2d::CCLayer {
 public:
     static LevelGrindLayer* create();
     bool init() override;
+    void update(float dt) override;
 
     void onBack(cocos2d::CCObject*);
     void keyBackClicked() override;
@@ -51,6 +56,9 @@ public:
 
     void onInfoBtn(cocos2d::CCObject* sender);
 
+    void onRandomBtn(cocos2d::CCObject* sender);
+    void onAnnouncementsBtn(cocos2d::CCObject* sender);
+
     void onDiffSelectorBtn(cocos2d::CCObject* sender);
     void updateDiffSelectorButtonVisibility();
 
@@ -74,4 +82,18 @@ public:
 
     cocos2d::CCMenu* demonsMenu;
     CCScale9Sprite* demonsPanel;
+
+    async::TaskHolder<geode::utils::web::WebResponse> m_listener;
+
+    CCMenuItemSpriteExtra* m_randBtn;
+    CCMenuItemSpriteExtra* m_annBtn;
+
+    bool m_randomPending = false;
+    float m_randomTimer = 10.f;
+    int m_randomLevelID = -1;
+    std::string m_randomKey;
+    LoadingCircle* m_randomLoadingCircle = nullptr;
+    CCBlockLayer* m_randomBlockLayer = nullptr;
+
+    ~LevelGrindLayer() { m_listener.cancel(); }
 };

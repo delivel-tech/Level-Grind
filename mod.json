@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v1.2.0",
+	"version": "v1.3.0",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -25,7 +25,13 @@
 			"resources/badge_helper.png",
 			"resources/badge_admin.png",
 			"resources/search_btn_1.png",
-			"resources/discord_popup.png"
+			"resources/discord_popup.png",
+			"resources/discord_btn.png",
+			"resources/ann_btn.png",
+			"resources/credits_btn.png",
+			"resources/info_btn.png",
+			"resources/badge_artist.png",
+			"resources/random_btn.png"
 		]
 	},
 	"links": {

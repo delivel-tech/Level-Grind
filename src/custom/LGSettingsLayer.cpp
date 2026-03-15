@@ -160,7 +160,7 @@ void LGSettingsLayer::makeTabs() {
     auto staffTabBtn = TabButton::create(
         TabBaseColor::Unselected,
         TabBaseColor::UnselectedDark,
-        "Staff",
+        "Other",
         this,
         menu_selector(LGSettingsLayer::onTabBtn)
     );
@@ -447,7 +447,7 @@ void LGSettingsLayer::createAppearanceTab() {
 
     tab->addCell(makeColorCell(
         "Background Color",
-        "Customize the background color using the native color picker.",
+        "Customize the background color.",
         menu_selector(LGSettingsLayer::onBackgroundColorPick),
         this
     ));

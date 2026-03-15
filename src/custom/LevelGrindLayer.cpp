@@ -12,10 +12,13 @@
 #include "Geode/ui/Layout.hpp"
 #include <Geode/Enums.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
+#include <Geode/binding/CCBlockLayer.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <Geode/binding/GJAccountManager.hpp>
+#include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/binding/GJSearchObject.hpp>
+#include <Geode/binding/GameLevelManager.hpp>
 #include <Geode/binding/GameStatsManager.hpp>
 #include <Geode/binding/LevelBrowserLayer.hpp>
 #include <Geode/binding/LevelFeatureLayer.hpp>
@@ -32,6 +35,8 @@
 #include "../popups/LGDiscordPopup.hpp"
 #include "../popups/LGDiffSelector.hpp"
 #include "../custom/LGSettingsLayer.hpp"
+#include "Geode/ui/Notification.hpp"
+#include "Geode/utils/web.hpp"
 
 using namespace geode::prelude;
 
@@ -312,12 +317,29 @@ bool LevelGrindLayer::init() {
 	this->addChild(diffSelMenu);
 	diffSelMenu->setPosition({ winSize.width / 1.27f, ratingsMenu->getPositionY() });
 
+	auto chooseInfoMenu = CCMenu::create();
+	chooseInfoMenu->setID("choose-info-menu");
+	chooseInfoMenu->setLayout(RowLayout::create()->setGap(8.f));
+	this->addChild(chooseInfoMenu);
+	chooseInfoMenu->setPosition({ winSize.width / 2, (winSize.height / 4) * 2.55f });
+
 	auto chooseLabel = CCLabelBMFont::create(
 		"Choose", "bigFont.fnt"
 	);
 	chooseLabel->setID("choose-label");
-	this->addChild(chooseLabel);
-	chooseLabel->setPosition({ winSize.width / 2, (winSize.height / 4) * 2.55f });
+	chooseInfoMenu->addChild(chooseLabel);
+
+	auto infoSpr = CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png");
+	infoSpr->setScale(0.6f);
+
+	auto infoButton = CCMenuItemSpriteExtra::create(
+		infoSpr,
+		this,
+		menu_selector(LevelGrindLayer::onInfoBtn)
+	);
+	infoButton->setID("info-btn");
+	chooseInfoMenu->addChild(infoButton);
+	chooseInfoMenu->updateLayout();
 
 	auto searchBtn = CCMenuItemSpriteExtra::create(
 		ButtonSprite::create("Search"),
@@ -602,10 +624,10 @@ bool LevelGrindLayer::init() {
 	rightBtnMenu->setLayout(ColumnLayout::create()->setGap(10.f));
 
 	this->addChild(rightBtnMenu);
-	rightBtnMenu->setPosition({ winSize.width - 23.f, 55.f });
-	rightBtnMenu->setScale(0.8f);
+	rightBtnMenu->setPosition({ winSize.width - 27.f, 50.f });
+	rightBtnMenu->setScale(0.55f);
 
-	auto discordSpr = CCSprite::createWithSpriteFrameName("gj_discordIcon_001.png");
+	auto discordSpr = CCSprite::create("discord_btn.png"_spr);
 	discordSpr->setScale(1.4f);
 
 	auto discordBtn = CCMenuItemSpriteExtra::create(
@@ -618,8 +640,11 @@ bool LevelGrindLayer::init() {
 	rightBtnMenu->addChild(discordBtn);
 	rightBtnMenu->updateLayout();
 
+	auto creditsSpr = CCSprite::create("credits_btn.png"_spr);
+	creditsSpr->setScale(1.3f);
+
 	auto creditsBtn = CCMenuItemSpriteExtra::create(
-		CCSprite::createWithSpriteFrameName("accountBtn_friends_001.png"),
+		creditsSpr,
 		this,
 		menu_selector(LevelGrindLayer::onCreditsBtn)
 	);
@@ -629,18 +654,441 @@ bool LevelGrindLayer::init() {
 
 	rightBtnMenu->setID("right-btn-menu");
 
-	auto infoButton = CCMenuItemSpriteExtra::create(
-		CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"),
+	auto leftBtnMenu = CCMenu::create();
+	leftBtnMenu->setLayout(ColumnLayout::create()->setGap(10.f));
+
+	leftBtnMenu->setID("left-btn-menu");
+	leftBtnMenu->setScale(0.8f);
+
+	this->addChild(leftBtnMenu);
+	leftBtnMenu->setPosition({ 27.f, 55.f });
+
+	m_randBtn = CCMenuItemSpriteExtra::create(
+		CCSprite::create("random_btn.png"_spr),
 		this,
-		menu_selector(LevelGrindLayer::onInfoBtn)
+		menu_selector(LevelGrindLayer::onRandomBtn)
 	);
-	infoButton->setID("info-btn");
-	rightBtnMenu->addChild(infoButton);
-	rightBtnMenu->updateLayout();
+	m_randBtn->setID("random-btn");
+	leftBtnMenu->addChild(m_randBtn);
+	leftBtnMenu->updateLayout();
+
+	m_annBtn = CCMenuItemSpriteExtra::create(
+		CCSprite::create("ann_btn.png"_spr),
+		this,
+		menu_selector(LevelGrindLayer::onAnnouncementsBtn)
+	);
+	m_annBtn->setID("announcements-btn");
+	leftBtnMenu->addChild(m_annBtn);
+	leftBtnMenu->updateLayout();
+
+	this->scheduleUpdate();
 
 	updateDiffSelectorButtonVisibility();
 
     return true;
+}
+
+void LevelGrindLayer::onAnnouncementsBtn(CCObject* sender) {
+	web::WebRequest req;
+
+	auto blockLayer = CCBlockLayer::create();
+	CCDirector::sharedDirector()->getRunningScene()->addChild(blockLayer);
+
+	auto loadingCircle = LoadingCircle::create();
+	loadingCircle->show();
+
+	auto annBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
+	if (!annBtn) {
+		blockLayer->removeFromParent();
+		loadingCircle->fadeAndRemove();
+		return;
+	}
+
+	annBtn->setEnabled(false); // preventing btn spamming
+	annBtn->setColor({ 128, 128, 128 });
+
+	auto circleRef = Ref(loadingCircle);
+	auto blockRef = Ref(blockLayer);
+	auto btnRef = Ref(annBtn);
+
+	m_listener.spawn(
+		req.get("https://delivel.tech/grindapi/get_latest_ann"),
+		[circleRef, blockRef, btnRef](web::WebResponse res) {
+			if (!circleRef || !blockRef || !btnRef) {
+				return;
+			}
+
+			if (!res.ok()) {
+				Notification::create("Failed to get announcements. Try again later.", NotificationIcon::Error)->show();
+				log::error("failed to get announcements: {}", res.code());
+				circleRef->fadeAndRemove();
+				blockRef->removeFromParent();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				return;
+			}
+
+			auto jsonRes = res.json();
+			if (!jsonRes) {
+				Notification::create("Failed to get announcements. Try again later.", NotificationIcon::Error)->show();
+				log::error("invalid json in response");
+				circleRef->fadeAndRemove();
+				blockRef->removeFromParent();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				return;
+			}
+
+			auto json = jsonRes.unwrap();
+
+			auto isOK = json["ok"].asBool().unwrapOrDefault();
+			if (!isOK) {
+				Notification::create("Failed to get announcements. Try again later.", NotificationIcon::Error)->show();
+				log::error("response returned ok: false");
+				circleRef->fadeAndRemove();
+				blockRef->removeFromParent();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				return;
+			}
+
+			auto annId = json["id"].asInt().unwrapOrDefault();
+			auto annTitle = json["title"].asString().unwrapOrDefault();
+			auto annContent = json["content"].asString().unwrapOrDefault();
+
+			if (annId <= 0 || annTitle.empty() || annContent.empty()) {
+				Notification::create("Invalid announcement data received.", NotificationIcon::Error)->show();
+				log::error("invalid announcement data received: id {}, title {}, content {}", annId, annTitle, annContent);
+				circleRef->fadeAndRemove();
+				blockRef->removeFromParent();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				return;
+			}
+
+			if (blockRef) blockRef->removeFromParent();
+			if (circleRef) circleRef->fadeAndRemove();
+			if (btnRef) {
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+			}
+
+			MDPopup::create(annTitle, annContent, "OK")->show();
+		}
+	);
+}
+
+void LevelGrindLayer::onRandomBtn(CCObject* sender) {
+	if (m_randomPending) {
+		return;
+	}
+
+	if (m_randomLoadingCircle) {
+		m_randomLoadingCircle->fadeAndRemove();
+		m_randomLoadingCircle = nullptr;
+	}
+
+	if (m_randomBlockLayer) {
+		m_randomBlockLayer->removeFromParent();
+		m_randomBlockLayer = nullptr;
+	}
+
+	auto blockLayer = CCBlockLayer::create();
+	m_randomBlockLayer = blockLayer;
+	CCDirector::sharedDirector()->getRunningScene()->addChild(m_randomBlockLayer);
+
+	auto loadingCircle = LoadingCircle::create();
+	loadingCircle->show();
+	m_randomLoadingCircle = loadingCircle;
+
+	auto randBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
+	if (randBtn) {
+		randBtn->setEnabled(false); // preventing btn spamming
+		randBtn->setColor({ 128, 128, 128 });
+	}
+
+	web::WebRequest req;
+	matjson::Value body;
+	if (!difficulties.empty()) body["difficulties"] = difficulties;
+	if (!lengths.empty()) body["lengths"] = lengths;
+	if (!demonDifficulties.empty()) body["demonDifficulties"] = demonDifficulties;
+	if (!grindTypes.empty()) body["grindTypes"] = grindTypes;
+	if (!versions.empty()) body["versions"] = versions;
+	body["newerFirst"] = Mod::get()->getSavedValue<bool>("newer-first");
+	body["recentlyAdded"] = Mod::get()->getSavedValue<bool>("recently-added");
+	req.bodyJSON(body);
+
+	auto circleRef = Ref(loadingCircle);
+	auto btnRef = Ref(randBtn);
+	auto blockRef = Ref(blockLayer);
+	auto self = Ref(this);
+
+	m_listener.spawn(
+		req.post("https://delivel.tech/grindapi/get_rand_level"),
+		[circleRef, btnRef, self, blockRef](web::WebResponse res) {
+			if (!self) {
+				if (blockRef) {
+					blockRef->removeFromParent();
+				}
+				return;
+			}
+			if (!circleRef || !btnRef) {
+				log::error("handling response while btns do not exist anymore");
+				if (blockRef) {
+					blockRef->removeFromParent();
+					self->m_randomBlockLayer = nullptr;
+				}
+				return;
+			}
+			if (!res.ok()) {
+				Notification::create("Failed to get random level. Try again later.", NotificationIcon::Error)->show();
+				log::error("failed to get random level: {}", res.code());
+				self->m_randomPending = false;
+				self->m_randomTimer = 0.f;
+				self->m_randomLevelID = -1;
+				self->m_randomKey.clear();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				circleRef->fadeAndRemove();
+				if (blockRef) {
+					blockRef->removeFromParent();
+					self->m_randomBlockLayer = nullptr;
+				}
+				self->m_randomLoadingCircle = nullptr;
+				return;
+			}
+
+			auto jsonRes = res.json();
+			if (!jsonRes) {
+				Notification::create("Failed to get random level. Try again later.", NotificationIcon::Error)->show();
+				log::error("invalid json in response");
+				self->m_randomPending = false;
+				self->m_randomTimer = 0.f;
+				self->m_randomLevelID = -1;
+				self->m_randomKey.clear();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				circleRef->fadeAndRemove();
+				if (blockRef) {
+					blockRef->removeFromParent();
+					self->m_randomBlockLayer = nullptr;
+				}
+				self->m_randomLoadingCircle = nullptr;
+				return;
+			}
+
+			auto json = jsonRes.unwrap();
+
+			auto isOK = json["ok"].asBool().unwrapOrDefault();
+
+			if (!isOK) {
+				Notification::create("Failed to get random level. Try again later.", NotificationIcon::Error)->show();
+				log::error("response returned ok: false");
+				self->m_randomPending = false;
+				self->m_randomTimer = 0.f;
+				self->m_randomLevelID = -1;
+				self->m_randomKey.clear();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				circleRef->fadeAndRemove();
+				if (blockRef) {
+					blockRef->removeFromParent();
+					self->m_randomBlockLayer = nullptr;
+				}
+				self->m_randomLoadingCircle = nullptr;
+				return;
+			}
+
+			auto levelID = json["id"].asInt().unwrapOrDefault();
+			if (levelID <= 0) {
+				Notification::create("Invalid level id received.", NotificationIcon::Error)->show();
+				log::error("invalid level id received: {}", levelID);
+				self->m_randomPending = false;
+				self->m_randomTimer = 0.f;
+				self->m_randomLevelID = -1;
+				self->m_randomKey.clear();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				circleRef->fadeAndRemove();
+				if (blockRef) {
+					blockRef->removeFromParent();
+					self->m_randomBlockLayer = nullptr;
+				}
+				self->m_randomLoadingCircle = nullptr;
+				return;
+			}
+
+			bool onlyUncompleted = false;
+			bool onlyCompleted = false;
+			if (auto mod = Mod::get()) {
+				onlyUncompleted = mod->getSavedValue<bool>("only-uncompleted");
+				onlyCompleted = mod->getSavedValue<bool>("only-completed");
+			}
+
+			auto gsm = GameStatsManager::sharedState();
+			if (gsm) {
+				auto isCompleted = gsm->hasCompletedOnlineLevel(levelID);
+
+				if (onlyUncompleted && isCompleted) {
+					Notification::create("Random level is already completed", NotificationIcon::Info)->show();
+					self->m_randomPending = false;
+					self->m_randomTimer = 0.f;
+					self->m_randomLevelID = -1;
+					self->m_randomKey.clear();
+					btnRef->setEnabled(true);
+					btnRef->setColor({ 255, 255, 255 });
+					circleRef->fadeAndRemove();
+					if (blockRef) {
+						blockRef->removeFromParent();
+						self->m_randomBlockLayer = nullptr;
+					}
+					self->m_randomLoadingCircle = nullptr;
+					return;
+				}
+
+				if (!onlyUncompleted && onlyCompleted && !isCompleted) {
+					Notification::create("Random level is not completed", NotificationIcon::Info)->show();
+					self->m_randomPending = false;
+					self->m_randomTimer = 0.f;
+					self->m_randomLevelID = -1;
+					self->m_randomKey.clear();
+					btnRef->setEnabled(true);
+					btnRef->setColor({ 255, 255, 255 });
+					circleRef->fadeAndRemove();
+					if (blockRef) {
+						blockRef->removeFromParent();
+						self->m_randomBlockLayer = nullptr;
+					}
+					self->m_randomLoadingCircle = nullptr;
+					return;
+				}
+			}
+
+			// thanks to ArcticWoof for code. partly taken from RLSearchLayer xD
+
+			auto searchObj = GJSearchObject::create(SearchType::Search, numToString(levelID));
+
+			auto key = searchObj->getKey();
+
+			auto glm = GameLevelManager::sharedState();
+			if (!glm) {
+				Notification::create("Failed to access level manager.", NotificationIcon::Error)->show();
+				self->m_randomPending = false;
+				self->m_randomTimer = 0.f;
+				self->m_randomLevelID = -1;
+				self->m_randomKey.clear();
+				btnRef->setEnabled(true);
+				btnRef->setColor({ 255, 255, 255 });
+				circleRef->fadeAndRemove();
+				if (blockRef) {
+					blockRef->removeFromParent();
+					self->m_randomBlockLayer = nullptr;
+				}
+				self->m_randomLoadingCircle = nullptr;
+				return;
+			}
+
+			auto stored = glm->getStoredOnlineLevels(key);
+            if (stored && stored->count() > 0) {
+                auto level = static_cast<GJGameLevel *>(stored->objectAtIndex(0));
+                if (level && level->m_levelID == levelID) {
+                    auto scene = LevelInfoLayer::scene(level, false);
+                    auto trans = CCTransitionFade::create(0.5f, scene);
+					self->m_randomPending = false;
+					self->m_randomTimer = 0.f;
+					self->m_randomLevelID = -1;
+					self->m_randomKey.clear();
+					btnRef->setEnabled(true);
+					btnRef->setColor({ 255, 255, 255 });
+					circleRef->fadeAndRemove();
+					if (blockRef) {
+						blockRef->removeFromParent();
+						self->m_randomBlockLayer = nullptr;
+					}
+					self->m_randomLoadingCircle = nullptr;
+                    CCDirector::sharedDirector()->pushScene(trans);
+                    return;
+                }
+            }
+
+			self->m_randomTimer = 10.f;
+			self->m_randomLevelID = levelID;
+			self->m_randomKey = key;
+
+			self->m_randomPending = true;
+
+			if (glm->m_levelManagerDelegate) {
+				glm->m_levelManagerDelegate = nullptr;
+			}
+			glm->getOnlineLevels(searchObj);
+
+			/*
+			
+			    if the level is not stored, we call getOnlineLevels
+				and wait for it to become stored,
+				further things are handled in LevelGrindLayer::update which is right below xD
+			
+			*/
+		}
+	);
+}
+
+void LevelGrindLayer::update(float dt) {
+	if (m_randomPending) {
+		    if (m_randomTimer > 0.f && m_randomLevelID > 0) {
+			    m_randomTimer -= dt;
+			    auto glm = GameLevelManager::sharedState();
+			    if (glm) {
+				    auto stored = glm->getStoredOnlineLevels(m_randomKey.c_str());
+				    if (stored && stored->count() > 0) {
+					    for (size_t i = 0; i < stored->count(); ++i) {
+						    auto lvl = static_cast<GJGameLevel*>(stored->objectAtIndex(i));
+						    if (lvl && lvl->m_levelID == m_randomLevelID) {
+						    auto scene = LevelInfoLayer::scene(lvl, false);
+						    auto trans = CCTransitionFade::create(0.5f, scene);
+						    CCDirector::sharedDirector()->pushScene(trans);
+						    m_randomPending = false;
+						    m_randomKey.clear();
+						    m_randomLevelID = -1;
+						    m_randomTimer = 0.f;
+						    if (m_randomLoadingCircle) {
+							    m_randomLoadingCircle->fadeAndRemove();
+							    m_randomLoadingCircle = nullptr;
+						    }
+							if (m_randomBlockLayer) {
+								m_randomBlockLayer->removeFromParent();
+								m_randomBlockLayer = nullptr;
+							}
+						    if (m_randBtn) {
+							    m_randBtn->setEnabled(true);
+							    m_randBtn->setColor({ 255, 255, 255 });
+						    }
+						    return;
+					    }
+				    }
+			    }
+		    }
+
+		    if (m_randomTimer <= 0.f) {
+			    m_randomPending = false;
+			    m_randomKey.clear();
+			    m_randomLevelID = -1;
+			    if (m_randomLoadingCircle) {
+				    m_randomLoadingCircle->fadeAndRemove();
+				    m_randomLoadingCircle = nullptr;
+			    }
+				if (m_randomBlockLayer) {
+					m_randomBlockLayer->removeFromParent();
+					m_randomBlockLayer = nullptr;
+				}
+			    if (m_randBtn) {
+				    m_randBtn->setEnabled(true);
+				    m_randBtn->setColor({ 255, 255, 255 });
+			    }
+			    Notification::create("Failed to fetch random level", NotificationIcon::Error)->show();
+		    }
+	    }
+    }
 }
 
 void LevelGrindLayer::onDiffSelectorBtn(CCObject* sender) {

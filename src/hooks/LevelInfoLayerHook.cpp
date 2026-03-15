@@ -1,8 +1,8 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 
-#include "../popups/HelperPopup.hpp"
 #include "../other/LGManager.hpp"
+#include "../popups/ManageLevel.hpp"
 
 using namespace geode::prelude;
 
@@ -41,7 +41,7 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 
 	void onAddBtn(CCObject* sender) {
 		if (m_fields->isRated) {
-			HelperPopup::create(m_level)->show();
+			ManageLevel::create(m_level, m_difficultySprite)->show();
 		} else {
 			FLAlertLayer::create(
 				"Level Not Rated",
