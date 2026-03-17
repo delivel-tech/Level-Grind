@@ -13,7 +13,8 @@
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
-		"jouca.badgesapi": ">=v1.4.1"
+		"jouca.badgesapi": ">=v1.4.1",
+		"alk.better-touch-prio": ">=v1.0.14"
 	},
 	"resources": {
 		"sprites": [

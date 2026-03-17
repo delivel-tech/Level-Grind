@@ -1,4 +1,5 @@
 #include "ManageLevel.hpp"
+#include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/Layout.hpp"
@@ -24,6 +25,42 @@ ManageLevel* ManageLevel::create(GJGameLevel* level, GJDifficultySprite* diffSpr
     }
     delete ret;
     return nullptr;
+}
+
+void ManageLevel::onStarSwitcher(CCObject* sender) {
+    auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
+    if (!toggler) return;
+
+    bool isToggled = !toggler->isToggled();
+    if (isToggled) {
+        m_star = true;
+    } else {
+        m_star = false;
+    }
+}
+
+void ManageLevel::onMoonSwitcher(CCObject* sender) {
+    auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
+    if (!toggler) return;
+
+    bool isToggled = !toggler->isToggled();
+    if (isToggled) {
+        m_moon = true;
+    } else {
+        m_moon = false;
+    }
+}
+
+void ManageLevel::onDemonSwitcher(CCObject* sender) {
+    auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
+    if (!toggler) return;
+
+    bool isToggled = !toggler->isToggled();
+    if (isToggled) {
+        m_demon = true;
+    } else {
+        m_demon = false;
+    }
 }
 
 bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
@@ -113,26 +150,137 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
     m_adminActionsMenu = m_menus[3];
     m_notesMenu = m_menus[4];
 
-    auto coinOff = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
-    coinOff->setColor({ 128, 128, 128 });
+    auto filtersContainer = NineSlice::create("GJ_square02.png");
+    filtersContainer->setContentSize({ 45.f, 165.f });
 
-    auto coinOn = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+    m_mainLayer->addChildAtPosition(filtersContainer, Anchor::Right, { 28.f, 0.f });
 
-    auto coinToggler = CCMenuItemToggler::create(
-        coinOff,
-        coinOn,
+    auto filtersMenu = CCMenu::create();
+    filtersMenu->setID("filters-menu");
+    filtersMenu->setLayout(ColumnLayout::create()->setGap(10.f)->setAutoGrowAxis(true));
+
+    filtersMenu->setScale(0.7f);
+
+    m_mainLayer->addChildAtPosition(filtersMenu, Anchor::Right, { 28.f, 0.f });
+
+    auto starFilterSpr = CCSprite::create("GJ_button_04.png");
+    auto moonFilterSpr = CCSprite::create("GJ_button_04.png");
+    auto coinFilterSpr = CCSprite::create("GJ_button_04.png");
+    auto demonFilterSpr = CCSprite::create("GJ_button_04.png");
+
+    auto starFilterOnSpr = CCSprite::create("GJ_button_02.png");
+    auto moonFilterOnSpr = CCSprite::create("GJ_button_02.png");
+    auto coinFilterOnSpr = CCSprite::create("GJ_button_02.png");
+    auto demonFilterOnSpr = CCSprite::create("GJ_button_02.png");
+
+    auto starSprOff = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
+    auto moonSprOff = CCSprite::createWithSpriteFrameName("GJ_moonsIcon_001.png");
+    auto coinSprOff = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+    auto demonSprOff = CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png");
+
+    auto starOnSpr = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
+    auto moonOnSpr = CCSprite::createWithSpriteFrameName("GJ_moonsIcon_001.png");
+    auto coinOnSpr = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+    auto demonOnSpr = CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png");
+
+    starSprOff->setPosition({ 20.f, 20.f });
+    moonSprOff->setPosition({ 20.f, 20.f });
+    coinSprOff->setPosition({ 20.f, 20.f });
+    demonSprOff->setPosition({ 20.f, 20.f });
+    starOnSpr->setPosition({ 20.f, 20.f });
+    moonOnSpr->setPosition({ 20.f, 20.f });
+    coinOnSpr->setPosition({ 20.f, 20.f });
+    demonOnSpr->setPosition({ 20.f, 20.f });
+
+    starFilterSpr->addChild(starSprOff);
+    moonFilterSpr->addChild(moonSprOff);
+    coinFilterSpr->addChild(coinSprOff);
+    demonFilterSpr->addChild(demonSprOff);
+
+    starFilterOnSpr->addChild(starOnSpr);
+    moonFilterOnSpr->addChild(moonOnSpr);
+    coinFilterOnSpr->addChild(coinOnSpr);
+    demonFilterOnSpr->addChild(demonOnSpr);
+
+    auto starFilterToggler = CCMenuItemToggler::create(
+        starFilterSpr,
+        starFilterOnSpr,
+        this,
+        menu_selector(ManageLevel::onStarSwitcher)
+    );
+
+    auto moonFilterToggler = CCMenuItemToggler::create(
+        moonFilterSpr,
+        moonFilterOnSpr,
+        this,
+        menu_selector(ManageLevel::onMoonSwitcher)
+    );
+
+    auto coinFilterToggler = CCMenuItemToggler::create(
+        coinFilterSpr,
+        coinFilterOnSpr,
         this,
         menu_selector(ManageLevel::onCoinSwitcher)
     );
-    coinToggler->setID("coin-toggler");
 
-    auto coinMenu = CCMenu::createWithItem(coinToggler);
+    auto demonFilterToggler = CCMenuItemToggler::create(
+        demonFilterSpr,
+        demonFilterOnSpr,
+        this,
+        menu_selector(ManageLevel::onDemonSwitcher)
+    );
 
-    if (level->m_coins > 0) {
-        m_mainLayer->addChildAtPosition(coinMenu, Anchor::Right, { 30.f, 0.f });
-    } else {
-        m_coin = false;
+    starFilterToggler->setID("star-filter-toggler");
+    moonFilterToggler->setID("moon-filter-toggler");
+    coinFilterToggler->setID("coin-filter-toggler");
+    demonFilterToggler->setID("demon-filter-toggler");
+
+    filtersMenu->addChild(starFilterToggler);
+    filtersMenu->addChild(moonFilterToggler);
+    filtersMenu->addChild(coinFilterToggler);
+    filtersMenu->addChild(demonFilterToggler);
+
+    if (!LGManager::get()->isAdmin()) {
+        starFilterSpr->setColor({ 128, 128, 128 });
+        moonFilterSpr->setColor({ 128, 128, 128 });
+        demonFilterSpr->setColor({ 128, 128, 128 });
+
+        starSprOff->setColor({ 128, 128, 128 });
+        moonSprOff->setColor({ 128, 128, 128 });
+        demonSprOff->setColor({ 128, 128, 128 });
+
+        starFilterOnSpr->setColor({ 128, 128, 128 });
+        moonFilterOnSpr->setColor({ 128, 128, 128 });
+        demonFilterOnSpr->setColor({ 128, 128, 128 });
+
+        starOnSpr->setColor({ 128, 128, 128 });
+        moonOnSpr->setColor({ 128, 128, 128 });
+        demonOnSpr->setColor({ 128, 128, 128 });
+
+        starFilterToggler->setEnabled(false);
+        moonFilterToggler->setEnabled(false);
+        demonFilterToggler->setEnabled(false);
     }
+
+    if (m_star) {
+        starFilterToggler->toggle(true);
+    } else {
+        starFilterToggler->toggle(false);
+    }
+
+    if (m_moon) {
+        moonFilterToggler->toggle(true);
+    } else {
+        moonFilterToggler->toggle(false);
+    }
+
+    if (m_demon) {
+        demonFilterToggler->toggle(true);
+    } else {
+        demonFilterToggler->toggle(false);
+    }
+
+    filtersMenu->updateLayout();
 
     if (m_levelInfoMenu) {
         auto levelVisualMenu = CCMenu::create();
@@ -457,6 +605,11 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
 
             auto filtersMenu = self->m_starLoading ? self->m_starLoading->getParent() : nullptr;
 
+            auto starFilterToggler = typeinfo_cast<CCMenuItemToggler*>(self->getChildByIDRecursive("star-filter-toggler"));
+            auto moonFilterToggler = typeinfo_cast<CCMenuItemToggler*>(self->getChildByIDRecursive("moon-filter-toggler"));
+            auto coinFilterToggler = typeinfo_cast<CCMenuItemToggler*>(self->getChildByIDRecursive("coin-filter-toggler"));
+            auto demonFilterToggler = typeinfo_cast<CCMenuItemToggler*>(self->getChildByIDRecursive("demon-filter-toggler"));
+
             if (self->m_starLoading && self->m_starSpr) {
                 auto parent = self->m_starLoading->getParent();
                 if (parent) {
@@ -500,6 +653,41 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
                     }
                 }
             }
+
+            if (isAdded) {
+
+            if (isStar && starFilterToggler) {
+                starFilterToggler->toggle(true);
+                self->m_star = true;
+            } else {
+                self->m_star = false;
+                starFilterToggler->toggle(false);
+            }
+
+            if (isMoon && moonFilterToggler) {
+                moonFilterToggler->toggle(true);
+                self->m_moon = true;
+            } else {
+                self->m_moon = false;
+                moonFilterToggler->toggle(false);
+            }
+
+            if (isCoin && coinFilterToggler) {
+                coinFilterToggler->toggle(true);
+                self->m_coin = true;
+            } else {
+                self->m_coin = false;
+                coinFilterToggler->toggle(false);
+            }
+
+            if (isDemon && demonFilterToggler) {
+                demonFilterToggler->toggle(true);
+                self->m_demon = true;
+            } else {
+                self->m_demon = false;
+                demonFilterToggler->toggle(false);
+            }
+        }
 
             if (filtersMenu) {
                 filtersMenu->updateLayout();

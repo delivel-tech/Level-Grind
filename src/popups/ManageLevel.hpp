@@ -88,6 +88,9 @@ protected:
     void onUnlockBtn(CCObject* sender);
 
     void onCoinSwitcher(CCObject* sender);
+    void onDemonSwitcher(CCObject* sender);
+    void onMoonSwitcher(CCObject* sender);
+    void onStarSwitcher(CCObject* sender);
 
     void onLockedBtn(CCObject* sender);
     void onNotReadyBtn(CCObject* sender);
