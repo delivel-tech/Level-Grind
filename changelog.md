@@ -1,3 +1,6 @@
+# 1.3.1
+- Small changes in Manage Level panel for Staff.
+
 # 1.3.0
 - Reworked Manage Level panel.
 - Added Announcements button.
