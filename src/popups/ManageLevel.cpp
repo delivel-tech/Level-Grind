@@ -823,7 +823,7 @@ void ManageLevel::onDeleteNoteButton(CCObject* sender) {
     body["token"] = LGManager::get()->getArgonToken();
     body["levelID"] = m_levelID;
     body["levelName"] = m_levelName;
-    body["deletedBy"] = GJAccountManager::get()->m_username;
+    body["deletedBy"] = GJAccountManager::get()->m_username.c_str();
 
     req.bodyJSON(body);
 

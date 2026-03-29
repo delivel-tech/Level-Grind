@@ -65,8 +65,8 @@ void AddNotePopup::onAddBtn(CCObject* sender) {
     body["token"] = LGManager::get()->getArgonToken();
     body["levelID"] = m_levelId;
     body["levelName"] = m_levelName;
-    body["note"] = m_input->getString();
-    body["addedBy"] = GJAccountManager::sharedState()->m_username;
+    body["note"] = m_input->getString().c_str();
+    body["addedBy"] = GJAccountManager::sharedState()->m_username.c_str();
 
     req.bodyJSON(body);
 

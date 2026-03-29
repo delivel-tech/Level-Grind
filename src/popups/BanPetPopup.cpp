@@ -61,7 +61,7 @@ void BanPetPopup::onBanBtn(CCObject* sender) {
     body["targetAccountId"] = m_targetAccountId;
     body["accountId"] = GJAccountManager::sharedState()->m_accountID;
     body["token"] = LGManager::get()->getArgonToken();
-    body["banReason"] = m_input->getString();
+    body["banReason"] = m_input->getString().c_str();
 
     web::WebRequest req;
     req.bodyJSON(body);
