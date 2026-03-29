@@ -69,7 +69,7 @@ void LGPetRenamePopup::onOKBtn(CCObject* sender) {
 
     body["token"] = LGManager::get()->getArgonToken();
     body["accountId"] = GJAccountManager::get()->m_accountID;
-    body["petName"] = m_input->getString();
+    body["petName"] = m_input->getString().c_str();
 
     req.bodyJSON(body);
 

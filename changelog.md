@@ -1,6 +1,7 @@
 # 1.4.0
-- Daily players achievements!
+- Weekly players achievements!
 - Grinding Pet mod functionality has been moved to Level Grind.
+- Level Notes!
 - Minor improvements.
 
 # 1.3.1
