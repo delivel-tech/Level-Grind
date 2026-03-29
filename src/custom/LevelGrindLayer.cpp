@@ -722,11 +722,9 @@ bool LevelGrindLayer::init() {
 	    );
 	    petBtn->setID("pet-btn");
 	    leftBtnMenu->addChild(petBtn);
+		leftBtnMenu->updateLayout();
+		m_top->setScale(0.8f);
 	}
-
-	leftBtnMenu->updateLayout();
-
-	m_top->setScale(0.8f);
 
 	this->scheduleUpdate();
 

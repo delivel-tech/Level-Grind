@@ -112,10 +112,10 @@ void PetLayer::onInfoBtn(CCObject* sender) {
         "# <cg>Grinding Pet</c>\n\n"
         "<cg>Grinding Pet</c> is your own <cj>companion</c> that evolves when you <cy>grind stats</c>!\n\n"
         "## <cp>How does it work?</c>\n\n"
-        "- <cy>Pet stars and Pet moons</c> are currencies of <cg>Grinding Pet</c>, you can use them to <cl>upgrade your pet</c>!\n"
+        "- <cy>Pet stars and Pet moons</c> are the currencies of <cg>Grinding Pet</c>, you can use them to <cl>upgrade your pet</c>!\n"
         "- You can <cp>earn them</c> by grinding stats as usual.\n"
         "- There are <cr>30 levels in total</c>, for each one, your <cr>pet will become bigger</c> and may <cy>change its style</c>!\n"
-        "- Currently, pet <cb>rarity</c> does nothing, however, in future it will give lower prices in <cb>Pet Shop</c>.\n"
+        "- Currently, pet <cb>rarity</c> does nothing, however, in the future it will give lower prices in the <cb>Pet Shop</c>.\n"
         "# <cy>Enjoy the game</c>!",
         "OK"
     )->show();

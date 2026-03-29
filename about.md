@@ -9,11 +9,25 @@ Level Grind offers you <cy>additional searching options</c>, such as <cb>version
 This <cg>database</c> is actively filled by our <cp>helpers</c>,  
 and we hope you will find this mod a <cy>great place</c> to evolve your <cr>account stats</c>!
 
-### <cy>Grinding Pet</c>
+### Our <cb>Discord Server</c>!
+
+<cy>Level Grind</c> has been growing as a <cr>big community of grinders</c>, therefore, <cy>consider joining our</c> [<cp>Discord Server</c>](https://discord.gg/tmf5xtCX5y). In this server you can <cb>suggest levels for adding</c>, or communicate with <cj>other mod players</c>. As well, you will be able to achieve <cp>exclusive Booster badge</c> in-game if you boost the server!
+
+### <cy>Grinding Pet</c>!
 
 Since <cp>1.4.0</c>, <cy>Level Grind</c> introduces <cg>Grinding Pet</c>!
 <cg>Grinding Pet</c> is a <cb>pet</c> that you can <cy>evolve by grinding stats</c>.
 In order to use the pet, click the <cj>cube button</c> on the main layer of the mod.
+
+### <cp>Level Notes</c>!
+
+Our <cr>Staff team</c> can now add <cg>Notes</c> to any levels. In these notes, you can find out about <cj>difficult moments of the level</c>, 
+<cy>coins explanations</c> and more!
+
+### <cr>Weekly achievements</c>!
+
+Every week, <cy>Grind Admins</c> choose <cp>the best achievement of the week</c> in <cy>grinding community</c>. 
+This achievement can be found <cg>on the main layer of the mod</c>.
 
 ### <cy>How to use:</c>
 

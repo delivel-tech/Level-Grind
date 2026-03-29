@@ -1,3 +1,6 @@
+# 1.4.1
+- Bugfixes.
+
 # 1.4.0
 - Weekly players achievements!
 - Grinding Pet mod functionality has been moved to Level Grind.

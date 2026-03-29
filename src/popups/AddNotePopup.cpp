@@ -4,6 +4,7 @@
 
 #include "../other/LGManager.hpp"
 #include "Geode/utils/web.hpp"
+#include <Geode/binding/CCTextInputNode.hpp>
 #include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/UploadActionPopup.hpp>
 
@@ -37,6 +38,7 @@ bool AddNotePopup::init(int levelId, std::string levelName) {
     m_input = TextInput::create(400.f, "Write down your note..", "bigFont.fnt");
     m_input->setMaxCharCount(255);
     m_input->setID("input");
+    m_input->setCommonFilter(CommonFilter::Any);
 
     m_mainLayer->addChildAtPosition(m_input, Anchor::Center, { 0.f, 5.f });
 
