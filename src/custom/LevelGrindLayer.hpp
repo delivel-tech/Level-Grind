@@ -59,6 +59,9 @@ public:
     void onRandomBtn(cocos2d::CCObject* sender);
     void onAnnouncementsBtn(cocos2d::CCObject* sender);
 
+    void onAchievementsBtn(cocos2d::CCObject* sender);
+    void onPetBtn(cocos2d::CCObject* sender);
+
     void onDiffSelectorBtn(cocos2d::CCObject* sender);
     void updateDiffSelectorButtonVisibility();
 
@@ -82,6 +85,8 @@ public:
 
     cocos2d::CCMenu* demonsMenu;
     CCScale9Sprite* demonsPanel;
+
+    CCSprite* m_top = nullptr;
 
     async::TaskHolder<geode::utils::web::WebResponse> m_listener;
 

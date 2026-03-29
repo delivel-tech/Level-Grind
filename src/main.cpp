@@ -58,5 +58,5 @@ $on_mod(Loaded) {
 
 	LGManager::get()->authArgon();
 
-	LGManager::get()->fetchStaff();
+	LGManager::get()->fetchBootup();
 }

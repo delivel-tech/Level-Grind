@@ -22,6 +22,14 @@ public:
     void onPromoteAdminBtn(CCObject* sender);
     void onPromoteContributorBtn(CCObject* sender);
     void onDemoteContributorBtn(CCObject* sender);
+    void onPromoteBoosterBtn(CCObject* sender);
+    void onDemoteBoosterBtn(CCObject* sender);
+    void onPromoteArtistBtn(CCObject* sender);
+    void onDemoteArtistBtn(CCObject* sender);
+
+    void onWipePetDataBtn(CCObject* sender);
+    void onBanPetBtn(CCObject* sender);
+    void onUnbanPetBtn(CCObject* sender);
 
     int m_targetAccountID;
     const char* m_username;

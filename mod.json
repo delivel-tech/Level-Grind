@@ -1,5 +1,5 @@
 {
-	"geode": "5.3.0",
+	"geode": "5.4.1",
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v1.3.1",
+	"version": "v1.4.0",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -32,7 +32,14 @@
 			"resources/credits_btn.png",
 			"resources/info_btn.png",
 			"resources/badge_artist.png",
-			"resources/random_btn.png"
+			"resources/random_btn.png",
+			"resources/moon_spr.png",
+			"resources/star_spr.png",
+			"resources/badge_booster.png",
+			"resources/badge_contributor.png",
+			"resources/info_btn_2.png",
+			"resources/button_edit_note.png",
+			"resources/button_note.png"
 		]
 	},
 	"links": {

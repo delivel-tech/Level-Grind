@@ -30,7 +30,8 @@ bool BaseLayer::init() {
 		addChild(customBg, -1);
 	}
 
-    addBackButton(this, BackButtonStyle::Green);
+    auto backBtn = addBackButton(this, BackButtonStyle::Green);
+    m_backBtn = backBtn;
 
     addSideArt(this, SideArt::All, SideArtStyle::Layer, false);
 

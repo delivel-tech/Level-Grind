@@ -1,14 +1,19 @@
 #include <Geode/Geode.hpp>
+#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 
 #include "../other/LGManager.hpp"
 #include "../popups/ManageLevel.hpp"
+#include "Geode/cocos/cocoa/CCObject.h"
+#include "Geode/ui/BasedButtonSprite.hpp"
 
 using namespace geode::prelude;
 
 class $modify(LevelGrinding, LevelInfoLayer) {
 	struct Fields {
 		bool isRated = false;
+		std::string m_levelNote;
 	};
 	bool init(GJGameLevel* level, bool challenge) {
 		if (!LevelInfoLayer::init(level, challenge)) return false;
@@ -36,7 +41,30 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 		    menu->updateLayout();
 		}
 
+		auto it = LGManager::get()->getNotes().find(level->m_levelID);
+		if (it != LGManager::get()->getNotes().end()) {
+			std::string levelNote = it->second;
+			m_fields->m_levelNote = levelNote;
+
+			auto noteBtn = CCMenuItemSpriteExtra::create(
+				CircleButtonSprite::createWithSprite("button_note.png"_spr),
+				this,
+				menu_selector(LevelGrinding::onNoteBtn)
+			);
+
+			menu->addChild(noteBtn);
+			menu->updateLayout();
+		}
+
 		return true;
+	}
+
+	void onNoteBtn(CCObject* sender) {
+		FLAlertLayer::create(
+			"Level Note",
+			m_fields->m_levelNote.c_str(),
+			"OK"
+		)->show();
 	}
 
 	void onAddBtn(CCObject* sender) {

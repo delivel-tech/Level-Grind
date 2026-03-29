@@ -1,4 +1,5 @@
 #include <Geode/Geode.hpp>
+#include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/modify/ProfilePage.hpp>
 
 #include "../other/LGManager.hpp"
@@ -25,6 +26,8 @@ class $modify(UserManage, ProfilePage) {
 		if (auto badgeBtn = getChildByIDRecursive("grind-helper-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-admin-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-contributor-badge")) badgeBtn->removeFromParent();
+		if (auto badgeBtn = getChildByIDRecursive("grind-artist-badge")) badgeBtn->removeFromParent();
+		if (auto badgeBtn = getChildByIDRecursive("grind-booster-badge")) badgeBtn->removeFromParent();
 
 		m_fields->m_targetAccountID = score->m_accountID;
 		m_fields->m_username = score->m_userName.c_str();
@@ -46,64 +49,89 @@ class $modify(UserManage, ProfilePage) {
 		);
 		manageBtn->setID("lg-manage-btn");
 
-		if (!Mod::get()->getSavedValue<bool>("disable-badges")) {
-			m_fields->m_staffFound = false;
-		    m_fields->m_staffRole = 0;
+		auto usernameMenu = getChildByIDRecursive("username-menu");
+		bool hasModBadge = getChildByIDRecursive("mod-badge") != nullptr;
+		bool noBadgeForMods = Mod::get()->getSavedValue<bool>("no-badge-for-mods");
+		bool shouldSkipStaffBadge = noBadgeForMods && hasModBadge;
+		bool dontShowBadges = Mod::get()->getSavedValue<bool>("disable-badges");
 
-		    auto it = LGManager::get()->getStaff().find(score->m_accountID);
-		    if (it != LGManager::get()->getStaff().end()) {
-			    m_fields->m_staffFound = true;
-			    m_fields->m_staffRole = it->second;
+		if (!dontShowBadges && usernameMenu && !shouldSkipStaffBadge) {
+			auto admins = LGManager::get()->getStaff().admins;
+			auto helpers = LGManager::get()->getStaff().helpers;
+			auto conts = LGManager::get()->getStaff().contributors;
+			auto artists = LGManager::get()->getStaff().artists;
+			auto boosters = LGManager::get()->getStaff().boosters;
 
-				auto usernameMenu = getChildByIDRecursive("username-menu");
-				bool hasModBadge = getChildByIDRecursive("mod-badge") != nullptr;
-				bool noBadgeForMods = Mod::get()->getSavedValue<bool>("no-badge-for-mods");
-				bool shouldSkipStaffBadge = noBadgeForMods && hasModBadge;
+			bool adminFound = std::find(admins.begin(), admins.end(), score->m_accountID) != admins.end();
+			bool helperFound = std::find(helpers.begin(), helpers.end(), score->m_accountID) != helpers.end();
+			bool contFound = std::find(conts.begin(), conts.end(), score->m_accountID) != conts.end();
+			bool artistFound = std::find(artists.begin(), artists.end(), score->m_accountID) != artists.end();
+			bool boosterFound = std::find(boosters.begin(), boosters.end(), score->m_accountID) != boosters.end();
 
-			    if (m_fields->m_staffRole == 1) {
-				    auto badgeSpr = CCSprite::create("badge_helper.png"_spr);
+			if (adminFound) {
+				auto badgeSpr = CCSprite::create("badge_admin.png"_spr);
+				auto badgeBtn = CCMenuItemSpriteExtra::create(
+					badgeSpr,
+					this,
+					menu_selector(UserManage::onAdminBadge)
+				);
 
-				    auto badgeBtn = CCMenuItemSpriteExtra::create(
-					    badgeSpr,
-					    this,
-					    menu_selector(UserManage::onHelperBadge)
-				    );
+				badgeBtn->setID("grind-admin-badge");
+				usernameMenu->addChild(badgeBtn);
+				usernameMenu->updateLayout();
+			}
+			if (helperFound) {
+				auto badgeSpr = CCSprite::create("badge_helper.png"_spr);
 
-				    badgeBtn->setID("grind-helper-badge");
+				auto badgeBtn = CCMenuItemSpriteExtra::create(
+					badgeSpr,
+					this,
+					menu_selector(UserManage::onHelperBadge)
+				);
 
-				    if (usernameMenu && !shouldSkipStaffBadge) {
-					    usernameMenu->addChild(badgeBtn);
-					    usernameMenu->updateLayout();
-				    }
-			    } else if (m_fields->m_staffRole == 2) {
-				    auto badgeSpr = CCSprite::create("badge_admin.png"_spr);
-				    auto badgeBtn = CCMenuItemSpriteExtra::create(
-					    badgeSpr,
-					    this,
-					    menu_selector(UserManage::onAdminBadge)
-				    );
+				badgeBtn->setID("grind-helper-badge");
+				usernameMenu->addChild(badgeBtn);
+				usernameMenu->updateLayout();
+			}
+			if (artistFound) {
+				auto badgeSpr = CCSprite::create("badge_artist.png"_spr);
 
-				    badgeBtn->setID("grind-admin-badge");
+				auto badgeBtn = CCMenuItemSpriteExtra::create(
+					badgeSpr,
+					this,
+					menu_selector(UserManage::onArtistBadge)
+				);
 
-				    if (usernameMenu && !shouldSkipStaffBadge) {
-					    usernameMenu->addChild(badgeBtn);
-					    usernameMenu->updateLayout();
-				    }
-			    } else if (m_fields->m_staffRole == 3) {
-                    auto badgeSpr = CCSprite::create("badge_artist.png"_spr);
-                    auto badgeBtn = CCMenuItemSpriteExtra::create(
-                        badgeSpr,
-						this,
-                        menu_selector(UserManage::onContributorBadge)
-                    );
-                    badgeBtn->setID("grind-contributor-badge");
+				badgeBtn->setID("grind-artist-badge");
+				usernameMenu->addChild(badgeBtn);
+				usernameMenu->updateLayout();
+			}
+			if (contFound) {
+				auto badgeSpr = CCSprite::create("badge_contributor.png"_spr);
 
-                    if (usernameMenu && !shouldSkipStaffBadge) {
-                        usernameMenu->addChild(badgeBtn);
-                        usernameMenu->updateLayout();
-                    }
-                }
-		    }
+				auto badgeBtn = CCMenuItemSpriteExtra::create(
+					badgeSpr,
+					this,
+					menu_selector(UserManage::onContributorBadge)
+				);
+
+				badgeBtn->setID("grind-contributor-badge");
+				usernameMenu->addChild(badgeBtn);
+				usernameMenu->updateLayout();
+			}
+			if (boosterFound) {
+				auto badgeSpr = CCSprite::create("badge_booster.png"_spr);
+
+				auto badgeBtn = CCMenuItemSpriteExtra::create(
+					badgeSpr,
+					this,
+					menu_selector(UserManage::onBoosterBadge)
+				);
+
+				badgeBtn->setID("grind-booster-badge");
+				usernameMenu->addChild(badgeBtn);
+				usernameMenu->updateLayout();
+			}
 		}
 
 		if (!LGManager::get()->isAdmin()) return;
@@ -149,4 +177,22 @@ class $modify(UserManage, ProfilePage) {
             "OK"
         )->show();
     }
+
+	void onArtistBadge(CCObject* sender) {
+		FLAlertLayer::create(
+			"Grind Artist",
+			"This user is an <cp>Artist</c> on the <cy>Level Grind</c> mod." \
+			"They are <cr>responsible for the visual part</c> of the mod",
+			"OK"
+		)->show();
+	}
+
+	void onBoosterBadge(CCObject* sender) {
+		FLAlertLayer::create(
+			"Grind Booster",
+			"This user is a <cp>Booster</c> of <cy>Level Grind Discord server</c>." \
+			"Their <cg>support is greatly appreciated</c>!",
+			"OK"
+		)->show();
+	}
 };

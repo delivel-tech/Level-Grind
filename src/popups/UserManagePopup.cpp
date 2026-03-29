@@ -17,6 +17,7 @@
 
 #include "../popups/UserManagePopup.hpp"
 #include "../other/LGManager.hpp"
+#include "BanPetPopup.hpp"
 
 using namespace geode::prelude;
 
@@ -30,8 +31,87 @@ UserManagePopup* UserManagePopup::create(int accountID, const char* username, in
     return nullptr;
 }
 
+void UserManagePopup::onWipePetDataBtn(CCObject* sender) {
+    matjson::Value body;
+
+    body["targetAccountID"] = m_targetAccountID;
+    body["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = LGManager::get()->getArgonToken();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(nullptr, "Wiping pet data...");
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+    Ref<UserManagePopup> self = this;
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/wipe_pet_data"),
+        [popupRef, self](web::WebResponse res) {
+            if (!popupRef || !self) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Failed to wipe pet. Try again later");
+                return;
+            }
+
+            auto json = res.json().unwrap();
+            auto isOk = json["ok"].asBool().unwrapOrDefault();
+
+            if (!isOk) {
+                popupRef->showFailMessage("Failed to wipe pet. Try again later");
+            } else {
+                popupRef->showSuccessMessage("Success! Pet data wiped");
+            }
+        }
+    );
+}
+
+void UserManagePopup::onBanPetBtn(CCObject* sender) {
+    BanPetPopup::create(m_targetAccountID)->show();
+}
+
+void UserManagePopup::onUnbanPetBtn(CCObject* sender) {
+    matjson::Value body;
+
+    body["targetAccountId"] = m_targetAccountID;
+    body["accountId"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = LGManager::get()->getArgonToken();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(nullptr, "Unbanning pet...");
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+    Ref<UserManagePopup> self = this;
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/unban_pet"),
+        [popupRef, self](web::WebResponse res) {
+            if (!popupRef || !self) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Failed to unban pet. Try again later");
+                return;
+            }
+
+            auto json = res.json().unwrap();
+            auto isOk = json["ok"].asBool().unwrapOrDefault();
+
+            if (!isOk) {
+                popupRef->showFailMessage("Failed to unban pet. Try again later");
+            } else {
+                popupRef->showSuccessMessage("Success! Pet unbanned");
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
+            }
+        }
+    );
+}
+
 bool UserManagePopup::init(int targetAccountID, const char* username, int icon, int color1, int color2, int color3) {
-    if (!Popup::init(260.f, 180.f)) return false;
+    if (!Popup::init(350.f, 210.f, "GJ_square02.png")) return false;
 
     m_targetAccountID = targetAccountID;
     m_username = username;
@@ -40,7 +120,7 @@ bool UserManagePopup::init(int targetAccountID, const char* username, int icon, 
     m_targetColor2 = color2;
     m_targetColor3 = color3;
 
-    addSideArt(m_mainLayer, SideArt::All, SideArtStyle::PopupGold, false);
+    addSideArt(m_mainLayer, SideArt::All, SideArtStyle::PopupBlue, false);
 
     auto spinner = LoadingSpinner::create(50.f);
 
@@ -53,7 +133,9 @@ bool UserManagePopup::init(int targetAccountID, const char* username, int icon, 
     }
 
     auto btnMenu = CCMenu::create();
-    btnMenu->setLayout(ColumnLayout::create());
+    btnMenu->setLayout(ColumnLayout::create()->setGap(7)->setGrowCrossAxis(true)->setCrossAxisReverse(true));
+    btnMenu->setScale(0.61f);
+    btnMenu->setContentHeight(150);
     m_mainLayer->addChildAtPosition(btnMenu, Anchor::Center);
 
     matjson::Value body;
@@ -77,86 +159,174 @@ bool UserManagePopup::init(int targetAccountID, const char* username, int icon, 
                 return;
             }
 
-            auto json = res.json().unwrapOrDefault();
-            auto position = json["pos"].asInt().unwrapOrDefault();
+            auto jsonRes = res.json();
 
-            if (position == 1) {
+            if (!jsonRes) {
+                log::error("failed check helper req");
                 spinnerRef->removeFromParent();
-                
-                auto demoteBtn = CCMenuItemSpriteExtra::create(
-                    ButtonSprite::create("Demote Helper", "goldFont.fnt", "GJ_button_02.png"),
+                Notification::create("Failed to fetch data!", NotificationIcon::Error)->show();
+                return;
+            }
+
+            auto json = jsonRes.unwrapOrDefault();
+
+            bool isAdmin = !json["isAdmin"].asBool().unwrapOrDefault();
+            bool isHelper = !json["isHelper"].asBool().unwrapOrDefault();
+            bool isCont = !json["isContributor"].asBool().unwrapOrDefault();
+            bool isArtist = !json["isArtist"].asBool().unwrapOrDefault();
+            bool isBooster = !json["isBooster"].asBool().unwrapOrDefault();
+            bool petExists = json["petExists"].asBool().unwrapOrDefault();
+            bool isPetBanned = json["isPetBanned"].asBool().unwrapOrDefault();
+
+            spinnerRef->removeFromParent();
+
+            if (LGManager::get()->isDelivel()) {
+
+            if (isAdmin) {
+                auto promoteAdminBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Promote Admin", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onPromoteAdminBtn)
+                );
+                btnMenuRef->addChild(promoteAdminBtn);
+            } else {
+                auto demoteAdminBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Demote Admin", 250.f, true, "goldFont.fnt", "GJ_button_06.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onDemoteAdminBtn)
+                );
+                btnMenuRef->addChild(demoteAdminBtn);
+            }
+
+            }
+
+            if (isHelper) {
+                auto promoteHelperBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Promote Helper", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onPromoteBtn)
+                );
+                btnMenuRef->addChild(promoteHelperBtn);
+            } else {
+                auto demoteHelperBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Demote Helper", 250.f, true, "goldFont.fnt", "GJ_button_06.png", 30.f, 1.f),
                     self,
                     menu_selector(UserManagePopup::onDemoteBtn)
                 );
-                btnMenuRef->addChild(demoteBtn);
-                btnMenuRef->updateLayout();
+                btnMenuRef->addChild(demoteHelperBtn);
+            }
+
+            if (isCont) {
+                auto promoteContBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Promote Contrib", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onPromoteContributorBtn)
+                );
+                btnMenuRef->addChild(promoteContBtn);
             } else {
-                spinnerRef->removeFromParent();
+                auto demoteContBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Demote Contrib", 250.f, true, "goldFont.fnt", "GJ_button_06.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onDemoteContributorBtn)
+                );
+                btnMenuRef->addChild(demoteContBtn);
+            }
 
-                if (!LGManager::get()->isDelivel()) {
-                    if (position == 2) {
-                        Notification::create("User is admin, you cannot manage other admins", NotificationIcon::Info)->show();
-                    } else {
-                        auto promoteBtn = CCMenuItemSpriteExtra::create(
-                        ButtonSprite::create("Promote Helper"),
+            if (isArtist) {
+                auto promoteArtistBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Promote Artist", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onPromoteArtistBtn)
+                );
+                btnMenuRef->addChild(promoteArtistBtn);
+            } else {
+                auto demoteArtistBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Demote Artist", 250.f, true, "goldFont.fnt", "GJ_button_06.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onDemoteArtistBtn)
+                );
+                btnMenuRef->addChild(demoteArtistBtn);
+            }
+
+            if (isBooster) {
+                auto promoteBoosterBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Promote Booster", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onPromoteBoosterBtn)
+                );
+                btnMenuRef->addChild(promoteBoosterBtn);
+            } else {
+                auto demoteBoosterBtn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create("Demote Booster", 250.f, true, "goldFont.fnt", "GJ_button_06.png", 30.f, 1.f),
+                    self,
+                    menu_selector(UserManagePopup::onDemoteBoosterBtn)
+                );
+                btnMenuRef->addChild(demoteBoosterBtn);
+            }
+
+            if (petExists) {
+                auto wipeBtnSpr = ButtonSprite::create("Wipe Pet", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f);
+                auto wipeBtn = CCMenuItemSpriteExtra::create(
+                    wipeBtnSpr,
+                    self,
+                    menu_selector(UserManagePopup::onWipePetDataBtn)
+                );
+                btnMenuRef->addChild(wipeBtn);
+            } else {
+                auto wipeBtnSpr = ButtonSprite::create("Wipe Pet", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f);
+                wipeBtnSpr->setColor({ 128, 128, 128 });
+                auto wipeBtn = CCMenuItemSpriteExtra::create(
+                    wipeBtnSpr,
+                    self,
+                    menu_selector(UserManagePopup::onWipePetDataBtn)
+                );
+                wipeBtn->setEnabled(false);
+                btnMenuRef->addChild(wipeBtn);
+            }
+
+            if (isPetBanned) {
+                if (petExists) {
+                    auto unbanBtn = CCMenuItemSpriteExtra::create(
+                        ButtonSprite::create("Unban Pet", 250.f, true, "goldFont.fnt", "GJ_button_06.png", 30.f, 1.f),
                         self,
-                        menu_selector(UserManagePopup::onPromoteBtn)
-                        );
-                        btnMenuRef->addChild(promoteBtn);
-                        btnMenuRef->updateLayout();
-                    }
+                        menu_selector(UserManagePopup::onUnbanPetBtn)
+                    );
+                    btnMenuRef->addChild(unbanBtn);
                 } else {
-                    if (position != 1 && position != 2) {
-                        auto promoteBtn = CCMenuItemSpriteExtra::create(
-                        ButtonSprite::create("Promote Helper"),
+                    auto unbBtnSpr = ButtonSprite::create("Unban Pet", 250.f, true, "goldFont.fnt", "GJ_button_06.png", 30.f, 1.f);
+                    unbBtnSpr->setColor({ 128, 128, 128 });
+
+                    auto unbanBtn = CCMenuItemSpriteExtra::create(
+                        unbBtnSpr,
                         self,
-                        menu_selector(UserManagePopup::onPromoteBtn)
-                        );
-                        btnMenuRef->addChild(promoteBtn);
-                        btnMenuRef->updateLayout();
-                    }
+                        menu_selector(UserManagePopup::onUnbanPetBtn)
+                    );
+                    unbanBtn->setEnabled(false);
+                    btnMenuRef->addChild(unbanBtn);
+                }
+            } else {
+                if (petExists) {
+                    auto banBtn = CCMenuItemSpriteExtra::create(
+                        ButtonSprite::create("Ban Pet", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f),
+                        self,
+                        menu_selector(UserManagePopup::onBanPetBtn)
+                    );
+                    btnMenuRef->addChild(banBtn);
+                } else {
+                    auto bBtnSpr = ButtonSprite::create("Ban Pet", 250.f, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 1.f);
+                    bBtnSpr->setColor({ 128, 128, 128 });
+
+                    auto banBtn = CCMenuItemSpriteExtra::create(
+                        bBtnSpr,
+                        self,
+                        menu_selector(UserManagePopup::onBanPetBtn)
+                    );
+                    banBtn->setEnabled(false);
+                    btnMenuRef->addChild(banBtn);
                 }
             }
 
-            if (LGManager::get()->isDelivel()) {
-                if (position == 2) {
-                    auto demoteAdminBtn = CCMenuItemSpriteExtra::create(
-                        ButtonSprite::create("Demote Admin", "goldFont.fnt", "GJ_button_02.png"),
-                        self,
-                        menu_selector(UserManagePopup::onDemoteAdminBtn)
-                    );
-                    btnMenuRef->addChild(demoteAdminBtn);
-                    btnMenuRef->updateLayout();
-                } else {
-                    auto promoteAdminBtn = CCMenuItemSpriteExtra::create(
-                        ButtonSprite::create("Promote Admin"),
-                        self,
-                        menu_selector(UserManagePopup::onPromoteAdminBtn)
-                    );
-                    btnMenuRef->addChild(promoteAdminBtn);
-                    btnMenuRef->updateLayout();
-                }
-            }
-
-            if ((LGManager::get()->isAdmin() || LGManager::get()->isDelivel()) && position != 2) {
-                if (position == 3) {
-                    auto demoteContributorBtn = CCMenuItemSpriteExtra::create(
-                        ButtonSprite::create("Demote Contrib", "goldFont.fnt", "GJ_button_02.png"),
-                        self,
-                        menu_selector(UserManagePopup::onDemoteContributorBtn)
-                    );
-                    btnMenuRef->addChild(demoteContributorBtn);
-                    btnMenuRef->updateLayout();
-                } else {
-                    auto promoteContributorBtn = CCMenuItemSpriteExtra::create(
-                        ButtonSprite::create("Promote Contrib"),
-                        self,
-                        menu_selector(UserManagePopup::onPromoteContributorBtn)
-                    );
-                    btnMenuRef->addChild(promoteContributorBtn);
-                    btnMenuRef->updateLayout();
-                }
-            }
+            btnMenuRef->updateLayout();
         }
     );
 
@@ -220,6 +390,165 @@ void UserManagePopup::onDemoteAdminBtn(CCObject* sender) {
     );
 }
 
+void UserManagePopup::onPromoteArtistBtn(CCObject* sender) {
+    matjson::Value body;
+
+    body["targetAccountID"] = m_targetAccountID;
+    body["targetUsername"] = m_username;
+    body["targetIcon"] = m_targetIcon;
+    body["targetColor1"] = m_targetColor1;
+    body["targetColor2"] = m_targetColor2;
+    body["targetColor3"] = m_targetColor3;
+    body["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = LGManager::get()->getArgonToken();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(nullptr, "Promoting to artist...");
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/promote_artist"),
+        [popupRef](web::WebResponse res) {
+            if (!popupRef) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Failed to promote. Try again later");
+                return;
+            }
+
+            auto json = res.json().unwrap();
+            auto isOk = json["ok"].asBool().unwrapOrDefault();
+
+            if (!isOk) {
+                popupRef->showFailMessage("Failed to promote. Try again later");
+            } else {
+                popupRef->showSuccessMessage("Success! User promoted to artist");
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
+            }
+        }
+    );
+}
+
+void UserManagePopup::onDemoteArtistBtn(CCObject* sender) {
+    matjson::Value body;
+
+    body["targetAccountID"] = m_targetAccountID;
+    body["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = LGManager::get()->getArgonToken();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(nullptr, "Demoting artist...");
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/demote_artist"),
+        [popupRef](web::WebResponse res) {
+            if (!popupRef) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Failed to demote. Try again later");
+                return;
+            }
+
+            auto json = res.json().unwrap();
+            auto isOk = json["ok"].asBool().unwrapOrDefault();
+
+            if (!isOk) {
+                popupRef->showFailMessage("Failed to demote. Try again later");
+            } else {
+                popupRef->showSuccessMessage("Success! User demoted from artist");
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
+            }
+        }
+    );
+}
+
+void UserManagePopup::onPromoteBoosterBtn(CCObject* sender) {
+    matjson::Value body;
+
+    body["targetAccountID"] = m_targetAccountID;
+    body["targetUsername"] = m_username;
+    body["targetIcon"] = m_targetIcon;
+    body["targetColor1"] = m_targetColor1;
+    body["targetColor2"] = m_targetColor2;
+    body["targetColor3"] = m_targetColor3;
+    body["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = LGManager::get()->getArgonToken();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(nullptr, "Promoting to booster...");
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/promote_booster"),
+        [popupRef](web::WebResponse res) {
+            if (!popupRef) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Failed to promote. Try again later");
+                return;
+            }
+
+            auto json = res.json().unwrap();
+            auto isOk = json["ok"].asBool().unwrapOrDefault();
+
+            if (!isOk) {
+                popupRef->showFailMessage("Failed to promote. Try again later");
+            } else {
+                popupRef->showSuccessMessage("Success! User promoted to booster");
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
+                
+            }
+        }
+    );
+}
+
+void UserManagePopup::onDemoteBoosterBtn(CCObject* sender) {
+    matjson::Value body;
+
+    body["targetAccountID"] = m_targetAccountID;
+    body["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = LGManager::get()->getArgonToken();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(nullptr, "Demoting booster...");
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/demote_booster"),
+        [popupRef](web::WebResponse res) {
+            if (!popupRef) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Failed to demote. Try again later");
+                return;
+            }
+
+            auto json = res.json().unwrap();
+            auto isOk = json["ok"].asBool().unwrapOrDefault();
+
+            if (!isOk) {
+                popupRef->showFailMessage("Failed to demote. Try again later");
+            } else {
+                popupRef->showSuccessMessage("Success! User demoted from booster");
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
+            }
+        }
+    );
+}
+
 void UserManagePopup::onDemoteBtn(CCObject* sender) {
     matjson::Value body;
 
@@ -259,19 +588,7 @@ void UserManagePopup::onDemoteBtn(CCObject* sender) {
                 return;
             } else {
                 popupRef->showSuccessMessage("Success! User demoted");
-
-                auto btnMenu = demoteRef->getParent();
-
-                demoteRef->removeFromParent();
-
-                auto promoteBtn = CCMenuItemSpriteExtra::create(
-                    ButtonSprite::create("Promote Helper"),
-                    self,
-                    menu_selector(UserManagePopup::onPromoteBtn)
-                );
-                btnMenu->addChild(promoteBtn);
-                btnMenu->updateLayout();
-
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
                 return;
             }
         }
@@ -322,18 +639,7 @@ void UserManagePopup::onPromoteBtn(CCObject* sender) {
                 return;
             } else {
                 popupRef->showSuccessMessage("Success! User promoted");
-                
-                auto btnMenu = promoteRef->getParent();
-
-                promoteRef->removeFromParent();
-
-                auto demoteBtn = CCMenuItemSpriteExtra::create(
-                    ButtonSprite::create("Demote Helper", "goldFont.fnt", "GJ_button_02.png"),
-                    self,
-                    menu_selector(UserManagePopup::onDemoteBtn)
-                );
-                btnMenu->addChild(demoteBtn);
-                btnMenu->updateLayout();
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
 
                 return;
             }
@@ -385,18 +691,7 @@ void UserManagePopup::onPromoteAdminBtn(CCObject* sender) {
                 return;
             } else {
                 popupRef->showSuccessMessage("Success! User promoted");
-                
-                auto btnMenu = promoteRef->getParent();
-
-                promoteRef->removeFromParent();
-
-                auto demoteBtn = CCMenuItemSpriteExtra::create(
-                    ButtonSprite::create("Demote Admin", "goldFont.fnt", "GJ_button_02.png"),
-                    self,
-                    menu_selector(UserManagePopup::onDemoteAdminBtn)
-                );
-                btnMenu->addChild(demoteBtn);
-                btnMenu->updateLayout();
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
 
                 return;
             }
@@ -448,18 +743,7 @@ void UserManagePopup::onPromoteContributorBtn(CCObject* sender) {
                 return;
             } else {
                 popupRef->showSuccessMessage("Success! User promoted");
-
-                auto btnMenu = promoteRef->getParent();
-
-                promoteRef->removeFromParent();
-
-                auto demoteBtn = CCMenuItemSpriteExtra::create(
-                    ButtonSprite::create("Demote Contrib", "goldFont.fnt", "GJ_button_02.png"),
-                    self,
-                    menu_selector(UserManagePopup::onDemoteContributorBtn)
-                );
-                btnMenu->addChild(demoteBtn);
-                btnMenu->updateLayout();
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
 
                 return;
             }
@@ -505,18 +789,7 @@ void UserManagePopup::onDemoteContributorBtn(CCObject* sender) {
                 return;
             } else {
                 popupRef->showSuccessMessage("Success! User demoted");
-
-                auto btnMenu = demoteRef->getParent();
-
-                demoteRef->removeFromParent();
-
-                auto promoteBtn = CCMenuItemSpriteExtra::create(
-                    ButtonSprite::create("Promote Contrib"),
-                    self,
-                    menu_selector(UserManagePopup::onPromoteContributorBtn)
-                );
-                btnMenu->addChild(promoteBtn);
-                btnMenu->updateLayout();
+                Notification::create("Please restart User Manage Panel to fetch data.", NotificationIcon::Info)->show();
 
                 return;
             }

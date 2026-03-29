@@ -1,6 +1,8 @@
 #include "ManageLevel.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/loader/Log.hpp"
+#include "Geode/ui/BasedButtonSprite.hpp"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
@@ -9,10 +11,14 @@
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
+#include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GJDifficultySprite.hpp>
 #include <Geode/binding/LevelInfoLayer.hpp>
+#include <Geode/binding/UploadActionPopup.hpp>
+#include <matjson.hpp>
 
 #include "../other/LGManager.hpp"
+#include "AddNotePopup.hpp"
 #include "Geode/utils/web.hpp"
 
 using namespace geode::prelude;
@@ -536,18 +542,19 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
 
     auto notesMenu = CCMenu::create();
     notesMenu->setID("notes_menu");
-    notesMenu->setLayout(ColumnLayout::create()->setGap(10.f));
+    notesMenu->setLayout(RowLayout::create()->setGap(10.f));
 
     m_notesMenu->addChildAtPosition(notesMenu, Anchor::Center);
 
-    auto notReadyLockBtn = CCMenuItemSpriteExtra::create(
-        CCSprite::createWithSpriteFrameName("GJ_lockGray_001.png"),
+    auto addNoteBtn = CCMenuItemSpriteExtra::create(
+        CircleButtonSprite::createWithSprite("button_edit_note.png"_spr, 1.f, CircleBaseColor::Green),
         this,
-        menu_selector(ManageLevel::onNotReadyBtn)
+        menu_selector(ManageLevel::onAddNoteButton)
     );
+    addNoteBtn->setEnabled(false);
+    notesMenu->addChild(addNoteBtn);
 
-    notReadyLockBtn->setID("not_ready_lock_btn");
-    notesMenu->addChild(notReadyLockBtn);
+    m_addNoteBtn = addNoteBtn;
 
     notesMenu->updateLayout();
 
@@ -602,6 +609,30 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
             bool isCoin = json["coin"].asBool().unwrapOrDefault();
             bool isDemon = json["demon"].asBool().unwrapOrDefault();
             std::string addedBy = json["added_by"].asString().unwrapOrDefault();
+            bool noteExists = json["noteExists"].asBool().unwrapOrDefault();
+            if (noteExists) {
+                auto noteAddParent = self->m_addNoteBtn->getParent();
+                self->m_addNoteBtn->removeFromParent();
+
+                auto readdNoteBtn = CCMenuItemSpriteExtra::create(
+                CircleButtonSprite::createWithSprite("button_edit_note.png"_spr, 1.f, CircleBaseColor::Blue),
+                self,
+                menu_selector(ManageLevel::onAddNoteButton)
+                );
+
+                auto deleteNoteBtn = CCMenuItemSpriteExtra::create(
+                    CircleButtonSprite::createWithSprite("button_edit_note.png"_spr, 1.f, CircleBaseColor::Red),
+                self,
+                menu_selector(ManageLevel::onDeleteNoteButton)
+                );
+
+                noteAddParent->addChild(deleteNoteBtn);
+                noteAddParent->addChild(readdNoteBtn);
+
+                noteAddParent->updateLayout();
+            } else {
+                self->m_addNoteBtn->setEnabled(true);
+            }
 
             auto filtersMenu = self->m_starLoading ? self->m_starLoading->getParent() : nullptr;
 
@@ -777,6 +808,44 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
     );
 
     return true;
+}
+
+void ManageLevel::onAddNoteButton(CCObject* sender) {
+    AddNotePopup::create(m_levelID, m_levelName)->show();
+}
+
+void ManageLevel::onDeleteNoteButton(CCObject* sender) {
+    web::WebRequest req;
+
+    matjson::Value body;
+
+    body["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = LGManager::get()->getArgonToken();
+    body["levelID"] = m_levelID;
+    body["levelName"] = m_levelName;
+    body["deletedBy"] = GJAccountManager::get()->m_username;
+
+    req.bodyJSON(body);
+
+    auto uPopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Deleting note...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    m_listener.spawn(
+        req.post("https://delivel.tech/grindapi/delete_note"),
+        [uPopupRef](web::WebResponse res) {
+            if (!uPopupRef) return;
+            if (!res.ok()) {
+                uPopupRef->showFailMessage("Failed! Try again later.");
+                log::error("req failed, code: {}", res.code());
+                return;
+            } else {
+                uPopupRef->showSuccessMessage("Success! Note deleted.");
+                return;
+            }
+        }
+    );
 }
 
 void ManageLevel::onCoinSwitcher(CCObject* sender) {

@@ -18,6 +18,7 @@
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/ui/Popup.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/cocos.hpp"
 #include "Geode/utils/web.hpp"
 
@@ -30,9 +31,9 @@
 
 using namespace geode::prelude;
 
-LGSettingsLayer* LGSettingsLayer::create() {
+LGSettingsLayer* LGSettingsLayer::create(bool isFromPet) {
     auto ret = new LGSettingsLayer();
-    if (ret && ret->init()) {
+    if (ret && ret->init(isFromPet)) {
         ret->autorelease();
         return ret;
     }
@@ -40,12 +41,12 @@ LGSettingsLayer* LGSettingsLayer::create() {
     return nullptr;
 }
 
-bool LGSettingsLayer::init() {
+bool LGSettingsLayer::init(bool isFromPet) {
     if (!BaseLayer::init()) return false;
 
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         auto tab = cue::ListNode::create({ 356.f, 220.f }, cue::Brown, cue::ListBorderStyle::SlimLevels);
         tab->setZOrder(6);
         tab->setPosition(winSize / 2.f);
@@ -60,7 +61,8 @@ bool LGSettingsLayer::init() {
 
     m_grindTab = m_tabs[0];
     m_appearanceTab = m_tabs[1];
-    m_staffTab = m_tabs[2];
+    m_petTab = m_tabs[2];
+    m_staffTab = m_tabs[3];
 
     m_grindTab->setVisible(true);
     m_currentTab = m_grindTab;
@@ -72,6 +74,7 @@ bool LGSettingsLayer::init() {
 
     createGrindTab();
     createAppearanceTab();
+    createPetTab();
     createStaffTab();
 
     auto resetSpr = CCSprite::createWithSpriteFrameName("GJ_deleteSongBtn_001.png");
@@ -88,6 +91,14 @@ bool LGSettingsLayer::init() {
     resetBtn->setPosition({ winSize.width - 22.f, 22.f });
     resetMenu->addChild(resetBtn);
     this->addChild(resetMenu);
+
+    if (isFromPet) {
+        m_petTabBtn->toggle(true);
+        m_grindTabBtn->toggle(false);
+        m_currentTab->setVisible(false);
+        m_currentTab = m_petTab;
+        m_currentTab->setVisible(true);
+    }
 
     setMouseEnabled(true);
 
@@ -135,8 +146,9 @@ void LGSettingsLayer::makeTabs() {
 
     auto tabsMenu = CCMenu::create();
     tabsMenu->setLayout(RowLayout::create()->setGap(25.f));
+    tabsMenu->setScale(0.85f);
 
-    tabsMenu->setPosition({ winSize.width / 2.f, tabsY });
+    tabsMenu->setPosition({ winSize.width / 2.f, tabsY - 2.f });
     tabsMenu->setZOrder(5);
 
     this->addChild(tabsMenu);
@@ -157,6 +169,14 @@ void LGSettingsLayer::makeTabs() {
         menu_selector(LGSettingsLayer::onTabBtn)
     );
 
+    auto petTabBtn = TabButton::create(
+        TabBaseColor::Unselected,
+        TabBaseColor::UnselectedDark,
+        "Pet",
+        this,
+        menu_selector(LGSettingsLayer::onTabBtn)
+    );
+
     auto staffTabBtn = TabButton::create(
         TabBaseColor::Unselected,
         TabBaseColor::UnselectedDark,
@@ -167,14 +187,17 @@ void LGSettingsLayer::makeTabs() {
 
     m_tabButtons.push_back(grindTabBtn);
     m_tabButtons.push_back(appearanceTabBtn);
+    m_tabButtons.push_back(petTabBtn);
     m_tabButtons.push_back(staffTabBtn);
 
     m_grindTabBtn = m_tabButtons[0];
     m_appearanceTabBtn = m_tabButtons[1];
-    m_staffTabBtn = m_tabButtons[2];
+    m_petTabBtn = m_tabButtons[2];
+    m_staffTabBtn = m_tabButtons[3];
 
     tabsMenu->addChild(grindTabBtn);
     tabsMenu->addChild(appearanceTabBtn);
+    tabsMenu->addChild(petTabBtn);
     tabsMenu->addChild(staffTabBtn);
 
     tabsMenu->updateLayout();
@@ -490,10 +513,28 @@ void LGSettingsLayer::createAppearanceTab() {
     tab->updateLayout();
 }
 
+void LGSettingsLayer::createPetTab() {
+    auto tab = m_petTab;
+
+    tab->addCell(makeHeader("Pet Settings"));
+
+    tab->addCell(makeToggleCell(
+        "Disable Pet",
+        "Removes Grinding Pet button from Level Grind Layer.",
+        "disable-pet",
+        menu_selector(LGSettingsLayer::onDisablePet),
+        this
+    ));
+
+    tab->updateLayout();
+}
+
 void LGSettingsLayer::createStaffTab() {
     auto tab = m_staffTab;
 
-    tab->addCell(makeHeader("Staff Settings"));
+    tab->addCell(makeHeader("Other Settings"));
+
+    // Request Staff Access
 
     auto reqCell = CCMenu::create();
     reqCell->ignoreAnchorPointForPosition(false);
@@ -569,6 +610,148 @@ void LGSettingsLayer::createStaffTab() {
     reqCell->addChild(reqBtn);
 
     tab->addCell(reqCell);
+    tab->updateLayout();
+
+    // Sync data
+
+    auto syncCell = CCMenu::create();
+    syncCell->ignoreAnchorPointForPosition(false);
+    syncCell->setContentSize(CELL_SIZE);
+
+    auto labelSync = CCLabelBMFont::create("Sync data", "bigFont.fnt");
+    labelSync->limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f);
+    labelSync->setAnchorPoint({ 0.f, 0.5f });
+    labelSync->setPosition({ 8.f, CELL_SIZE.height / 2.f });
+    syncCell->addChild(labelSync);
+
+    auto infoSyncSpr = CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png");
+    infoSyncSpr->setScale(0.5f);
+    auto infoSync = CCMenuItemExt::createSpriteExtra(
+        infoSyncSpr,
+        [](CCObject*) {
+            FLAlertLayer::create(
+                "Sync data",
+                "Updates such data as Staff badges and notes.",
+                "OK"
+            )->show();
+        }
+    );
+    infoSync->setPosition({ 8.f + labelSync->getScaledContentWidth() + 10.f, CELL_SIZE.height / 2.f });
+    syncCell->addChild(infoSync);
+
+    auto syncBtnSpr = ButtonSprite::create("Sync", "goldFont.fnt", "GJ_button_04.png", 0.8f);
+    syncBtnSpr->setScale(0.55f);
+    auto syncBtn = CCMenuItemExt::createSpriteExtra(syncBtnSpr, [](CCObject*) {
+        web::WebRequest req;
+
+        auto uPopup = UploadActionPopup::create(nullptr, "Syncing data...");
+        uPopup->show();
+
+        LGManager::get()->getNotes().clear();
+        LGManager::get()->getStaff().admins.clear();
+        LGManager::get()->getStaff().helpers.clear();
+        LGManager::get()->getStaff().contributors.clear();
+        LGManager::get()->getStaff().artists.clear();
+        LGManager::get()->getStaff().boosters.clear();
+        
+        auto uPopupRef = Ref(uPopup);
+
+        async::spawn(
+            req.get("https://delivel.tech/grindapi/bootup_get"),
+            [uPopupRef](web::WebResponse res) {
+                if (!uPopupRef) return;
+                if (!res.ok()) {
+                    log::warn("get_staff returned non-ok status: {}", res.code());
+                    uPopupRef->showFailMessage("Failed! Try again later.");
+                    return;
+                }
+
+                auto jsonRes = res.json();
+                if (!jsonRes) {
+                    log::warn("Failed to parse get_staff JSON");
+                    uPopupRef->showFailMessage("Failed! Try again later.");
+                    return;
+                }
+
+                auto json = jsonRes.unwrap();
+
+                bool isOK = json["ok"].asBool().unwrapOrDefault();
+                if (!isOK) {
+                    log::warn("Server returned ok=false for get_staff");
+                    uPopupRef->showFailMessage("Failed! Try again later.");
+                    return;
+                }
+
+                auto& staff = LGManager::get()->getStaff();
+
+                auto staffs = json["staff"];
+
+                auto admins = staffs["admins"].asArray();
+                auto helpers = staffs["helpers"].asArray();
+                auto contributors = staffs["contributors"].asArray();
+                auto artists = staffs["artists"].asArray();
+                auto boosters = staffs["boosters"].asArray();
+
+                for (auto const& val : admins.unwrap()) {
+                    auto accountId = val["accountId"].asInt();
+                    if (!accountId) continue;
+                    staff.admins.push_back(accountId.unwrapOrDefault());
+                }
+
+                for (auto const& val : helpers.unwrap()) {
+                    auto accountId = val["accountId"].asInt();
+                    if (!accountId) continue;
+                    staff.helpers.push_back(accountId.unwrapOrDefault());
+                }
+
+                for (auto const& val : contributors.unwrap()) {
+                    auto accountId = val["accountId"].asInt();
+                    if (!accountId) continue;
+                    staff.contributors.push_back(accountId.unwrapOrDefault());
+                }
+
+                for (auto const& val : artists.unwrap()) {
+                    auto accountId = val["accountId"].asInt();
+                    if (!accountId) continue;
+                    staff.artists.push_back(accountId.unwrapOrDefault());
+                }
+
+                for (auto const& val : boosters.unwrap()) {
+                    auto accountId = val["accountId"].asInt();
+                    if (!accountId) continue;
+                    staff.boosters.push_back(accountId.unwrapOrDefault());
+                }
+
+                auto notes = json["notes"].asArray();
+
+                if (!notes) {
+                    log::warn("bootup_get JSON does not contain notes array");
+                    uPopupRef->showFailMessage("Failed! Try again later.");
+                    return;
+                }
+
+                for (auto const& val : notes.unwrap()) {
+                    auto levelID = val["levelID"].asInt();
+                    auto note = val["note"].asString();
+
+                    if (!levelID || !note) {
+                        continue;
+                    }
+
+                    auto& notesMap = LGManager::get()->getNotes();
+                    notesMap[levelID.unwrap()] = note.unwrap();
+                }
+
+                uPopupRef->showSuccessMessage("Success! Synced.");
+                return;
+            }
+        );
+    });
+
+    syncBtn->setPosition({ CELL_SIZE.width - 25.f, CELL_SIZE.height / 2.f });
+    syncCell->addChild(syncBtn);
+
+    tab->addCell(syncCell);
     tab->updateLayout();
 }
 
@@ -720,6 +903,10 @@ void LGSettingsLayer::onNoBadgeForMods(CCObject* sender) {
 
 void LGSettingsLayer::onDisableBadges(CCObject* sender) {
     setBoolSetting("disable-badges", getIncomingToggleValue(sender), false);
+}
+
+void LGSettingsLayer::onDisablePet(CCObject* sender) {
+    setBoolSetting("disable-pet", getIncomingToggleValue(sender), false);
 }
 
 void LGSettingsLayer::onBackgroundSpeedArrow(CCObject* sender) {

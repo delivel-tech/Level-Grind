@@ -1,3 +1,8 @@
+# 1.4.0
+- Daily players achievements!
+- Grinding Pet mod functionality has been moved to Level Grind.
+- Minor improvements.
+
 # 1.3.1
 - Small changes in Manage Level panel for Staff.
 

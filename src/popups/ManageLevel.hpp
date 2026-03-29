@@ -1,3 +1,4 @@
+#include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/LoadingSpinner.hpp"
@@ -77,6 +78,8 @@ public:
     CCMenuItemSpriteExtra* m_lockBtn = nullptr;
     CCMenuItemSpriteExtra* m_unlockBtn = nullptr;
 
+    CCMenuItemSpriteExtra* m_addNoteBtn = nullptr;
+
     void onClosePopup(::UploadActionPopup* popup) override;
 
 protected:
@@ -94,6 +97,9 @@ protected:
 
     void onLockedBtn(CCObject* sender);
     void onNotReadyBtn(CCObject* sender);
+
+    void onAddNoteButton(CCObject* sender);
+    void onDeleteNoteButton(CCObject* sender);
 
     geode::async::TaskHolder<geode::utils::web::WebResponse> m_listener;
     geode::async::TaskHolder<geode::utils::web::WebResponse> m_listener2;

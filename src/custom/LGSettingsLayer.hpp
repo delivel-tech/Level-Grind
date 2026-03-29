@@ -12,15 +12,16 @@ class ColorChannelSprite;
 
 class LGSettingsLayer : public BaseLayer {
 public:
-    static LGSettingsLayer* create();
+    static LGSettingsLayer* create(bool isFromPet);
 
 private:
-    bool init() override;
+    bool init(bool isFromPet);
     void scrollWheel(float y, float x) override;
 
     void selectTab(cue::ListNode* tab);
     void createGrindTab();
     void createAppearanceTab();
+    void createPetTab();
     void createStaffTab();
     void refreshBackgroundColorUI();
     bool getIncomingToggleValue(CCObject* sender) const;
@@ -63,6 +64,7 @@ private:
     void onDisableCustomBackground(CCObject* sender);
     void onNoBadgeForMods(CCObject* sender);
     void onDisableBadges(CCObject* sender);
+    void onDisablePet(CCObject* sender);
 
     void onBackgroundSpeedArrow(CCObject* sender);
     void onBackgroundColorPick(CCObject* sender);
@@ -76,10 +78,12 @@ private:
     std::vector<TabButton*> m_tabButtons;
     TabButton* m_grindTabBtn = nullptr;
     TabButton* m_appearanceTabBtn = nullptr;
+    TabButton* m_petTabBtn = nullptr;
     TabButton* m_staffTabBtn = nullptr;
     cue::ListNode* m_currentTab = nullptr;
     cue::ListNode* m_grindTab = nullptr;
     cue::ListNode* m_appearanceTab = nullptr;
+    cue::ListNode* m_petTab = nullptr;
     cue::ListNode* m_staffTab = nullptr;
     std::unordered_map<std::string, CCMenuItemToggler*> m_boolTogglers;
     std::unordered_map<CCMenuItemSpriteExtra*, float> m_speedArrowSteps;

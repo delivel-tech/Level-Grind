@@ -167,6 +167,8 @@ bool LGCreditsPopup::init() {
                 else if (text == "Admins") infoTag = 2;
                 else if (text == "Helpers") infoTag = 3;
                 else if (text == "Contributors") infoTag = 4;
+                else if (text == "Artists") infoTag = 5;
+                else if (text == "Boosters") infoTag = 6;
                 infoBtn->setTag(infoTag);
 
                 auto labelWidth = label->getContentSize().width * label->getScale();
@@ -304,12 +306,34 @@ bool LGCreditsPopup::init() {
                 }
             }
 
+            if (json.contains("artists") && json["artists"].isArray()) {
+                auto artists = json["artists"].asArray().unwrap();
+                if (!artists.empty()) {
+                    hasAny = true;
+                    addHeader("Artists");
+                    for (auto const& val : artists) {
+                        addPlayer(val, false, false);
+                    }
+                }
+            }
+
             if (json.contains("contributors") && json["contributors"].isArray()) {
                 auto contributors = json["contributors"].asArray().unwrap();
                 if (!contributors.empty()) {
                     hasAny = true;
                     addHeader("Contributors");
                     for (auto const& val : contributors) {
+                        addPlayer(val, false, false);
+                    }
+                }
+            }
+
+            if (json.contains("boosters") && json["boosters"].isArray()) {
+                auto boosters = json["boosters"].asArray().unwrap();
+                if (!boosters.empty()) {
+                    hasAny = true;
+                    addHeader("Boosters");
+                    for (auto const& val : boosters) {
                         addPlayer(val, false, false);
                     }
                 }
@@ -384,6 +408,24 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
             "OK"
         )->show();
         return;
+    }
+
+    if (tag == 5) {
+        FLAlertLayer::create(
+            "Artists",
+            "<cy>Artists</c> are responsible for <cg>visual part of the mod</c>. " \
+            "Their <cp>work is greatly appreciated</c>!",
+            "OK"
+        )->show();
+    }
+
+    if (tag == 6) {
+        FLAlertLayer::create(
+            "Boosters",
+            "<cy>Boosters</c> boost the <cp>Level Grind Discord server</c>. " \
+            "Their <cy>support is greatly appreciated</c>!",
+            "OK"
+        )->show();
     }
 }
 

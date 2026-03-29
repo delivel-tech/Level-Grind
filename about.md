@@ -9,6 +9,12 @@ Level Grind offers you <cy>additional searching options</c>, such as <cb>version
 This <cg>database</c> is actively filled by our <cp>helpers</c>,  
 and we hope you will find this mod a <cy>great place</c> to evolve your <cr>account stats</c>!
 
+### <cy>Grinding Pet</c>
+
+Since <cp>1.4.0</c>, <cy>Level Grind</c> introduces <cg>Grinding Pet</c>!
+<cg>Grinding Pet</c> is a <cb>pet</c> that you can <cy>evolve by grinding stats</c>.
+In order to use the pet, click the <cj>cube button</c> on the main layer of the mod.
+
 ### <cy>How to use:</c>
 
 * Go to <cg>search layer</c>, find a <cy>loupe button</c> and click it.
