@@ -760,7 +760,7 @@ void LevelGrindLayer::onPetBtn(CCObject* sender) {
 
 	matjson::Value body;
 	body["accountId"] = GJAccountManager::sharedState()->m_accountID;
-	body["username"] = GJAccountManager::sharedState()->m_username;
+	body["username"] = GJAccountManager::sharedState()->m_username.c_str();
 	body["token"] = LGManager::get()->getArgonToken();
 	if (PetManager::get()->shouldUpdatePetStars()) {
 		body["shouldUpdateStars"] = PetManager::get()->shouldUpdatePetStars();
