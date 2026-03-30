@@ -1,3 +1,7 @@
+# 1.4.2
+- Updated Argon version.
+- Minor fixes.
+
 # 1.4.1
 - Bugfixes.
 

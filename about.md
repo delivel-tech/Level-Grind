@@ -44,5 +44,6 @@ This achievement can be found <cg>on the main layer of the mod</c>.
 
 ### <cy>Credits:</c>
 
-* <cp>Mod logo & sprites</c> - [<cy>iDust</c>](user:20851829)
+* <cp>Mod logo & sprites</c> - [<cy>iDust</c>](user:20851829)!
+* Making <cy>Argon and cue</c> - [<cr>dankmeme01</c>](user:9735891) :3
 * A lot of <cg>levels</c> in the database - <cp>our helpers</c> <3

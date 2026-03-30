@@ -7,6 +7,7 @@
 #include "../popups/ManageLevel.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/ui/BasedButtonSprite.hpp"
+#include "Geode/ui/Popup.hpp"
 
 using namespace geode::prelude;
 
@@ -71,11 +72,24 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 		if (m_fields->isRated) {
 			ManageLevel::create(m_level, m_difficultySprite)->show();
 		} else {
-			FLAlertLayer::create(
-				"Level Not Rated",
-				"This level <cr>has not been rated</c>. You cannot add unrated levels to the <cy>Level Grind</c>.",
-				"OK"
-			)->show();
+			if (!LGManager::get()->isAdmin()) {
+				FLAlertLayer::create(
+					"Level Not Rated!",
+					"This level <cr>has not been rated</c>. You cannot add unrated levels to the <cy>Level Grind</c>.",
+					"OK"
+				)->show();
+			} else {
+				createQuickPopup(
+					"Level Not Rated!",
+					"This level <cr>has not been rated</c>. You cannot add unrated levels to the <cy>Level Grind</c>. Do you <cp>still want to open</c>?",
+					"Cancel", "Open",
+					[&](auto, bool btn2) {
+						if (btn2) {
+							ManageLevel::create(m_level, m_difficultySprite)->show();
+						}
+					}
+				);
+			}
 		}
 	}
 };

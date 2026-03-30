@@ -5,6 +5,8 @@
 #include "../other/LGManager.hpp"
 #include "../popups/UserManagePopup.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
+#include "Geode/ui/Popup.hpp"
+#include "Geode/utils/web.hpp"
 
 using namespace geode::prelude;
 
@@ -181,18 +183,23 @@ class $modify(UserManage, ProfilePage) {
 	void onArtistBadge(CCObject* sender) {
 		FLAlertLayer::create(
 			"Grind Artist",
-			"This user is an <cp>Artist</c> on the <cy>Level Grind</c> mod." \
+			"This user is an <cp>Artist</c> on the <cy>Level Grind</c> mod. " \
 			"They are <cr>responsible for the visual part</c> of the mod",
 			"OK"
 		)->show();
 	}
 
 	void onBoosterBadge(CCObject* sender) {
-		FLAlertLayer::create(
+		createQuickPopup(
 			"Grind Booster",
-			"This user is a <cp>Booster</c> of <cy>Level Grind Discord server</c>." \
-			"Their <cg>support is greatly appreciated</c>!",
-			"OK"
-		)->show();
+			"This user is a <cp>Booster</c> of <cy>Level Grind Discord server</c>. " \
+			"Their <cg>support is greatly appreciated</c>! <cl>Join the server?</c>",
+			"Cancel", "Join",
+			[&](auto, bool btn2) {
+				if (btn2) {
+					web::openLinkInBrowser("https://discord.gg/tmf5xtCX5y");
+				}
+			}
+		);
 	}
 };
