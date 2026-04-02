@@ -22,6 +22,9 @@ public:
         int petMoons;
         int petLevel;
         int petRarity;
+        bool a1bought;
+        bool a2bought;
+        bool a3bought;
         bool isBanned;
         std::string banReason;
     };
@@ -57,6 +60,7 @@ private:
     void onInfoBtn(CCObject* sender);
     void onRenameBtn(CCObject* sender);
     void onUpgradeBtn(CCObject* sender);
+    void onShopBtn(CCObject* sender);
 
     PetData parsePetData(web::WebResponse res);
 };

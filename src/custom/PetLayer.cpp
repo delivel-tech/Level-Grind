@@ -26,6 +26,7 @@
 #include "../popups/LGPetRenamePopup.hpp"
 #include "../popups/LGPetUpgradePopup.hpp"
 #include "../other/PetManager.hpp"
+#include "PetShopLayer.hpp"
 
 using namespace geode::prelude;
 
@@ -58,6 +59,9 @@ PetLayer::PetData PetLayer::parsePetData(web::WebResponse res) {
     data.petMoons = json["petMoons"].asInt().unwrapOrDefault();
     data.petLevel = json["petLevel"].asInt().unwrapOrDefault();
     data.petRarity = json["petRarity"].asInt().unwrapOrDefault();
+    data.a1bought = json["a1b"].asInt().unwrapOrDefault();
+    data.a2bought = json["a2b"].asInt().unwrapOrDefault();
+    data.a3bought = json["a3b"].asInt().unwrapOrDefault();
     data.isBanned = json["isBanned"].asBool().unwrapOrDefault();
     if (data.isBanned) {
         data.banReason = json["banReason"].asString().unwrapOrDefault();
@@ -327,6 +331,21 @@ bool PetLayer::init(web::WebResponse response) {
   rightSideMenu->addChild(settingsBtn);
   rightSideMenu->updateLayout();
 
+  auto leftSideMenu = CCMenu::create();
+  leftSideMenu->setLayout(ColumnLayout::create()->setAxisReverse(true)->setGap(15));
+  leftSideMenu->setID("left-side-menu");
+  leftSideMenu->setPosition({ 25.f, mainPanelCS.height / 2.f });
+  mainPanel->addChild(leftSideMenu);
+
+  auto shopBtn = CCMenuItemSpriteExtra::create(
+    CCSprite::createWithSpriteFrameName("shadowShardBig_001.png"),
+    this,
+    menu_selector(PetLayer::onShopBtn)
+  );
+  shopBtn->setID("shop-btn");
+  leftSideMenu->addChild(shopBtn);
+  leftSideMenu->updateLayout();
+
   auto progressBar = ProgressBar::create(ProgressBarStyle::Slider);
   progressBar->setID("progress-bar");
   progressBar->setPosition(
@@ -395,6 +414,10 @@ bool PetLayer::init(web::WebResponse response) {
   progressBar->addChildAtPosition(upgStarsLabel, Anchor::Right, { 5.f, 0.f });
 
   return true;
+}
+
+void PetLayer::onShopBtn(CCObject* sender) {
+    PetShopLayer::create(m_petData)->open();
 }
 
 bool PetLayer::maxLevel(int petLevel) {
