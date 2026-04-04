@@ -7,6 +7,7 @@
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/NineSlice.hpp"
+#include "Geode/ui/Popup.hpp"
 #include "Geode/utils/cocos.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
@@ -916,39 +917,50 @@ void ManageLevel::onSetEventBtn(CCObject* sender) {
     auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
     if (!btn) return;
 
-    static const char* slotNames[] = {"daily", "dailyPlat", "weekly", "weeklyPlat"};
-    static const int durations[]   = {86400, 86400, 604800, 604800};
-
     int tag = btn->getTag();
     if (tag < 0 || tag > 3) return;
 
-    matjson::Value body;
-    body["accountID"] = GJAccountManager::get()->m_accountID;
-    body["token"]     = LGManager::get()->getArgonToken();
-    body["slot"]      = slotNames[tag];
-    body["levelId"]   = m_levelID;
-    body["duration"]  = durations[tag];
+    createQuickPopup(
+        "Admin: Set Event",
+        "Are you sure you want to set this level as an event?",
+        "Cancel", "Set Event",
+        [this, tag](auto, bool btn2) {
+            if (!btn2) return;
 
-    web::WebRequest req;
-    req.bodyJSON(body);
+            static const char* slotNames[] = {"daily", "dailyPlat", "weekly", "weeklyPlat"};
+            static const int durations[]   = {86400, 86400, 604800, 604800};
 
-    auto upopup = UploadActionPopup::create(
-        typeinfo_cast<::UploadPopupDelegate*>(this),
-        "Setting event..."
-    );
-    upopup->show();
+            matjson::Value body;
+            body["accountID"] = GJAccountManager::get()->m_accountID;
+            body["token"]     = LGManager::get()->getArgonToken();
+            body["slot"]      = slotNames[tag];
+            body["levelId"]   = m_levelID;
+            body["levelName"] = m_levelName;
+            body["addedBy"]   = GJAccountManager::get()->m_username.c_str();
+            body["duration"]  = durations[tag];
 
-    Ref<UploadActionPopup> popupRef = upopup;
+            web::WebRequest req;
+            req.bodyJSON(body);
 
-    m_eventListener.spawn(
-        req.post("https://delivel.tech/grindapi/set_event"),
-        [popupRef](web::WebResponse res) {
-            if (!popupRef) return;
-            if (!res.ok()) {
-                popupRef->showFailMessage("Failed. Try again later.");
-                return;
-            }
-            popupRef->showSuccessMessage("Success! Event set.");
+            auto upopup = UploadActionPopup::create(
+                typeinfo_cast<::UploadPopupDelegate*>(this),
+                "Setting event..."
+            );
+            upopup->show();
+
+            Ref<UploadActionPopup> popupRef = upopup;
+
+            m_eventListener.spawn(
+                req.post("https://delivel.tech/grindapi/set_event"),
+                [popupRef](web::WebResponse res) {
+                    if (!popupRef) return;
+                    if (!res.ok()) {
+                        popupRef->showFailMessage("Failed. Try again later.");
+                        return;
+                    }
+                    popupRef->showSuccessMessage("Success! Event set.");
+                }
+            );
         }
     );
 }
@@ -957,36 +969,45 @@ void ManageLevel::onDeleteEventBtn(CCObject* sender) {
     auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
     if (!btn) return;
 
-    static const char* slotNames[] = {"daily", "dailyPlat", "weekly", "weeklyPlat"};
-
     int tag = btn->getTag();
     if (tag < 0 || tag > 3) return;
 
-    matjson::Value body;
-    body["accountID"] = GJAccountManager::get()->m_accountID;
-    body["token"] = LGManager::get()->getArgonToken();
-    body["slot"] = slotNames[tag];
+    createQuickPopup(
+        "Admin: Delete Event",
+        "Are you sure you want to delete this event level?",
+        "Cancel", "Delete Event",
+        [this, tag](auto, bool btn2) {
+            if (!btn2) return;
 
-    web::WebRequest req;
-    req.bodyJSON(body);
+            static const char* slotNames[] = {"daily", "dailyPlat", "weekly", "weeklyPlat"};
 
-    auto upopup = UploadActionPopup::create(
-        typeinfo_cast<::UploadPopupDelegate*>(this),
-        "Removing event..."
-    );
-    upopup->show();
+            matjson::Value body;
+            body["accountID"] = GJAccountManager::get()->m_accountID;
+            body["token"]     = LGManager::get()->getArgonToken();
+            body["slot"]      = slotNames[tag];
 
-    Ref<UploadActionPopup> popupRef = upopup;
+            web::WebRequest req;
+            req.bodyJSON(body);
 
-    m_eventListener.spawn(
-        req.post("https://delivel.tech/grindapi/delete_event"),
-        [popupRef](web::WebResponse res) {
-            if (!popupRef) return;
-            if (!res.ok()) {
-                popupRef->showFailMessage("Failed. Try again later.");
-                return;
-            }
-            popupRef->showSuccessMessage("Success! Event removed.");
+            auto upopup = UploadActionPopup::create(
+                typeinfo_cast<::UploadPopupDelegate*>(this),
+                "Removing event..."
+            );
+            upopup->show();
+
+            Ref<UploadActionPopup> popupRef = upopup;
+
+            m_eventListener.spawn(
+                req.post("https://delivel.tech/grindapi/delete_event"),
+                [popupRef](web::WebResponse res) {
+                    if (!popupRef) return;
+                    if (!res.ok()) {
+                        popupRef->showFailMessage("Failed. Try again later.");
+                        return;
+                    }
+                    popupRef->showSuccessMessage("Success! Event removed.");
+                }
+            );
         }
     );
 }

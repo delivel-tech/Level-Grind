@@ -67,6 +67,15 @@ PetLayer::PetData PetLayer::parsePetData(web::WebResponse res) {
     Mod::get()->setSavedValue("a-1-bought", data.a1bought);
     Mod::get()->setSavedValue("a-2-bought", data.a2bought);
     Mod::get()->setSavedValue("a-3-bought", data.a3bought);
+    if (!data.a1bought) {
+        Mod::get()->setSavedValue("a-1-enabled", false);
+    }
+    if (!data.a3bought) {
+        Mod::get()->setSavedValue("a-3-enabled", false);
+    }
+    if (!data.a2bought) {
+        Mod::get()->setSavedValue("a-2-enabled", false);
+    }
     data.isBanned = json["isBanned"].asBool().unwrapOrDefault();
     if (data.isBanned) {
         data.banReason = json["banReason"].asString().unwrapOrDefault();

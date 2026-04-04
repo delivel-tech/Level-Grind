@@ -1,3 +1,6 @@
+# 1.5.1
+- Bugfix
+
 # 1.5.0
 - Pet Community Shop in where you can buy accessories for your pet.
 - Event Levels (Daily / Weekly platformer and classic levels).
