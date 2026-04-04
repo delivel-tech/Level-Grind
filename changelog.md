@@ -1,3 +1,6 @@
+# 1.5.2
+- Rearranged owner position.
+
 # 1.5.1
 - Bugfix
 

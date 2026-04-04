@@ -5,6 +5,7 @@
 #include <argon/argon.hpp>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 using namespace geode::prelude;
 
@@ -21,6 +22,7 @@ public:
     LGManager& operator=(LGManager&&) = delete;
 
     struct Staff {
+        std::vector<int> owners;
         std::vector<int> helpers;
         std::vector<int> admins;
         std::vector<int> artists;
@@ -107,12 +109,19 @@ public:
                 auto& staff = LGManager::get()->getStaff();
 
                 auto staffs = json["staff"];
-
+                
+                auto owners = staffs["owners"].asArray();
                 auto admins = staffs["admins"].asArray();
                 auto helpers = staffs["helpers"].asArray();
                 auto contributors = staffs["contributors"].asArray();
                 auto artists = staffs["artists"].asArray();
                 auto boosters = staffs["boosters"].asArray();
+
+                for (auto const& val : owners.unwrap()) {
+                    auto accountId = val["accountId"].asInt();
+                    if (!accountId) continue;
+                    staff.owners.push_back(accountId.unwrapOrDefault());
+                }
 
                 for (auto const& val : admins.unwrap()) {
                     auto accountId = val["accountId"].asInt();
@@ -196,13 +205,13 @@ public:
     void setHelper(bool isHelper) {
         Mod::get()->setSavedValue("isHelper", isHelper);
     }
-    
-    bool isDelivel() {
-        if (GJAccountManager::sharedState()->m_accountID == 13678537) {
-            return true;
-        } else {
-            return false;
-        }
+
+    bool isOwner() {
+        return Mod::get()->getSavedValue<bool>("isOwner");
+    }
+
+    void setOwner(bool isOwner) {
+        Mod::get()->setSavedValue("isOwner", isOwner);
     }
 
 private:

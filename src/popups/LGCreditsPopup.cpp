@@ -33,31 +33,34 @@ bool LGCreditsPopup::init() {
     auto scrollLayer = ScrollLayer::create({340.f, 195.f});
     scrollLayer->setPosition({20.f, 23.f});
     m_mainLayer->addChild(scrollLayer);
+
     auto borders = ListBorders::create();
-    borders->setContentSize({ 340.f, 195.f });
-    borders->setPosition({  m_mainLayer->getContentSize().width / 2.f, m_mainLayer->getContentSize().height / 2.f - 5.f });
+    borders->setContentSize({340.f, 195.f});
+    borders->setPosition({
+        m_mainLayer->getContentSize().width / 2.f,
+        m_mainLayer->getContentSize().height / 2.f - 5.f
+    });
     m_mainLayer->addChild(borders);
 
     m_scrollLayer = scrollLayer;
 
     auto infoSpr = CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png");
-    
     auto infoBtn = CCMenuItemSpriteExtra::create(
-        infoSpr,
-        this,
-        menu_selector(LGCreditsPopup::onInfo)
+        infoSpr, this, menu_selector(LGCreditsPopup::onInfo)
     );
-    infoBtn->setPosition({m_mainLayer->getContentSize().width,
-                        m_mainLayer->getContentSize().height - 3});
+    infoBtn->setPosition({
+        m_mainLayer->getContentSize().width,
+        m_mainLayer->getContentSize().height - 3
+    });
     m_buttonMenu->addChild(infoBtn);
 
     auto contentLayer = m_scrollLayer->m_contentLayer;
     if (contentLayer) {
         auto layout = ColumnLayout::create();
-        contentLayer->setLayout(layout);
         layout->setGap(0.f);
         layout->setAutoGrowAxis(0.f);
         layout->setAxisReverse(true);
+        contentLayer->setLayout(layout);
 
         auto spinner = LoadingSpinner::create(48.f);
         spinner->setPosition(contentLayer->getContentSize() / 2);
@@ -66,13 +69,16 @@ bool LGCreditsPopup::init() {
     }
 
     auto scrollbar = Scrollbar::create(m_scrollLayer);
-    scrollbar->setPosition({ m_mainLayer->getContentSize().width - 12.f, (m_mainLayer->getContentSize().height / 2.f) - 5.f});
+    scrollbar->setPosition({
+        m_mainLayer->getContentSize().width - 12.f,
+        m_mainLayer->getContentSize().height / 2.f - 5.f
+    });
     scrollbar->setScale(0.9f);
     m_mainLayer->addChild(scrollbar);
 
     auto joinBtn = CCMenuItemExt::createSpriteExtra(
         CCSprite::createWithSpriteFrameName("GJ_longBtn05_001.png"),
-        [](CCObject* sender) {
+        [](CCObject*) {
             createQuickPopup(
                 "Want to be a Helper?",
                 "If you're interested in helping with the <cp>Level Grind</c> project, fill out an <cg>application form</c>.",
@@ -89,117 +95,134 @@ bool LGCreditsPopup::init() {
     m_buttonMenu->addChild(joinBtn);
 
     Ref<LGCreditsPopup> self = this;
-
     web::WebRequest req;
 
     async::spawn(
         req.get("https://delivel.tech/grindapi/get_credits"),
         [self](web::WebResponse res) {
             if (!self) return;
-            if (!res.ok()) {
-                log::warn("get_credits returned non-ok status: {}", res.code());
+
+            auto removeSpinner = [&]() {
                 if (self->m_spinner) {
                     self->m_spinner->removeFromParent();
                     self->m_spinner = nullptr;
                 }
-                Notification::create("Failed to fetch credits",
-                               NotificationIcon::Error)->show();
+            };
+
+            if (!res.ok()) {
+                log::warn("get_credits returned non-ok status: {}", res.code());
+                removeSpinner();
+                Notification::create("Failed to fetch credits", NotificationIcon::Error)->show();
                 return;
             }
 
             auto jsonRes = res.json();
             if (!jsonRes) {
                 log::warn("Failed to parse get_credits JSON");
-                if (self->m_spinner) {
-                    self->m_spinner->removeFromParent();
-                    self->m_spinner = nullptr;
-                }
-                Notification::create("Invalid server response",
-                               NotificationIcon::Error)->show();
+                removeSpinner();
+                Notification::create("Invalid server response", NotificationIcon::Error)->show();
                 return;
             }
 
             auto json = jsonRes.unwrap();
-            bool success = json["success"].asBool().unwrapOrDefault();
-            if (!success) {
+            if (!json["success"].asBool().unwrapOrDefault()) {
                 log::warn("Server returned success=false for get_credits");
-                if (self->m_spinner) {
-                    self->m_spinner->removeFromParent();
-                    self->m_spinner = nullptr;
-                }
+                removeSpinner();
                 return;
             }
 
             auto content = self->m_scrollLayer ? self->m_scrollLayer->m_contentLayer : nullptr;
             if (!content) return;
 
-            if (self->m_spinner) {
-                self->m_spinner->removeFromParent();
-                self->m_spinner = nullptr;
-            }
-
+            removeSpinner();
             content->removeAllChildrenWithCleanup(true);
 
             auto addHeader = [&](std::string_view text) {
-                auto tableCell = TableViewCell::create();
-                tableCell->setContentSize({340.f, 30.f});
+                auto cell = TableViewCell::create();
+                cell->setContentSize({340.f, 30.f});
+
+                const float cellH = cell->getContentSize().height;
+                const float dividerH = 1.f;
+
+                if (content->getChildren()->count() > 0) {
+                    auto topDivider = CCSprite::create();
+                    topDivider->setTextureRect(CCRectMake(0, 0, 340.f, dividerH));
+                    topDivider->setPosition({170.f, cellH - dividerH / 2.f});
+                    topDivider->setColor({0, 0, 0});
+                    topDivider->setOpacity(80);
+                    cell->addChild(topDivider, 2);
+                }
+
+                auto bottomDivider = CCSprite::create();
+                bottomDivider->setTextureRect(CCRectMake(0, 0, 340.f, dividerH));
+                bottomDivider->setPosition({170.f, dividerH / 2.f});
+                bottomDivider->setColor({0, 0, 0});
+                bottomDivider->setOpacity(80);
+                cell->addChild(bottomDivider, 2);
+
+                auto row = CCMenu::create();
+                row->setPosition({170.f, 15.f});
+                row->setAnchorPoint({0.5f, 0.5f});
+                row->setContentSize({340.f, 30.f});
+
+                auto rowLayout = RowLayout::create();
+                rowLayout->setGap(7.f);
+                rowLayout->setAxisAlignment(AxisAlignment::Center);
+                rowLayout->setCrossAxisAlignment(AxisAlignment::Center);
+                row->setLayout(rowLayout);
+
+                const char* badgeName = "badge_helper.png"_spr;
+                if (text == "Owners") badgeName = "badge_owner.png"_spr;
+                else if (text == "Admins") badgeName = "badge_admin.png"_spr;
+                else if (text == "Contributors") badgeName = "badge_contributor.png"_spr;
+                else if (text == "Artists") badgeName = "badge_artist.png"_spr;
+                else if (text == "Boosters") badgeName = "badge_booster.png"_spr;
+
+                auto badgeSpr = CCSprite::create(badgeName);
+                if (badgeSpr) {
+                    auto badgeWrapper = CCNode::create();
+                    float bw = badgeSpr->getContentSize().width * 0.45f;
+                    float bh = badgeSpr->getContentSize().height * 0.45f;
+                    badgeWrapper->setContentSize({bw, bh});
+                    badgeSpr->setScale(0.65f);
+                    badgeSpr->setPosition({bw / 2.f, bh / 2.f});
+                    badgeWrapper->addChild(badgeSpr);
+                    row->addChild(badgeWrapper);
+                }
 
                 auto label = CCLabelBMFont::create(std::string{text}.c_str(), "bigFont.fnt");
+                auto labelWrapper = CCNode::create();
+                float lw = label->getContentSize().width * 0.45f;
+                float lh = label->getContentSize().height * 0.45f;
+                labelWrapper->setContentSize({lw, lh});
                 label->setScale(0.45f);
-                label->setAnchorPoint({0.5f, 0.5f});
-                auto labelPos = CCPoint { tableCell->getContentSize().width / 2.f, 15.f };
-                label->setPosition(labelPos);
-                tableCell->addChild(label);
-
-                auto headerMenu = CCMenu::create();
-                headerMenu->setPosition({0.f, 0.f});
+                label->setPosition({lw / 2.f, lh / 2.f});
+                labelWrapper->addChild(label);
+                row->addChild(labelWrapper);
 
                 auto infoSpr = CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png");
-                infoSpr->setScale(0.45f);
                 auto infoBtn = CCMenuItemSpriteExtra::create(
-                    infoSpr,
-                    self,
-                    menu_selector(LGCreditsPopup::onHeaderInfo)
+                    infoSpr, self, menu_selector(LGCreditsPopup::onHeaderInfo)
                 );
+                float iw = infoSpr->getContentSize().width * 0.45f;
+                float ih = infoSpr->getContentSize().height * 0.45f;
+                infoBtn->setContentSize({iw, ih});
+                infoSpr->setScale(0.45f);
+                infoSpr->setPosition({iw / 2.f, ih / 2.f});
 
                 int infoTag = 0;
-                if (text == "Owner") infoTag = 1;
+                if (text == "Owners") infoTag = 1;
                 else if (text == "Admins") infoTag = 2;
                 else if (text == "Helpers") infoTag = 3;
                 else if (text == "Contributors") infoTag = 4;
                 else if (text == "Artists") infoTag = 5;
                 else if (text == "Boosters") infoTag = 6;
                 infoBtn->setTag(infoTag);
+                row->addChild(infoBtn);
 
-                auto labelWidth = label->getContentSize().width * label->getScale();
-                auto infoWidth = infoSpr->getContentSize().width * infoSpr->getScale();
-                float infoX = labelPos.x + (labelWidth / 2.f) + 8.f + (infoWidth / 2.f);
-                infoBtn->setPosition({infoX, labelPos.y});
-
-                headerMenu->addChild(infoBtn);
-                tableCell->addChild(headerMenu);
-
-                const float contentH = tableCell->getContentSize().height;
-                const float dividerH = 1.f;
-                const float halfDivider = dividerH / 2.f;
-
-                if (content->getChildren()->count() > 0) {
-                    auto topDivider = CCSprite::create();
-                    topDivider->setTextureRect(CCRectMake(0, 0, tableCell->getContentSize().width, dividerH));
-                    topDivider->setPosition({tableCell->getContentSize().width / 2.f, contentH - halfDivider});
-                    topDivider->setColor({0, 0, 0});
-                    topDivider->setOpacity(80);
-                    tableCell->addChild(topDivider, 2);
-                }
-
-                auto bottomDivider = CCSprite::create();
-                bottomDivider->setTextureRect(CCRectMake(0, 0, tableCell->getContentSize().width, dividerH));
-                bottomDivider->setPosition({tableCell->getContentSize().width / 2.f, halfDivider});
-                bottomDivider->setColor({0, 0, 0});
-                bottomDivider->setOpacity(80);
-                tableCell->addChild(bottomDivider, 2);
-
-                content->addChild(tableCell);
+                row->updateLayout();
+                cell->addChild(row, 1);
+                content->addChild(cell);
             };
 
             auto addPlayer = [&](const matjson::Value& userVal, bool isAdmin, bool isOwner) {
@@ -215,26 +238,20 @@ bool LGCreditsPopup::init() {
                 auto cell = TableViewCell::create();
                 cell->setContentSize({340.f, 50.f});
 
-                auto bgSprite = CCSprite::create();
-                bgSprite->setTextureRect(CCRectMake(0, 0, 340.f, 50.f));
-                bgSprite->setPosition({170.f, 25.f});
-                bgSprite->setOpacity(95);
-                if (isOwner) {
-                    bgSprite->setColor({150, 255, 255});
-                } else if (isAdmin) {
-                    bgSprite->setColor({245, 107, 107});
-                } else {
-                    bgSprite->setColor({81, 147, 248});
-                }
-                cell->addChild(bgSprite);
+                auto bg = CCSprite::create();
+                bg->setTextureRect(CCRectMake(0, 0, 340.f, 50.f));
+                bg->setPosition({170.f, 25.f});
+                bg->setOpacity(95);
+                if (isOwner) bg->setColor({150, 255, 255});
+                else if (isAdmin) bg->setColor({245, 107, 107});
+                else bg->setColor({81, 147, 248});
+                cell->addChild(bg);
 
                 auto gm = GameManager::sharedState();
                 auto player = SimplePlayer::create(iconId);
                 player->updatePlayerFrame(iconId, IconType::Cube);
                 player->setColors(gm->colorForIdx(color1), gm->colorForIdx(color2));
-                if (color3 != 0) {
-                    player->setGlowOutline(gm->colorForIdx(color3));
-                }
+                if (color3 != 0) player->setGlowOutline(gm->colorForIdx(color3));
                 player->setPosition({40.f, 25.f});
                 cell->addChild(player);
 
@@ -246,9 +263,7 @@ bool LGCreditsPopup::init() {
                 menu->setPosition({0.f, 0.f});
 
                 auto nameBtn = CCMenuItemSpriteExtra::create(
-                    nameLabel,
-                    self,
-                    menu_selector(LGCreditsPopup::onAccountClicked)
+                    nameLabel, self, menu_selector(LGCreditsPopup::onAccountClicked)
                 );
                 nameBtn->setTag(accountId);
                 nameBtn->setPosition({80.f, 25.f});
@@ -259,83 +274,32 @@ bool LGCreditsPopup::init() {
                 content->addChild(cell);
             };
 
+            struct Section {
+                std::string key;
+                std::string header;
+                bool isAdmin;
+                bool isOwner;
+            };
+
+            std::vector<Section> sections = {
+                {"owners", "Owners",true, true},
+                {"admins", "Admins", true, false},
+                {"helpers", "Helpers", false, false},
+                {"artists", "Artists", false, false},
+                {"contributors", "Contributors", false, false},
+                {"boosters", "Boosters", false, false},
+            };
+
             bool hasAny = false;
+            for (auto const& section : sections) {
+                if (!json.contains(section.key) || !json[section.key].isArray()) continue;
+                auto arr = json[section.key].asArray().unwrap();
+                if (arr.empty()) continue;
 
-            std::vector<matjson::Value> ownerUsers;
-            std::vector<matjson::Value> adminUsers;
-
-            if (json.contains("admins") && json["admins"].isArray()) {
-                auto admins = json["admins"].asArray().unwrap();
-                for (auto const& val : admins) {
-                    if (!val.isObject()) continue;
-                    int accountId = val["accountId"].asInt().unwrapOrDefault();
-                    std::string username = val["username"].asString().unwrapOrDefault();
-                    bool isDelivel = accountId == 13678537 || username == "Delivel" || username == "delivel";
-                    if (isDelivel) {
-                        ownerUsers.push_back(val);
-                    } else {
-                        adminUsers.push_back(val);
-                    }
-                }
-            }
-
-            if (!ownerUsers.empty()) {
                 hasAny = true;
-                addHeader("Owner");
-                for (auto const& val : ownerUsers) {
-                    addPlayer(val, true, true);
-                }
-            }
-
-            if (!adminUsers.empty()) {
-                hasAny = true;
-                addHeader("Admins");
-                for (auto const& val : adminUsers) {
-                    addPlayer(val, true, false);
-                }
-            }
-
-            if (json.contains("helpers") && json["helpers"].isArray()) {
-                auto helpers = json["helpers"].asArray().unwrap();
-                if (!helpers.empty()) {
-                    hasAny = true;
-                    addHeader("Helpers");
-                    for (auto const& val : helpers) {
-                        addPlayer(val, false, false);
-                    }
-                }
-            }
-
-            if (json.contains("artists") && json["artists"].isArray()) {
-                auto artists = json["artists"].asArray().unwrap();
-                if (!artists.empty()) {
-                    hasAny = true;
-                    addHeader("Artists");
-                    for (auto const& val : artists) {
-                        addPlayer(val, false, false);
-                    }
-                }
-            }
-
-            if (json.contains("contributors") && json["contributors"].isArray()) {
-                auto contributors = json["contributors"].asArray().unwrap();
-                if (!contributors.empty()) {
-                    hasAny = true;
-                    addHeader("Contributors");
-                    for (auto const& val : contributors) {
-                        addPlayer(val, false, false);
-                    }
-                }
-            }
-
-            if (json.contains("boosters") && json["boosters"].isArray()) {
-                auto boosters = json["boosters"].asArray().unwrap();
-                if (!boosters.empty()) {
-                    hasAny = true;
-                    addHeader("Boosters");
-                    for (auto const& val : boosters) {
-                        addPlayer(val, false, false);
-                    }
+                addHeader(section.header);
+                for (auto const& val : arr) {
+                    addPlayer(val, section.isAdmin, section.isOwner);
                 }
             }
 
@@ -372,8 +336,8 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
 
     if (tag == 1) {
         FLAlertLayer::create(
-            "Owner",
-            "<co>Owner</c> is the main person in <cp>Level Grind</c>. " \
+            "Owners",
+            "<co>Owners</c> are main people in <cp>Level Grind</c>. " \
             "They are responsible for <cg>development</c>, <cy>leading the project</c>, <cf>making final decisions</c>, and <cl>managing all roles</c>.",
             "OK"
         )->show();

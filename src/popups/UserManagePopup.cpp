@@ -126,7 +126,7 @@ bool UserManagePopup::init(int targetAccountID, const char* username, int icon, 
 
     m_mainLayer->addChildAtPosition(spinner, Anchor::Center);
 
-    if (LGManager::get()->isDelivel()) {
+    if (LGManager::get()->isOwner()) {
         this->setTitle("Owner: Manage User");
     } else {
         this->setTitle("Admin: Manage User");
@@ -180,7 +180,7 @@ bool UserManagePopup::init(int targetAccountID, const char* username, int icon, 
 
             spinnerRef->removeFromParent();
 
-            if (LGManager::get()->isDelivel()) {
+            if (LGManager::get()->isOwner()) {
 
             if (isAdmin) {
                 auto promoteAdminBtn = CCMenuItemSpriteExtra::create(

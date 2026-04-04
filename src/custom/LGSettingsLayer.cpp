@@ -612,6 +612,11 @@ void LGSettingsLayer::createStaffTab() {
                     popupRef->showSuccessMessage("Success! Admin granted.");
                     LGManager::get()->setAdmin(true);
                     LGManager::get()->setHelper(false);
+                } else if (position == 3) {
+                    popupRef->showSuccessMessage("Success! Owner granted.");
+                    LGManager::get()->setAdmin(true);
+                    LGManager::get()->setOwner(true);
+                    LGManager::get()->setHelper(false);
                 } else {
                     popupRef->showFailMessage("Failed! User is not a helper.");
                     LGManager::get()->setHelper(false);
@@ -662,6 +667,7 @@ void LGSettingsLayer::createStaffTab() {
         uPopup->show();
 
         LGManager::get()->getNotes().clear();
+        LGManager::get()->getStaff().owners.clear();
         LGManager::get()->getStaff().admins.clear();
         LGManager::get()->getStaff().helpers.clear();
         LGManager::get()->getStaff().contributors.clear();
@@ -699,12 +705,19 @@ void LGSettingsLayer::createStaffTab() {
                 auto& staff = LGManager::get()->getStaff();
 
                 auto staffs = json["staff"];
-
+                
+                auto owners = staffs["owners"].asArray();
                 auto admins = staffs["admins"].asArray();
                 auto helpers = staffs["helpers"].asArray();
                 auto contributors = staffs["contributors"].asArray();
                 auto artists = staffs["artists"].asArray();
                 auto boosters = staffs["boosters"].asArray();
+
+                for (auto const& val : owners.unwrap()) {
+                    auto accountId = val["accountId"].asInt();
+                    if (!accountId) continue;
+                    staff.owners.push_back(accountId.unwrapOrDefault());
+                }
 
                 for (auto const& val : admins.unwrap()) {
                     auto accountId = val["accountId"].asInt();

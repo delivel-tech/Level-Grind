@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/modify/ProfilePage.hpp>
+#include <fmt/format.h>
 
 #include "../other/LGManager.hpp"
 #include "../popups/UserManagePopup.hpp"
@@ -18,8 +19,7 @@ class $modify(UserManage, ProfilePage) {
 		int m_targetColor1;
 		int m_targetColor2;
 		int m_targetColor3;
-		bool m_staffFound = false;
-		int m_staffRole = 0;
+		bool isOwner = false;
 	};
 	void loadPageFromUserInfo(GJUserScore* score) {
 		ProfilePage::loadPageFromUserInfo(score);
@@ -37,6 +37,7 @@ class $modify(UserManage, ProfilePage) {
 		m_fields->m_targetColor1 = score->m_color1;
 		m_fields->m_targetColor2 = score->m_color2;
 		m_fields->m_targetColor3 = score->m_color3;
+		m_fields->isOwner = score->m_accountID == 13678537;
 
 		auto leftMenu = getChildByIDRecursive("left-menu");
 		if (!leftMenu) return;
@@ -58,17 +59,32 @@ class $modify(UserManage, ProfilePage) {
 		bool dontShowBadges = Mod::get()->getSavedValue<bool>("disable-badges");
 
 		if (!dontShowBadges && usernameMenu && !shouldSkipStaffBadge) {
+			auto owners = LGManager::get()->getStaff().owners;
 			auto admins = LGManager::get()->getStaff().admins;
 			auto helpers = LGManager::get()->getStaff().helpers;
 			auto conts = LGManager::get()->getStaff().contributors;
 			auto artists = LGManager::get()->getStaff().artists;
 			auto boosters = LGManager::get()->getStaff().boosters;
-
+			
+			bool ownerFound = std::find(owners.begin(), owners.end(), score->m_accountID) != owners.end();
 			bool adminFound = std::find(admins.begin(), admins.end(), score->m_accountID) != admins.end();
 			bool helperFound = std::find(helpers.begin(), helpers.end(), score->m_accountID) != helpers.end();
 			bool contFound = std::find(conts.begin(), conts.end(), score->m_accountID) != conts.end();
 			bool artistFound = std::find(artists.begin(), artists.end(), score->m_accountID) != artists.end();
 			bool boosterFound = std::find(boosters.begin(), boosters.end(), score->m_accountID) != boosters.end();
+
+			if (ownerFound) {
+				auto badgeSpr = CCSprite::create("badge_owner.png"_spr);
+				auto badgeBtn = CCMenuItemSpriteExtra::create(
+					badgeSpr,
+					this,
+					menu_selector(UserManage::onOwnerBadge)
+				);
+
+				badgeBtn->setID("grind-owner-badge");
+				usernameMenu->addChild(badgeBtn);
+				usernameMenu->updateLayout();
+			}
 
 			if (adminFound) {
 				auto badgeSpr = CCSprite::create("badge_admin.png"_spr);
@@ -158,6 +174,20 @@ class $modify(UserManage, ProfilePage) {
 			"Grind Helper",
 			"This user is a <cg>Helper</c> on the <cp>Level Grind</c> mod. " \
 			"They <cj>help</c> with adding and <cr>deleting</c> levels on the <cp>Level Grind</c> database.",
+			"OK"
+		)->show();
+	}
+
+	void onOwnerBadge(CCObject* sender) {
+		std::string role = m_fields->isOwner ? "Owner" : "Co-Owner";
+		std::string role2 = m_fields->isOwner ? "an Owner" : "a Co-Owner";
+		FLAlertLayer::create(
+			fmt::format("Grind {}", role).c_str(),
+			fmt::format(
+				"This user is <cy>{}</c> on the <cp>Level Grind</c> mod. " \
+				"They are <cg>responsible for leading the project</c>, <cj>development</c>, <cy>making final decisions</c> etc.",
+				role2
+			).c_str(),
 			"OK"
 		)->show();
 	}
