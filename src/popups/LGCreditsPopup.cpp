@@ -63,7 +63,7 @@ bool LGCreditsPopup::init() {
         contentLayer->setLayout(layout);
 
         auto spinner = LoadingSpinner::create(48.f);
-        spinner->setPosition(contentLayer->getContentSize() / 2);
+        spinner->setPosition(m_scrollLayer->getContentSize() / 2);
         contentLayer->addChild(spinner);
         m_spinner = spinner;
     }

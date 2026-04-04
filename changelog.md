@@ -1,3 +1,7 @@
+# 1.5.3
+- Badges in comments.
+- Bugfixes.
+
 # 1.5.2
 - Rearranged owner position.
 
