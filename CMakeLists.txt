@@ -28,4 +28,7 @@ target_link_libraries(${PROJECT_NAME} argon)
 CPMAddPackage("gh:dankmeme01/cue#211f644")
 target_link_libraries(${PROJECT_NAME} cue)
 
+CPMAddPackage("gh:camila314/UIBuilder#main")
+target_link_libraries(${PROJECT_NAME} UIBuilder)
+
 setup_geode_mod(${PROJECT_NAME})

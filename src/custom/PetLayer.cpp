@@ -5,6 +5,7 @@
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/cocos/sprite_nodes/CCSpriteFrameCache.h"
+#include "Geode/ui/BasedButtonSprite.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/MDPopup.hpp"
 #include "Geode/ui/NineSlice.hpp"
@@ -26,6 +27,7 @@
 #include "../popups/LGPetRenamePopup.hpp"
 #include "../popups/LGPetUpgradePopup.hpp"
 #include "../other/PetManager.hpp"
+#include "../popups/ChooseAccesoriesPopup.hpp"
 #include "PetShopLayer.hpp"
 
 using namespace geode::prelude;
@@ -62,6 +64,9 @@ PetLayer::PetData PetLayer::parsePetData(web::WebResponse res) {
     data.a1bought = json["a1b"].asInt().unwrapOrDefault();
     data.a2bought = json["a2b"].asInt().unwrapOrDefault();
     data.a3bought = json["a3b"].asInt().unwrapOrDefault();
+    Mod::get()->setSavedValue("a-1-bought", data.a1bought);
+    Mod::get()->setSavedValue("a-2-bought", data.a2bought);
+    Mod::get()->setSavedValue("a-3-bought", data.a3bought);
     data.isBanned = json["isBanned"].asBool().unwrapOrDefault();
     if (data.isBanned) {
         data.banReason = json["banReason"].asString().unwrapOrDefault();
@@ -119,7 +124,8 @@ void PetLayer::onInfoBtn(CCObject* sender) {
         "- <cy>Pet stars and Pet moons</c> are the currencies of <cg>Grinding Pet</c>, you can use them to <cl>upgrade your pet</c>!\n"
         "- You can <cp>earn them</c> by grinding stats as usual.\n"
         "- There are <cr>30 levels in total</c>, for each one, your <cr>pet will become bigger</c> and may <cy>change its style</c>!\n"
-        "- Currently, pet <cb>rarity</c> does nothing, however, in the future it will give lower prices in the <cb>Pet Shop</c>.\n"
+        "- Pet <cb>rarity</c> gives you discounts on <cy>Pet Shop</c>.\n"
+        "- Pet <cg>shop</c> can be unlocked if you have level 15.\n"
         "# <cy>Enjoy the game</c>!",
         "OK"
     )->show();
@@ -182,6 +188,7 @@ bool PetLayer::init(web::WebResponse response) {
 
   PetManager::get()->m_isLevelUpgraded = false;
   PetManager::get()->m_isRarityUpgraded = false;
+  PetManager::get()->isItemBought = false;
 
   m_petData = petData;
 
@@ -335,15 +342,34 @@ bool PetLayer::init(web::WebResponse response) {
   leftSideMenu->setLayout(ColumnLayout::create()->setAxisReverse(true)->setGap(15));
   leftSideMenu->setID("left-side-menu");
   leftSideMenu->setPosition({ 25.f, mainPanelCS.height / 2.f });
+  leftSideMenu->setScale(0.8f);
   mainPanel->addChild(leftSideMenu);
 
+  if (
+    Mod::get()->getSavedValue<bool>("a-1-bought") ||
+    Mod::get()->getSavedValue<bool>("a-2-bought") ||
+    Mod::get()->getSavedValue<bool>("a-3-bought")
+  ) {
+    auto chooseABtn = CCMenuItemSpriteExtra::create(
+        CircleButtonSprite::createWithSpriteFrameName("d_key01_001.png"),
+        this,
+        menu_selector(PetLayer::onChooseABtn)
+    );
+    chooseABtn->setID("choose-accessories-btn");
+    leftSideMenu->addChild(chooseABtn);
+  }
+
+  if (petData.petLevel >= 15) {
+
   auto shopBtn = CCMenuItemSpriteExtra::create(
-    CCSprite::createWithSpriteFrameName("shadowShardBig_001.png"),
+    CircleButtonSprite::createWithSpriteFrameName("chest_01_02_001.png"),
     this,
     menu_selector(PetLayer::onShopBtn)
   );
   shopBtn->setID("shop-btn");
   leftSideMenu->addChild(shopBtn);
+
+  }
   leftSideMenu->updateLayout();
 
   auto progressBar = ProgressBar::create(ProgressBarStyle::Slider);
@@ -416,6 +442,10 @@ bool PetLayer::init(web::WebResponse response) {
   return true;
 }
 
+void PetLayer::onChooseABtn(CCObject* sender) {
+    ChooseAccessoriesPopup::create()->show();
+}
+
 void PetLayer::onShopBtn(CCObject* sender) {
     PetShopLayer::create(m_petData)->open();
 }
@@ -451,12 +481,34 @@ void PetLayer::drawPet(PetLayer::PetStyle style, int petLevel) {
     petMenu->addChild(petShadow);
     petMenu->addChild(petSpr);
 
-    petMenu->updateLayout();
-
     petPanel->addChildAtPosition(petMenu, Anchor::Center, { 0.f, -20.f });
     petShadow->setScale(0.55f);
 
     petMenu->setScale(getPetScale(petLevel));
+
+    petMenu->updateLayout();
+
+    if (Mod::get()->getSavedValue<bool>("a-1-enabled")) {
+        auto accessorySpr = CCSprite::create("bunny_ears.png"_spr);
+        accessorySpr->setScale(0.325f);
+        accessorySpr->setPosition({ petMenu->getContentWidth() / 2.f, petMenu->getContentHeight() / 2.f + 12.f + 11.5f });
+        petMenu->addChild(accessorySpr);
+    }
+
+    if (Mod::get()->getSavedValue<bool>("a-2-enabled")) {
+        auto accessorySpr = CCSprite::create("moon_crown.png"_spr);
+        accessorySpr->setScale(0.05f);
+        accessorySpr->setPosition({ petMenu->getContentWidth() / 2.f, petMenu->getContentHeight() / 2.f + 12.f + 22.f });
+        petMenu->addChild(accessorySpr);
+    }
+
+    if (Mod::get()->getSavedValue<bool>("a-3-enabled")) {
+        auto accessorySpr = CCSprite::create("zoink_headphones.png"_spr);
+        accessorySpr->setScale(0.125f);
+        accessorySpr->setPosition({ petMenu->getContentWidth() / 2.f - 0.5f, petMenu->getContentHeight() / 2.f + 12.f + 5.f });
+        petMenu->addChild(accessorySpr);
+    }
+    petShadow->setScale(0.55f);
 }
 
 std::string PetLayer::getRarityFromInt(int rarity) {

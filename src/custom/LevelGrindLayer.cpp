@@ -1,5 +1,4 @@
 #include "LevelGrindLayer.hpp"
-#include "GUI/CCControlExtension/CCScale9Sprite.h"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
@@ -40,6 +39,8 @@
 #include "../popups/LGAnnPopup.hpp"
 #include "../other/LGManager.hpp"
 #include "../other/PetManager.hpp"
+#include "../popups/ChooseEventPopup.hpp"
+#include "Geode/ui/NineSlice.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/web.hpp"
 
@@ -142,22 +143,17 @@ bool LevelGrindLayer::init() {
 	logoSpr->setScale(1.2f);
 
 	this->addChild(logoSpr);
-	logoSpr->setPosition({ winSize.width / 2, (winSize.height / 4) * 3.3f });
+	logoSpr->setPosition({ winSize.width / 2, (winSize.height / 4) * 3.3f + 7.f });
 
-	auto panel = CCScale9Sprite::create("GJ_square01.png");
+	auto panel = NineSlice::create("GJ_square01.png");
 	panel->setID("buttons-panel");
-
-	panel->setInsetLeft(12);
-	panel->setInsetRight(12);
-	panel->setInsetTop(12);
-	panel->setInsetBottom(12);
 
 	panel->setContentSize({210.f, 140.f});
 	panel->setPosition({winSize.width / 2, winSize.height / 2});
 
 	this->addChild(panel);
 
-	auto optionsPanel1 = CCScale9Sprite::create("square02_small.png");
+	auto optionsPanel1 = NineSlice::create("square02_small.png");
 	optionsPanel1->setContentSize({ winSize.width / 2, 30.f });
 	optionsPanel1->setOpacity(100);
 	optionsPanel1->setID("options-panel-first");
@@ -166,7 +162,7 @@ bool LevelGrindLayer::init() {
 
 	optionsPanel1->setPosition({ winSize.width / 2, winSize.height / 4.6f });
 
-	auto optionsPanel2 = CCScale9Sprite::create("square02_small.png");
+	auto optionsPanel2 = NineSlice::create("square02_small.png");
 	optionsPanel2->setContentSize({ winSize.width / 2, 30.f });
 	optionsPanel2->setOpacity(100);
 	optionsPanel2->setID("options-panel-second");
@@ -459,7 +455,7 @@ bool LevelGrindLayer::init() {
 	searchBtnMenu->addChild(settingsBtn);
 	searchBtnMenu->updateLayout();
 
-	auto versionsPanel = CCScale9Sprite::create("square02_small.png");
+	auto versionsPanel = NineSlice::create("square02_small.png");
 	versionsPanel->setContentSize({ 30.f, winSize.height / 2.3f });
 	versionsPanel->setID("versions-panel");
 	this->addChild(versionsPanel);
@@ -540,7 +536,7 @@ bool LevelGrindLayer::init() {
 	versionsMenu->updateLayout();
 	versionsPanel->setOpacity(100);
 
-	demonsPanel = CCScale9Sprite::create("square02_small.png");
+	demonsPanel = NineSlice::create("square02_small.png");
 	demonsPanel->setContentSize({ 30.f, winSize.height / 2.3f });
 	demonsPanel->setPosition({ (winSize.width / 2) + 128.f, winSize.height / 2 });
 	demonsPanel->setID("demons-panel");
@@ -629,8 +625,8 @@ bool LevelGrindLayer::init() {
 	rightBtnMenu->setLayout(ColumnLayout::create()->setGap(10.f));
 
 	this->addChild(rightBtnMenu);
-	rightBtnMenu->setPosition({ winSize.width - 27.f, 50.f });
-	rightBtnMenu->setScale(0.55f);
+	rightBtnMenu->setPosition({ winSize.width - 23.f, 67.f });
+	rightBtnMenu->setScale(0.5f);
 
 	auto discordSpr = CCSprite::create("discord_btn.png"_spr);
 	discordSpr->setScale(1.4f);
@@ -644,6 +640,31 @@ bool LevelGrindLayer::init() {
 
 	rightBtnMenu->addChild(discordBtn);
 	rightBtnMenu->updateLayout();
+
+	auto supportSpr = CCSprite::create("support_btn.png"_spr);
+	supportSpr->setScale(1.6f);
+
+	auto supportBtn = CCMenuItemExt::createSpriteExtra(
+		supportSpr,
+		[](CCObject* sender) {
+			createQuickPopup(
+				"Support Level Grind!",
+				"<cy>Level Grind</c> is completely <cp>free for everyone</c>, " \
+				"however, any <cj>donations would be highly appreciated</c>. By <cl>donating the developer</c> " \
+				"you will get a <co>permanent contributor role</c>, and I will be able to <cj>continue paying for mod servers</c>! " \
+				"\n<cg>Consider a donation</c> if you <cd>like the project</c>!",
+				"Cancel", "Donate",
+				[](auto, bool btn2) {
+					if (btn2) {
+						web::openLinkInBrowser("https://boosty.to/deliveltech/about");
+					}
+				}
+			);
+		}
+	);
+	supportBtn->setID("support-btn");
+
+	rightBtnMenu->addChild(supportBtn);
 
 	auto creditsSpr = CCSprite::create("credits_btn.png"_spr);
 	creditsSpr->setScale(1.3f);
@@ -698,6 +719,18 @@ bool LevelGrindLayer::init() {
 	leftBtnMenu->addChild(achBtn);
 	leftBtnMenu->updateLayout();
 
+	auto eventSpr = CircleButtonSprite::createWithSpriteFrameName("gj_dailyCrown_001.png", 1.f, CircleBaseColor::Blue);
+	eventSpr->setScale(1.2f);
+
+	auto eventBtn = CCMenuItemSpriteExtra::create(
+		eventSpr,
+		this,
+		menu_selector(LevelGrindLayer::onEventBtn)
+	);
+	eventBtn->setID("event-btn");
+	leftBtnMenu->addChild(eventBtn);
+	leftBtnMenu->updateLayout();
+
 	if (!Mod::get()->getSavedValue<bool>("disable-pet")) {
 		auto topPetSpr = []() {
 			if (Mod::get()->getSavedValue<int>("last-pet-lvl") < 1 || Mod::get()->getSavedValue<int>("last-pet-lvl") > 30) {
@@ -731,6 +764,10 @@ bool LevelGrindLayer::init() {
 	updateDiffSelectorButtonVisibility();
 
     return true;
+}
+
+void LevelGrindLayer::onEventBtn(CCObject* sender) {
+	ChooseEventPopup::create()->show();
 }
 
 void LevelGrindLayer::onPetBtn(CCObject* sender) {

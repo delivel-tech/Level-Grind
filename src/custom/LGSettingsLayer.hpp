@@ -65,6 +65,7 @@ private:
     void onNoBadgeForMods(CCObject* sender);
     void onDisableBadges(CCObject* sender);
     void onDisablePet(CCObject* sender);
+    void onDisableAutoNotes(CCObject* sender);
 
     void onBackgroundSpeedArrow(CCObject* sender);
     void onBackgroundColorPick(CCObject* sender);

@@ -437,18 +437,10 @@ void LGSettingsLayer::createGrindTab() {
     ));
 
     tab->addCell(makeToggleCell(
-        "Hide Progress Bar",
-        "If enabled, progress bar on level browser layer will be hidden.",
-        "hide-bar",
-        menu_selector(LGSettingsLayer::onHideProgressBar),
-        this
-    ));
-
-    tab->addCell(makeToggleCell(
-        "Hide Completion Info",
-        "If enabled, completion info will be hidden on level browser layer.",
-        "hide-completion-info",
-        menu_selector(LGSettingsLayer::onHideCompletionInfo),
+        "Disable Auto Notes",
+        "If enabled, notes won't be shown when you click play button on Level Info Layer.",
+        "disable-auto-notes",
+        menu_selector(LGSettingsLayer::onDisableAutoNotes),
         this
     ));
 
@@ -491,6 +483,26 @@ void LGSettingsLayer::createAppearanceTab() {
         this
     ));
 
+    tab->addCell(makeHeader(
+        "Browser Settings"
+    ));
+
+    tab->addCell(makeToggleCell(
+        "Hide Progress Bar",
+        "If enabled, progress bar on level browser layer will be hidden.",
+        "hide-bar",
+        menu_selector(LGSettingsLayer::onHideProgressBar),
+        this
+    ));
+
+    tab->addCell(makeToggleCell(
+        "Hide Completion Info",
+        "If enabled, completion info will be hidden on level browser layer.",
+        "hide-completion-info",
+        menu_selector(LGSettingsLayer::onHideCompletionInfo),
+        this
+    ));
+
     tab->addCell(makeHeader("Badge Settings"));
 
     tab->addCell(makeToggleCell(
@@ -511,6 +523,8 @@ void LGSettingsLayer::createAppearanceTab() {
 
     refreshBackgroundColorUI();
     tab->updateLayout();
+    auto scrollLayer = tab->getScrollLayer();
+    scrollLayer->m_contentLayer->updateLayout();
 }
 
 void LGSettingsLayer::createPetTab() {
@@ -722,6 +736,21 @@ void LGSettingsLayer::createStaffTab() {
                     staff.boosters.push_back(accountId.unwrapOrDefault());
                 }
 
+                auto levelsWithCoins = json["levelsWithCoins"].asArray();
+                auto levelsWithoutCoins = json["levelsWithoutCoins"].asArray();
+
+                for (auto id : levelsWithCoins.unwrap()) {
+                    if (auto idVal = id.asInt(); idVal) {
+                        LGManager::get()->getLevelsWithCoins().insert(idVal.unwrap());
+                    }
+                }
+
+                for (auto id : levelsWithoutCoins.unwrap()) {
+                    if (auto idVal = id.asInt(); idVal) {
+                        LGManager::get()->getLevelsWithoutCoins().insert(idVal.unwrap());
+                    }
+                }
+
                 auto notes = json["notes"].asArray();
 
                 if (!notes) {
@@ -811,6 +840,8 @@ void LGSettingsLayer::applyDefaultSettings() {
     Mod::get()->setSavedValue("disable-custom-background", false);
     Mod::get()->setSavedValue("no-badge-for-mods", true);
     Mod::get()->setSavedValue("disable-badges", false);
+    Mod::get()->setSavedValue("disable-pet", false);
+    Mod::get()->setSavedValue("disable-auto-notes", false);
 }
 
 void LGSettingsLayer::onResetSettings(CCObject* sender) {
@@ -907,6 +938,10 @@ void LGSettingsLayer::onDisableBadges(CCObject* sender) {
 
 void LGSettingsLayer::onDisablePet(CCObject* sender) {
     setBoolSetting("disable-pet", getIncomingToggleValue(sender), false);
+}
+
+void LGSettingsLayer::onDisableAutoNotes(CCObject* sender) {
+    setBoolSetting("disable-auto-notes", getIncomingToggleValue(sender), false);
 }
 
 void LGSettingsLayer::onBackgroundSpeedArrow(CCObject* sender) {

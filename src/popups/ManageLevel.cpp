@@ -499,6 +499,7 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
     auto adminToolsMenu = CCMenu::create();
     adminToolsMenu->setID("admin_tools_menu");
     adminToolsMenu->setLayout(ColumnLayout::create()->setGap(10.f));
+    adminToolsMenu->setScale(0.65f);
 
     auto adminToolsLabel = CCLabelBMFont::create("Admin Tools", "goldFont.fnt");
     adminToolsLabel->setID("admin_tools_label");
@@ -529,8 +530,6 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
         lockedBtn->setID("locked-btn");
         adminToolsMenu->addChild(lockedBtn);
     }
-
-    adminToolsMenu->setScale(0.8f);
 
     adminToolsMenu->updateLayout();
 
@@ -804,10 +803,192 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
                     self->m_lockBtn->setEnabled(true);
                 }
             }
+
+            if (LGManager::get()->isAdmin()) {
+                bool isDaily      = json["isDaily"].asBool().unwrapOrDefault();
+                bool isDailyPlat  = json["isDailyPlat"].asBool().unwrapOrDefault();
+                bool isWeekly     = json["isWeekly"].asBool().unwrapOrDefault();
+                bool isWeeklyPlat = json["isWeeklyPlat"].asBool().unwrapOrDefault();
+
+                self->m_isDaily      = isDaily;
+                self->m_isDailyPlat  = isDailyPlat;
+                self->m_isWeekly     = isWeekly;
+                self->m_isWeeklyPlat = isWeeklyPlat;
+
+                bool isPlatformer = self->m_moon;
+
+                auto adminToolsMenu = typeinfo_cast<CCMenu*>(self->getChildByIDRecursive("admin_tools_menu"));
+                if (!adminToolsMenu) return;
+
+                if (isPlatformer) {
+                    if (isDailyPlat) {
+                        auto btn = CCMenuItemSpriteExtra::create(
+                            ButtonSprite::create("Del Daily", "goldFont.fnt", "GJ_button_06.png"),
+                            self,
+                            menu_selector(ManageLevel::onDeleteEventBtn)
+                        );
+                        btn->setTag(1);
+                        self->m_deleteDailyBtn = btn;
+                        adminToolsMenu->addChild(btn);
+                    } else {
+                        auto btn = CCMenuItemSpriteExtra::create(
+                            ButtonSprite::create("Set Daily", "goldFont.fnt", "GJ_button_01.png"),
+                            self,
+                            menu_selector(ManageLevel::onSetEventBtn)
+                        );
+                        btn->setTag(1);
+                        self->m_setDailyBtn = btn;
+                        adminToolsMenu->addChild(btn);
+                    }
+                } else {
+                 if (isDaily) {
+                        auto btn = CCMenuItemSpriteExtra::create(
+                            ButtonSprite::create("Del Daily", "goldFont.fnt", "GJ_button_06.png"),
+                            self,
+                            menu_selector(ManageLevel::onDeleteEventBtn)
+                        );
+                        btn->setTag(0);
+                        self->m_deleteDailyBtn = btn;
+                        adminToolsMenu->addChild(btn);
+                    } else {
+                        auto btn = CCMenuItemSpriteExtra::create(
+                            ButtonSprite::create("Set Daily", "goldFont.fnt", "GJ_button_01.png"),
+                            self,
+                            menu_selector(ManageLevel::onSetEventBtn)
+                        );
+                        btn->setTag(0);
+                        self->m_setDailyBtn = btn;
+                        adminToolsMenu->addChild(btn);
+                }
+            }
+
+                if (isPlatformer) {
+                    if (isWeeklyPlat) {
+                        auto btn = CCMenuItemSpriteExtra::create(
+                            ButtonSprite::create("Del Weekly", "goldFont.fnt", "GJ_button_06.png"),
+                            self,
+                            menu_selector(ManageLevel::onDeleteEventBtn)
+                        );
+                        btn->setTag(3);
+                        self->m_deleteWeeklyBtn = btn;
+                        adminToolsMenu->addChild(btn);
+                    } else {
+                        auto btn = CCMenuItemSpriteExtra::create(
+                          ButtonSprite::create("Set Weekly", "goldFont.fnt", "GJ_button_01.png"),
+                          self,
+                          menu_selector(ManageLevel::onSetEventBtn)
+                     );
+                        btn->setTag(3);
+                        self->m_setWeeklyBtn = btn;
+                        adminToolsMenu->addChild(btn);
+                    }
+                } else {
+                    if (isWeekly) {
+                        auto btn = CCMenuItemSpriteExtra::create(
+                            ButtonSprite::create("Del Weekly", "goldFont.fnt", "GJ_button_06.png"),
+                            self,
+                            menu_selector(ManageLevel::onDeleteEventBtn)
+                        );
+                        btn->setTag(2);
+                        self->m_deleteWeeklyBtn = btn;
+                        adminToolsMenu->addChild(btn);
+                    } else {
+                        auto btn = CCMenuItemSpriteExtra::create(
+                            ButtonSprite::create("Set Weekly", "goldFont.fnt", "GJ_button_01.png"),
+                            self,
+                            menu_selector(ManageLevel::onSetEventBtn)
+                        );
+                        btn->setTag(2);
+                        self->m_setWeeklyBtn = btn;
+                        adminToolsMenu->addChild(btn);
+                    }
+                }
+
+                adminToolsMenu->updateLayout();
+            }
         }
     );
 
     return true;
+}
+
+void ManageLevel::onSetEventBtn(CCObject* sender) {
+    auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
+    if (!btn) return;
+
+    static const char* slotNames[] = {"daily", "dailyPlat", "weekly", "weeklyPlat"};
+    static const int durations[]   = {86400, 86400, 604800, 604800};
+
+    int tag = btn->getTag();
+    if (tag < 0 || tag > 3) return;
+
+    matjson::Value body;
+    body["accountID"] = GJAccountManager::get()->m_accountID;
+    body["token"]     = LGManager::get()->getArgonToken();
+    body["slot"]      = slotNames[tag];
+    body["levelId"]   = m_levelID;
+    body["duration"]  = durations[tag];
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(
+        typeinfo_cast<::UploadPopupDelegate*>(this),
+        "Setting event..."
+    );
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+
+    m_eventListener.spawn(
+        req.post("https://delivel.tech/grindapi/set_event"),
+        [popupRef](web::WebResponse res) {
+            if (!popupRef) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Failed. Try again later.");
+                return;
+            }
+            popupRef->showSuccessMessage("Success! Event set.");
+        }
+    );
+}
+
+void ManageLevel::onDeleteEventBtn(CCObject* sender) {
+    auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(sender);
+    if (!btn) return;
+
+    static const char* slotNames[] = {"daily", "dailyPlat", "weekly", "weeklyPlat"};
+
+    int tag = btn->getTag();
+    if (tag < 0 || tag > 3) return;
+
+    matjson::Value body;
+    body["accountID"] = GJAccountManager::get()->m_accountID;
+    body["token"] = LGManager::get()->getArgonToken();
+    body["slot"] = slotNames[tag];
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    auto upopup = UploadActionPopup::create(
+        typeinfo_cast<::UploadPopupDelegate*>(this),
+        "Removing event..."
+    );
+    upopup->show();
+
+    Ref<UploadActionPopup> popupRef = upopup;
+
+    m_eventListener.spawn(
+        req.post("https://delivel.tech/grindapi/delete_event"),
+        [popupRef](web::WebResponse res) {
+            if (!popupRef) return;
+            if (!res.ok()) {
+                popupRef->showFailMessage("Failed. Try again later.");
+                return;
+            }
+            popupRef->showSuccessMessage("Success! Event removed.");
+        }
+    );
 }
 
 void ManageLevel::onAddNoteButton(CCObject* sender) {

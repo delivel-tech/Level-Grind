@@ -1,3 +1,12 @@
+# 1.5.0
+- Pet Community Shop in where you can buy accessories for your pet.
+- Event Levels (Daily / Weekly platformer and classic levels).
+- Automatic notes when clicking play button.
+- Notes can now be seen from Pause Layer.
+- Added donation button.
+- Textures fixes.
+- Minor bugfixes (for instance moving settings that were supposed to be in Appearance tab from Grind tab).
+
 # 1.4.2
 - Updated Argon version.
 - Minor fixes.

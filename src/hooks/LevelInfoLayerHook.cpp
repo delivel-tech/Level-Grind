@@ -15,7 +15,31 @@ class $modify(LevelGrinding, LevelInfoLayer) {
 	struct Fields {
 		bool isRated = false;
 		std::string m_levelNote;
+		bool m_noteShown = false;
 	};
+	void onPlay(CCObject* sender) {
+		if (Mod::get()->getSavedValue<bool>("disable-auto-notes")) {
+			m_fields->m_noteShown = true;
+			LevelInfoLayer::onPlay(sender);
+			return;
+		}
+    	if (m_fields->m_levelNote.empty() || m_fields->m_noteShown) {
+        	LevelInfoLayer::onPlay(sender);
+        	return;
+    	}
+   	 	m_fields->m_noteShown = true;
+    	createQuickPopup(
+        	"Level Note",
+        	m_fields->m_levelNote.c_str(),
+        	"Cancel", "Play",
+        	[sender, this](auto, bool btn2) {
+            	if (btn2) {
+                	LevelInfoLayer::onPlay(sender);
+            	}
+            	m_fields->m_noteShown = false;
+        	}	
+    	);
+    }
 	bool init(GJGameLevel* level, bool challenge) {
 		if (!LevelInfoLayer::init(level, challenge)) return false;
 

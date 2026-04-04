@@ -61,6 +61,7 @@ private:
     void onRenameBtn(CCObject* sender);
     void onUpgradeBtn(CCObject* sender);
     void onShopBtn(CCObject* sender);
+    void onChooseABtn(CCObject* sender);
 
     PetData parsePetData(web::WebResponse res);
 };

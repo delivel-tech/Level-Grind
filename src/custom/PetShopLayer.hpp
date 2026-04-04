@@ -1,3 +1,4 @@
+#pragma once
 #include "BaseLayer.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
@@ -23,6 +24,8 @@ public:
         std::string accessoryName;
         std::string fileName;
         bool isBought;
+        CCSize aPosition;
+        float aScale;
     };
 
     std::vector<AccessoryInfo> m_accesories;
@@ -31,6 +34,8 @@ public:
     AccessoryInfo* m_a3 = nullptr;
 
     cue::ListNode* m_list = nullptr;
+
+    static int getPriceWithDiscount(AccessoryInfo* accessory);
 
 private:
     bool init(PetLayer::PetData petData);
@@ -42,7 +47,6 @@ private:
     CCMenu* makeAccessoryCell(AccessoryInfo* info);
 
     int getDiscountByRarity(int rarity);
-    int getPriceWithDiscount(AccessoryInfo* accessory);
 
     void onBuy1Btn(CCObject* sender);
     void onBuy2Btn(CCObject* sender);

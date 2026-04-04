@@ -104,8 +104,24 @@ protected:
     geode::async::TaskHolder<geode::utils::web::WebResponse> m_listener;
     geode::async::TaskHolder<geode::utils::web::WebResponse> m_listener2;
 
+    bool m_isDaily = false;
+    bool m_isDailyPlat = false;
+    bool m_isWeekly = false;
+    bool m_isWeeklyPlat = false;
+
+    CCMenuItemSpriteExtra* m_setDailyBtn = nullptr;
+    CCMenuItemSpriteExtra* m_deleteDailyBtn = nullptr;
+    CCMenuItemSpriteExtra* m_setWeeklyBtn = nullptr;
+    CCMenuItemSpriteExtra* m_deleteWeeklyBtn = nullptr;
+
+    geode::async::TaskHolder<geode::utils::web::WebResponse> m_eventListener;
+
+    void onSetEventBtn(CCObject* sender);
+    void onDeleteEventBtn(CCObject* sender);
+
     ~ManageLevel() {
         m_listener.cancel();
         m_listener2.cancel();
+        m_eventListener.cancel();
     }
 };

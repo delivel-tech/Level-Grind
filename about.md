@@ -19,6 +19,10 @@ Since <cp>1.4.0</c>, <cy>Level Grind</c> introduces <cg>Grinding Pet</c>!
 <cg>Grinding Pet</c> is a <cb>pet</c> that you can <cy>evolve by grinding stats</c>.
 In order to use the pet, click the <cj>cube button</c> on the main layer of the mod.
 
+### <cg>Event Levels</c>!
+
+There are <cy>2 types</c> of <cp>Event Levels</c>: <cg>Daily and Weekly levels</c>! <cp>Grind Admins</c> set <cj>classic & platformer</c> pair of levels every day and week. Weekly events are demon levels.
+
 ### <cp>Level Notes</c>!
 
 Our <cr>Staff team</c> can now add <cg>Notes</c> to any levels. In these notes, you can find out about <cj>difficult moments of the level</c>, 

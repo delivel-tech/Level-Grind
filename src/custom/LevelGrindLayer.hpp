@@ -1,6 +1,6 @@
-#include "GUI/CCControlExtension/CCScale9Sprite.h"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h"
+#include "Geode/ui/NineSlice.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCBlockLayer.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
@@ -62,6 +62,8 @@ public:
     void onAchievementsBtn(cocos2d::CCObject* sender);
     void onPetBtn(cocos2d::CCObject* sender);
 
+    void onEventBtn(cocos2d::CCObject* sender);
+
     void onDiffSelectorBtn(cocos2d::CCObject* sender);
     void updateDiffSelectorButtonVisibility();
 
@@ -84,7 +86,7 @@ public:
     bool m_splitInsane9 = false;
 
     cocos2d::CCMenu* demonsMenu;
-    CCScale9Sprite* demonsPanel;
+    NineSlice* demonsPanel;
 
     CCSprite* m_top = nullptr;
 

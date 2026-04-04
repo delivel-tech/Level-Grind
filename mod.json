@@ -8,7 +8,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v1.4.2",
+	"version": "v1.5.0",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
@@ -39,7 +39,14 @@
 			"resources/badge_contributor.png",
 			"resources/info_btn_2.png",
 			"resources/button_edit_note.png",
-			"resources/button_note.png"
+			"resources/button_note.png",
+			"resources/daily_level.png",
+			"resources/weekly_level.png",
+			"resources/pet_shop.png",
+			"resources/zoink_headphones.png",
+			"resources/moon_crown.png",
+			"resources/bunny_ears.png",
+			"resources/support_btn.png"
 		]
 	},
 	"links": {

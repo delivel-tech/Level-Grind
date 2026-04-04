@@ -113,6 +113,8 @@ public:
     bool m_isRarityUpgraded = false;
     bool m_isLevelUpgraded = false;
 
+    bool isItemBought = false;
+
 private:
     PetManager() = default;
     ~PetManager() = default;

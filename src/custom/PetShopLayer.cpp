@@ -1,17 +1,21 @@
 #include "PetShopLayer.hpp"
 #include "BaseLayer.hpp"
 #include "Geode/cocos/CCDirector.h"
+#include "Geode/cocos/cocoa/CCGeometry.h"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCScene.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCTransition.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
+#include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
 #include "PetLayer.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <cue/ListNode.hpp>
 #include <fmt/format.h>
+
+#include "../popups/BuyAccessoryPopup.hpp"
 
 using namespace geode::prelude;
 
@@ -38,6 +42,8 @@ bool PetShopLayer::init(PetLayer::PetData petData) {
     if (!BaseLayer::init()) return false;
     if (!initAccessoriesInfo(petData)) return false;
 
+    m_petData = petData;
+
     if (!Mod::get()->getSavedValue<bool>("disable-star-particles")) {
         auto grindParticles = CCParticleSnow::create();
         auto texture = CCTextureCache::sharedTextureCache()->addImage(
@@ -50,6 +56,16 @@ bool PetShopLayer::init(PetLayer::PetData petData) {
 
         this->addChild(grindParticles);
     }
+
+    auto petShopSpr = CCSprite::create("pet_shop.png"_spr);
+    petShopSpr->setID("pet-shop-spr");
+    petShopSpr->setZOrder(2);
+
+    this->addChild(petShopSpr);
+    petShopSpr->setPosition({
+        CCDirector::sharedDirector()->getWinSize().width / 2.f,
+        CCDirector::sharedDirector()->getWinSize().height - 28.f
+    });
 
     if (!initAccessories()) return false;
 
@@ -81,8 +97,20 @@ bool PetShopLayer::initAccessoriesInfo(PetLayer::PetData petData) {
     m_a3->aid = 3;
 
     m_a1->accessoryName = "Bunny Ears";
-    m_a2->accessoryName = "Test 2";
-    m_a3->accessoryName = "Test 3";
+    m_a2->accessoryName = "Moon Crown";
+    m_a3->accessoryName = "Zoink's Headphones";
+
+    m_a1->fileName = "bunny_ears.png"_spr;
+    m_a2->fileName = "moon_crown.png"_spr;
+    m_a3->fileName = "zoink_headphones.png"_spr;
+
+    m_a1->aScale = 0.325f;
+    m_a2->aScale = 0.05f;
+    m_a3->aScale = 0.125f;
+
+    m_a1->aPosition = CCSize(30.f, 11.5f);
+    m_a2->aPosition = CCSize(30.f, 22.f);
+    m_a3->aPosition = CCSize(29.5f, 5.f);
 
     return true;
 }
@@ -111,6 +139,14 @@ CCMenu* PetShopLayer::makeAccessoryCell(PetShopLayer::AccessoryInfo* info) {
 
     accessoryCell->addChildAtPosition(
         petSpr, Anchor::Left, { 30.f, 0.f }
+    );
+
+    auto accessorySpr = CCSprite::create(info->fileName.c_str());
+    accessorySpr->setScale(info->aScale);
+    accessoryCell->addChildAtPosition(
+        accessorySpr,
+        Anchor::Left,
+        info->aPosition
     );
 
     auto aNameLabel = CCLabelBMFont::create(info->accessoryName.c_str(), "goldFont.fnt");
@@ -143,14 +179,6 @@ CCMenu* PetShopLayer::makeAccessoryCell(PetShopLayer::AccessoryInfo* info) {
         accessoryCell->addChildAtPosition(
             buyBtn, Anchor::Right, { -35.f, 0.f }
         );
-
-        auto priceLabel = CCLabelBMFont::create(numToString(getPriceWithDiscount(info)).c_str(), "goldFont.fnt");
-        priceLabel->setID(fmt::format("price-label-{}", info->aid));
-        priceLabel->setAnchorPoint({ 1.f, 0.5f });
-        priceLabel->setScale(0.7f);
-        accessoryCell->addChildAtPosition(
-            priceLabel, Anchor::Right, { -65.f, 0.f }
-        );
     } else {
         auto boughtSpr = ButtonSprite::create("Bought", "goldFont.fnt", "GJ_button_02.png");
         boughtSpr->setScale(0.7f);
@@ -173,15 +201,15 @@ CCMenu* PetShopLayer::makeAccessoryCell(PetShopLayer::AccessoryInfo* info) {
 }
 
 void PetShopLayer::onBuy1Btn(CCObject* sender) {
-
+    BuyAccessoryPopup::create(m_a1, m_petData)->show();
 }
 
 void PetShopLayer::onBuy2Btn(CCObject* sender) {
-    
+    BuyAccessoryPopup::create(m_a2, m_petData)->show();
 }
 
 void PetShopLayer::onBuy3Btn(CCObject* sender) {
-    
+    BuyAccessoryPopup::create(m_a3, m_petData)->show();
 }
 
 bool PetShopLayer::initAccessories() {

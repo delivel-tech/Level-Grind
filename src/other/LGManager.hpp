@@ -4,6 +4,7 @@
 #include <string>
 #include <argon/argon.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace geode::prelude;
 
@@ -49,6 +50,14 @@ public:
                 LGManager::get()->setArgonToken(token);
             }
         );
+    }
+
+    std::unordered_set<int>& getLevelsWithCoins() {
+        return levelsWithCoins;
+    }
+
+    std::unordered_set<int>& getLevelsWithoutCoins() {
+        return levelsWithoutCoins;
     }
 
     Staff& getStaff() {
@@ -135,6 +144,21 @@ public:
                     staff.boosters.push_back(accountId.unwrapOrDefault());
                 }
 
+                auto levelsWithCoins = json["levelsWithCoins"].asArray();
+                auto levelsWithoutCoins = json["levelsWithoutCoins"].asArray();
+
+                for (auto id : levelsWithCoins.unwrap()) {
+                    if (auto idVal = id.asInt(); idVal) {
+                        LGManager::get()->getLevelsWithCoins().insert(idVal.unwrap());
+                    }
+                }
+
+                for (auto id : levelsWithoutCoins.unwrap()) {
+                    if (auto idVal = id.asInt(); idVal) {
+                        LGManager::get()->getLevelsWithoutCoins().insert(idVal.unwrap());
+                    }
+                }
+
                 auto notes = json["notes"].asArray();
 
                 if (!notes) {
@@ -189,4 +213,6 @@ private:
 
     Staff staffs;
     std::unordered_map<int, std::string> notes;
+    std::unordered_set<int> levelsWithCoins;
+    std::unordered_set<int> levelsWithoutCoins;
 };
