@@ -49,5 +49,7 @@ This achievement can be found <cg>on the main layer of the mod</c>.
 ### <cy>Credits:</c>
 
 * <cp>Mod logo & sprites</c> - [<cy>iDust</c>](user:20851829)!
+* Helping with <cj>making sprites</c> - [<cy>Dasshu</c>](user:1975253)
 * Making <cy>Argon and cue</c> - [<cr>dankmeme01</c>](user:9735891) :3
+* <cj>Credits popup design</c> & <cy>partly code</c> - [<cr>dankmeme01</c>](user:9735891) <3
 * A lot of <cg>levels</c> in the database - <cp>our helpers</c> <3

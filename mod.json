@@ -8,46 +8,16 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v1.5.3",
+	"version": "v2.0.0",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
-		"jouca.badgesapi": ">=v1.4.1",
-		"alk.better-touch-prio": ">=v1.0.14"
+		"jouca.badgesapi": ">=v1.4.1"
 	},
 	"resources": {
 		"sprites": [
-			"resources/grinding_btn.png",
-			"resources/lg-logo.png",
-			"resources/GJ_bigStar_noShadow.png",
-			"resources/button_add_1.png",
-			"resources/button_add_2.png",
-			"resources/badge_helper.png",
-			"resources/badge_admin.png",
-			"resources/search_btn_1.png",
-			"resources/discord_popup.png",
-			"resources/discord_btn.png",
-			"resources/ann_btn.png",
-			"resources/credits_btn.png",
-			"resources/info_btn.png",
-			"resources/badge_artist.png",
-			"resources/random_btn.png",
-			"resources/moon_spr.png",
-			"resources/star_spr.png",
-			"resources/badge_booster.png",
-			"resources/badge_contributor.png",
-			"resources/info_btn_2.png",
-			"resources/button_edit_note.png",
-			"resources/button_note.png",
-			"resources/daily_level.png",
-			"resources/weekly_level.png",
-			"resources/pet_shop.png",
-			"resources/zoink_headphones.png",
-			"resources/moon_crown.png",
-			"resources/bunny_ears.png",
-			"resources/support_btn.png",
-			"resources/badge_owner.png"
+			"resources/*.png"
 		]
 	},
 	"links": {

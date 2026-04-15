@@ -1,3 +1,11 @@
+# 1.5.5
+- Owner badge appearing twice after profile reloading fixed.
+- Better Touch Prio dependancy removed.
+- Started using UIBuilder. Will do codebase overhauling soon.
+- Precise Level Length option added if BetterInfo is not installed.
+- Only more than 0% option added.
+- New credits popup.
+
 # 1.5.3
 - Badges in comments.
 - Bugfixes.
