@@ -1,3 +1,6 @@
+# 1.5.4
+- Removed Better Touch Prio from dependancies.
+
 # 1.5.3
 - Badges in comments.
 - Bugfixes.
