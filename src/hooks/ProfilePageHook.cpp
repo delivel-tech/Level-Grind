@@ -30,6 +30,7 @@ class $modify(UserManage, ProfilePage) {
 		if (auto badgeBtn = getChildByIDRecursive("grind-contributor-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-artist-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-booster-badge")) badgeBtn->removeFromParent();
+		if (auto badgeBtn = getChildByIDRecursive("grind-owner-badge")) badgeBtn->removeFromParent();
 
 		m_fields->m_targetAccountID = score->m_accountID;
 		m_fields->m_username = score->m_userName.c_str();
