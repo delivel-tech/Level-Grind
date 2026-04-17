@@ -85,7 +85,7 @@ public:
         LGManager::get()->getStaff().boosters.clear();
 
         async::spawn(
-            req.get("https://delivel.tech/grindapi/bootup_get"),
+            req.get("https://api.delivel.tech/bootup_get"),
             [](web::WebResponse res) {
                 if (!res.ok()) {
                     log::warn("get_staff returned non-ok status: {}", res.code());

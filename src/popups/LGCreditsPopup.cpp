@@ -98,7 +98,7 @@ bool LGCreditsPopup::init() {
     web::WebRequest req;
 
     async::spawn(
-        req.get("https://delivel.tech/grindapi/get_credits"),
+        req.get("https://api.delivel.tech/get_credits"),
         [self](web::WebResponse res) {
             if (!self) return;
 

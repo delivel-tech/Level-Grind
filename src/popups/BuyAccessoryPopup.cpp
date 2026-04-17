@@ -125,7 +125,7 @@ void BuyAccessoryPopup::onBuyBtn(CCObject* sender) {
     auto uPopupRef = Ref(uPopup);
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/buy_item"),
+        req.post("https://api.delivel.tech/buy_item"),
         [uPopupRef](web::WebResponse res) {
             if (!uPopupRef) return;
             if (!res.ok()) {

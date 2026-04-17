@@ -684,7 +684,7 @@ void LGLevelBrowserLayer::performFetchLevels() {
     WeakRef<LGLevelBrowserLayer> weakSelf = this;
     
     m_searchTask.spawn(
-        req.post("https://delivel.tech/grindapi/get_levels"),
+        req.post("https://api.delivel.tech/get_levels"),
         [weakSelf](web::WebResponse const& res) {
             
             auto self = weakSelf.lock();

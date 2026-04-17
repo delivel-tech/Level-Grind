@@ -77,7 +77,7 @@ void LGPetRenamePopup::onOKBtn(CCObject* sender) {
     auto self = Ref(this);
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/update_pet_name"),
+        req.post("https://api.delivel.tech/update_pet_name"),
         [uPopupRef, self](web::WebResponse res) {
             if (!uPopupRef || !self) return;
             if (!res.ok()) {

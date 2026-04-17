@@ -48,7 +48,7 @@ void UserManagePopup::onWipePetDataBtn(CCObject* sender) {
     Ref<UserManagePopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/wipe_pet_data"),
+        req.post("https://api.delivel.tech/wipe_pet_data"),
         [popupRef, self](web::WebResponse res) {
             if (!popupRef || !self) return;
             if (!res.ok()) {
@@ -89,7 +89,7 @@ void UserManagePopup::onUnbanPetBtn(CCObject* sender) {
     Ref<UserManagePopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/unban_pet"),
+        req.post("https://api.delivel.tech/unban_pet"),
         [popupRef, self](web::WebResponse res) {
             if (!popupRef || !self) return;
             if (!res.ok()) {
@@ -149,7 +149,7 @@ bool UserManagePopup::init(int targetAccountID, const char* username, int icon, 
     Ref<CCMenu> btnMenuRef = btnMenu;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/check_helper_manage"),
+        req.post("https://api.delivel.tech/check_helper_manage"),
         [spinnerRef, self, btnMenuRef](web::WebResponse res) {
             if (!self || !spinnerRef) return;
             if (!res.ok()) {
@@ -353,7 +353,7 @@ void UserManagePopup::onDemoteAdminBtn(CCObject* sender) {
     Ref<UserManagePopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/demote_admin"),
+        req.post("https://api.delivel.tech/demote_admin"),
         [popupRef, demoteRef, self](web::WebResponse res) {
             if (!popupRef || !demoteRef || !self) return;
             if (!res.ok()) {
@@ -411,7 +411,7 @@ void UserManagePopup::onPromoteArtistBtn(CCObject* sender) {
     Ref<UploadActionPopup> popupRef = upopup;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/promote_artist"),
+        req.post("https://api.delivel.tech/promote_artist"),
         [popupRef](web::WebResponse res) {
             if (!popupRef) return;
             if (!res.ok()) {
@@ -448,7 +448,7 @@ void UserManagePopup::onDemoteArtistBtn(CCObject* sender) {
     Ref<UploadActionPopup> popupRef = upopup;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/demote_artist"),
+        req.post("https://api.delivel.tech/demote_artist"),
         [popupRef](web::WebResponse res) {
             if (!popupRef) return;
             if (!res.ok()) {
@@ -490,7 +490,7 @@ void UserManagePopup::onPromoteBoosterBtn(CCObject* sender) {
     Ref<UploadActionPopup> popupRef = upopup;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/promote_booster"),
+        req.post("https://api.delivel.tech/promote_booster"),
         [popupRef](web::WebResponse res) {
             if (!popupRef) return;
             if (!res.ok()) {
@@ -528,7 +528,7 @@ void UserManagePopup::onDemoteBoosterBtn(CCObject* sender) {
     Ref<UploadActionPopup> popupRef = upopup;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/demote_booster"),
+        req.post("https://api.delivel.tech/demote_booster"),
         [popupRef](web::WebResponse res) {
             if (!popupRef) return;
             if (!res.ok()) {
@@ -570,7 +570,7 @@ void UserManagePopup::onDemoteBtn(CCObject* sender) {
     Ref<UserManagePopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/demote_helper"),
+        req.post("https://api.delivel.tech/demote_helper"),
         [popupRef, demoteRef, self](web::WebResponse res) {
             if (!popupRef || !demoteRef || !self) return;
             if (!res.ok()) {
@@ -621,7 +621,7 @@ void UserManagePopup::onPromoteBtn(CCObject* sender) {
     Ref<UserManagePopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/promote_helper"),
+        req.post("https://api.delivel.tech/promote_helper"),
         [popupRef, promoteRef, self](web::WebResponse res) {
             if (!popupRef || !promoteRef || !self) return;
             if (!res.ok()) {
@@ -673,7 +673,7 @@ void UserManagePopup::onPromoteAdminBtn(CCObject* sender) {
     Ref<UserManagePopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/promote_admin"),
+        req.post("https://api.delivel.tech/promote_admin"),
         [popupRef, promoteRef, self](web::WebResponse res) {
             if (!popupRef || !promoteRef || !self) return;
             if (!res.ok()) {
@@ -725,7 +725,7 @@ void UserManagePopup::onPromoteContributorBtn(CCObject* sender) {
     Ref<UserManagePopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/promote_contributor"),
+        req.post("https://api.delivel.tech/promote_contributor"),
         [popupRef, promoteRef, self](web::WebResponse res) {
             if (!popupRef || !promoteRef || !self) return;
             if (!res.ok()) {
@@ -771,7 +771,7 @@ void UserManagePopup::onDemoteContributorBtn(CCObject* sender) {
     Ref<UserManagePopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/demote_contributor"),
+        req.post("https://api.delivel.tech/demote_contributor"),
         [popupRef, demoteRef, self](web::WebResponse res) {
             if (!popupRef || !demoteRef || !self) return;
             if (!res.ok()) {

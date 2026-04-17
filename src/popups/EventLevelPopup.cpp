@@ -167,7 +167,7 @@ bool EventLevelPopup::init(GrindEventType type) {
 
     auto self = Ref(this);
     m_listener.spawn(
-        web::WebRequest().get("https://delivel.tech/grindapi/get_events"),
+        web::WebRequest().get("https://api.delivel.tech/get_events"),
         [self](web::WebResponse res) {
             if (!self || !self->m_mainLayer) return;
             if (!res.ok()) return;

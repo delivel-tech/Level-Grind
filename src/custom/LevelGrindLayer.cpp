@@ -808,7 +808,7 @@ void LevelGrindLayer::onPetBtn(CCObject* sender) {
 	req.bodyJSON(body);
 
 	m_listener.spawn(
-		req.post("https://delivel.tech/grindapi/get_create_pet"),
+		req.post("https://api.delivel.tech/get_create_pet"),
 		[circleRef, blockRef, btnRef](web::WebResponse res) {
 			if (!circleRef || !blockRef || !btnRef) {
 				return;
@@ -863,7 +863,7 @@ void LevelGrindLayer::onAnnouncementsBtn(CCObject* sender) {
 	auto btnRef = Ref(annBtn);
 
 	m_listener.spawn(
-		req.get("https://delivel.tech/grindapi/get_latest_ann"),
+		req.get("https://api.delivel.tech/get_latest_ann"),
 		[circleRef, blockRef, btnRef](web::WebResponse res) {
 			if (!circleRef || !blockRef || !btnRef) {
 				return;
@@ -989,7 +989,7 @@ void LevelGrindLayer::onRandomBtn(CCObject* sender) {
     };
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/get_levels"),
+        req.post("https://api.delivel.tech/get_levels"),
         [self, circleRef, btnRef, blockRef, resetState](web::WebResponse res) {
             if (!self) {
                 if (blockRef) blockRef->removeFromParent();

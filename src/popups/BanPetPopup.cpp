@@ -73,7 +73,7 @@ void BanPetPopup::onBanBtn(CCObject* sender) {
     Ref<BanPetPopup> self = this;
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/ban_pet"),
+        req.post("https://api.delivel.tech/ban_pet"),
         [popupRef, self](web::WebResponse res) {
             if (!popupRef || !self) return;
             if (!res.ok()) {

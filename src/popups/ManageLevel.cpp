@@ -572,7 +572,7 @@ bool ManageLevel::init(GJGameLevel* level, GJDifficultySprite* diffSprite) {
     auto self = Ref(this);
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/get_level_info_staff"),
+        req.post("https://api.delivel.tech/get_level_info_staff"),
         [self](web::WebResponse res) {
             const CCSize statusRowLimit = { 190.f, 26.f };
 
@@ -951,7 +951,7 @@ void ManageLevel::onSetEventBtn(CCObject* sender) {
             Ref<UploadActionPopup> popupRef = upopup;
 
             m_eventListener.spawn(
-                req.post("https://delivel.tech/grindapi/set_event"),
+                req.post("https://api.delivel.tech/set_event"),
                 [popupRef](web::WebResponse res) {
                     if (!popupRef) return;
                     if (!res.ok()) {
@@ -998,7 +998,7 @@ void ManageLevel::onDeleteEventBtn(CCObject* sender) {
             Ref<UploadActionPopup> popupRef = upopup;
 
             m_eventListener.spawn(
-                req.post("https://delivel.tech/grindapi/delete_event"),
+                req.post("https://api.delivel.tech/delete_event"),
                 [popupRef](web::WebResponse res) {
                     if (!popupRef) return;
                     if (!res.ok()) {
@@ -1035,7 +1035,7 @@ void ManageLevel::onDeleteNoteButton(CCObject* sender) {
     auto uPopupRef = Ref(uPopup);
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/delete_note"),
+        req.post("https://api.delivel.tech/delete_note"),
         [uPopupRef](web::WebResponse res) {
             if (!uPopupRef) return;
             if (!res.ok()) {
@@ -1077,7 +1077,7 @@ void ManageLevel::onDeleteBtn(CCObject* sender) {
     auto popupRef = Ref(upopup);
 
     m_listener2.spawn(
-        req.post("https://delivel.tech/grindapi/delete_level"),
+        req.post("https://api.delivel.tech/delete_level"),
         [popupRef](web::WebResponse res) {
             if (!popupRef) return;
             if (!res.ok()) {
@@ -1112,7 +1112,7 @@ void ManageLevel::onUnlockBtn(CCObject* sender) {
     Ref<CCMenuItemSpriteExtra> unlockBtnRef = clickedUnlockBtn;
 
     m_listener2.spawn(
-        req.post("https://delivel.tech/grindapi/unban_level"),
+        req.post("https://api.delivel.tech/unban_level"),
         [popupRef, layerRef, unlockBtnRef](web::WebResponse res) {
             if (!popupRef) return;
             if (!layerRef) return;
@@ -1180,7 +1180,7 @@ void ManageLevel::onLockBtn(CCObject* sender) {
     Ref<CCMenuItemSpriteExtra> lockBtnRef = clickedLockBtn;
 
     m_listener2.spawn(
-        req.post("https://delivel.tech/grindapi/ban_level"),
+        req.post("https://api.delivel.tech/ban_level"),
         [popupRef, layerRef, lockBtnRef](web::WebResponse res) {
             if (!popupRef) return;
             if (!layerRef) return;
@@ -1243,7 +1243,7 @@ void ManageLevel::onAddButton(CCObject* sender) {
     Ref<UploadActionPopup> popupRef = upopup;
 
     m_listener2.spawn(
-        req.post("https://delivel.tech/grindapi/new_level"),
+        req.post("https://api.delivel.tech/new_level"),
         [popupRef](web::WebResponse res) {
             if (!popupRef) return;
             if (!res.ok()) {

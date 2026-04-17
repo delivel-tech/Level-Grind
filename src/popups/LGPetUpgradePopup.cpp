@@ -112,7 +112,7 @@ void LGPetUpgradePopup::onUpgradeRarity(CCObject* sender) {
     auto uPopupRef = Ref(upopup);
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/upgrade_pet_rarity"),
+        req.post("https://api.delivel.tech/upgrade_pet_rarity"),
         [uPopupRef](web::WebResponse res) {
             if (!uPopupRef) return;
             if (!res.ok()) {
@@ -183,7 +183,7 @@ void LGPetUpgradePopup::onUpgradeLevel(CCObject* sender) {
     auto uPopupRef = Ref(upopup);
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/upgrade_pet_level"),
+        req.post("https://api.delivel.tech/upgrade_pet_level"),
         [uPopupRef](web::WebResponse res) {
             if (!uPopupRef) return;
             if (!res.ok()) {

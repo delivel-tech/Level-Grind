@@ -19,7 +19,7 @@ bool LGAnnPopup::init() {
     if (!Popup::init(400.f, 225.f, "GJ_square07.png")) return false;
 
     auto imageSpr = LazySprite::create({ m_mainLayer->getScaledContentSize() }, true);
-    imageSpr->loadFromUrl("https://delivel.tech/grind/imglgvds/achievement.png", CCImage::kFmtPng, true);
+    imageSpr->loadFromUrl("https://api.delivel.tech/cdn/achievement.png", CCImage::kFmtPng, true);
     imageSpr->setAutoResize(true);
 
     auto stencil = NineSlice::create("GJ_square06.png");

@@ -78,7 +78,7 @@ void AddNotePopup::onAddBtn(CCObject* sender) {
     auto uPopupRef = Ref(uPopup);
 
     m_listener.spawn(
-        req.post("https://delivel.tech/grindapi/new_note"),
+        req.post("https://api.delivel.tech/new_note"),
         [uPopupRef](web::WebResponse res) {
             if (!uPopupRef) return;
             if (!res.ok()) {

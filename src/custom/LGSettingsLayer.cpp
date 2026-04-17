@@ -591,7 +591,7 @@ void LGSettingsLayer::createStaffTab() {
         Ref<UploadActionPopup> popupRef = upopup;
 
         async::spawn(
-            req.post("https://delivel.tech/grindapi/check_helper_new"),
+            req.post("https://api.delivel.tech/check_helper_new"),
             [popupRef](web::WebResponse res) {
                 if (!popupRef) return;
                 if (!res.ok()) {
@@ -677,7 +677,7 @@ void LGSettingsLayer::createStaffTab() {
         auto uPopupRef = Ref(uPopup);
 
         async::spawn(
-            req.get("https://delivel.tech/grindapi/bootup_get"),
+            req.get("https://api.delivel.tech/bootup_get"),
             [uPopupRef](web::WebResponse res) {
                 if (!uPopupRef) return;
                 if (!res.ok()) {

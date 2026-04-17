@@ -1,3 +1,6 @@
+# 1.5.5
+- Changed base url from delivel.tech/grindapi to api.delivel.tech after server maintenance.
+
 # 1.5.4
 - Removed Better Touch Prio from dependancies.
 
