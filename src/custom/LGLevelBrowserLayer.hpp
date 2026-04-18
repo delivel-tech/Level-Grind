@@ -58,6 +58,7 @@ public:
 protected:
     void onInfoButton(CCObject* sender);
     void onPageButton(CCObject* sender);
+    void onRandomPage(CCObject* sender);
     void onPrevPage(CCObject* sender);
     void onNextPage(CCObject* sender);
 
@@ -92,6 +93,7 @@ protected:
     CCLabelBMFont* m_pageButtonLabel;
 
     CCMenuItemSpriteExtra* m_pageButton;
+    CCMenuItemSpriteExtra* m_randomPageButton;
     CCMenuItemSpriteExtra* m_refreshBtn;
     CCMenuItemSpriteExtra* m_prevButton;
     CCMenuItemSpriteExtra* m_nextButton;
