@@ -49,6 +49,16 @@ bool BaseLayer::init() {
     return true;
 }
 
+void BaseLayer::replaceBgToClassic() {
+    m_bg->removeFromParent();
+
+    auto newBg = createLayerBG();
+    newBg->setColor({ 0, 102, 255 });
+    addChild(newBg, -1);
+
+    return;
+}
+
 void BaseLayer::keyBackClicked() {
     this->onBack(nullptr);
 }

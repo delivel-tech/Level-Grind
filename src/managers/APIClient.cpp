@@ -7,6 +7,7 @@
 #include <unordered_set>
 
 #include <argon/argon.hpp>
+#include <vector>
 
 #include "DataManager.hpp"
 
@@ -247,6 +248,63 @@ BootupGetResponse APIClient::bootupGetParse(web::WebResponse res) {
     return ret;
 }
 
+web::WebFuture APIClient::getAnnouncements() {
+    return web::WebRequest().get(fmt::format("{}{}", baseUrl, "/get_announcements"));
+}
+
+AnnouncementsResponse APIClient::getAnnouncementsParse(web::WebResponse res) {
+    AnnouncementsResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+
+    bool isOK = json["ok"].asBool().unwrapOrDefault();
+    
+    if (!isOK) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto ann = json["announcements"].asArray();
+
+    if (!ann) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto announcements = ann.unwrap();
+
+    for (auto const& val : announcements) {
+        AnnouncementInfo currentAnn;
+
+        currentAnn.content = val["content"].asString().unwrapOrDefault();
+        currentAnn.id = val["id"].asInt().unwrapOrDefault();
+        currentAnn.title = val["title"].asString().unwrapOrDefault();
+        currentAnn.addedBy = val["added_by"].asString().unwrapOrDefault();
+        currentAnn.createdAt = val["created_at"].asString().unwrapOrDefault();
+
+        ret.announcements.push_back(currentAnn);
+    }
+
+    ret.ok = true;
+
+    return ret;
+}
+
 void APIClient::performBootupGet() {
     async::spawn(
         bootupGet(),
@@ -255,6 +313,74 @@ void APIClient::performBootupGet() {
             DataManager::getInstance().setSharedData(parsed);
         }
     );
+}
+
+web::WebFuture APIClient::addAnnouncement(std::string title, std::string content) {
+    auto req = web::WebRequest();
+    matjson::Value reqBody;
+
+    reqBody["account_id"] = GJAccountManager::sharedState()->m_accountID;
+    reqBody["token"] = DataManager::getInstance().getUserToken();
+    reqBody["title"] = title;
+    reqBody["content"] = content;
+    reqBody["added_by"] = GJAccountManager::sharedState()->m_username;
+
+    req.bodyJSON(reqBody);
+    return req.post(fmt::format("{}{}", baseUrl, "/new_announcement"));
+}
+
+AddAnnouncementResponse APIClient::addAnnouncementParse(web::WebResponse res) {
+    AddAnnouncementResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    return ret;
+}
+
+web::WebFuture APIClient::deleteAnnouncement(int announcementId) {
+    auto req = web::WebRequest();
+    matjson::Value reqBody;
+
+    reqBody["account_id"] = GJAccountManager::sharedState()->m_accountID;
+    reqBody["token"] = DataManager::getInstance().getUserToken();
+    reqBody["announcement_id"] = announcementId;
+
+    req.bodyJSON(reqBody);
+    return req.post(fmt::format("{}{}", baseUrl, "/delete_announcement"));
+}
+
+DeleteAnnouncementResponse APIClient::deleteAnnouncementParse(web::WebResponse res) {
+    DeleteAnnouncementResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    return ret;
 }
 
 web::WebFuture APIClient::getUserRoles(int accountID) {

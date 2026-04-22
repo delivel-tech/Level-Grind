@@ -14,6 +14,8 @@ public:
     CCMenuItemSpriteExtra* m_backBtn = nullptr;
     cue::RepeatingBackground* m_bg = nullptr;
 
+    void replaceBgToClassic();
+
 private:
     void keyBackClicked() override;
     virtual void onBack(CCObject* sender);

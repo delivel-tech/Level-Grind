@@ -1,4 +1,6 @@
 #pragma once
+#include "Geode/cocos/cocoa/CCObject.h"
+#include <Geode/Enums.hpp>
 #include <string>
 namespace levelgrind {
 
@@ -9,8 +11,8 @@ namespace levelgrind {
         std::vector<int> demonDifficulties;
         std::vector<std::string> grindTypes;
         std::vector<int> versions;
-        bool isNewerFirst;
-        bool isRecentlyAdded;
+        bool isNewerFirst = true;
+        bool isRecentlyAdded = false;
     };
 
     // Body that is returned from get_levels
@@ -38,6 +40,47 @@ namespace levelgrind {
         Helper = 1,
         Admin = 2,
         Owner = 3
+    };
+
+    enum GuidePage {
+        MainGuide = 0,
+        PetGuide = 1,
+        WeeklyAchievementsGuide = 2,
+        NotesGuide = 3,
+        OwnerRoleGuide = 4,
+        AdminRoleGuide = 5,
+        HelperRoleGuide = 6,
+        ArtistRoleGuide = 7,
+        ContribRoleGuide = 8,
+        BoosterRoleGuide = 9,
+        RandomButtonGuide = 10,
+        MainPage = 11
+    };
+
+    enum GuidePopupState {
+        FromMainLayer = 0,
+        FromOutside = 1
+    };
+
+    struct AnnouncementInfo {
+        int id;
+        std::string title;
+        std::string content;
+        std::string addedBy;
+        std::string createdAt;
+    };
+
+    struct AnnouncementsResponse {
+        std::vector<AnnouncementInfo> announcements;
+        bool ok;
+    };
+
+    struct AddAnnouncementResponse {
+        bool ok;
+    };
+
+    struct DeleteAnnouncementResponse {
+        bool ok;
     };
 
     struct UserRoles {
@@ -99,6 +142,27 @@ namespace levelgrind {
         Length length;
         std::string lengthName;
         std::string lengthId;
+        cocos2d::SEL_MenuHandler cb;
+    };
+
+    struct VersionInfo {
+        int version;
+        std::string versionName;
+        std::string versionId;
+        cocos2d::SEL_MenuHandler cb;
+    };
+
+    struct FilterInfo {
+        std::string filterName;
+        std::string top;
+        std::string filterId;
+        cocos2d::SEL_MenuHandler cb;
+    };
+
+    struct DemonDifficultyInfo {
+        int demonDifficulty;
+        std::string sprite;
+        std::string id;
         cocos2d::SEL_MenuHandler cb;
     };
 }

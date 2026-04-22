@@ -4,6 +4,7 @@
 
 #include "Geode/utils/web.hpp"
 #include <Geode/Geode.hpp>
+#include <string>
 
 using namespace geode::prelude;
 
@@ -69,10 +70,19 @@ public:
     web::WebFuture unbanPet(int accountID);
     UnbanPetResponse unbanPetParse(web::WebResponse res);
 
+    web::WebFuture getAnnouncements();
+    AnnouncementsResponse getAnnouncementsParse(web::WebResponse res);
+
+    web::WebFuture addAnnouncement(std::string title, std::string content);
+    AddAnnouncementResponse addAnnouncementParse(web::WebResponse res);
+
+    web::WebFuture deleteAnnouncement(int announcementId);
+    DeleteAnnouncementResponse deleteAnnouncementParse(web::WebResponse res);
+
     // argon
     void performGetToken();
 
-    std::string baseUrl = "https://delivel.tech/grindapi";
+    std::string baseUrl = "https://api.delivel.tech";
 };
 
 }

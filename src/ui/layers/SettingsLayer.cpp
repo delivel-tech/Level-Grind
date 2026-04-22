@@ -1,5 +1,5 @@
 #include "SettingsLayer.hpp"
-#include "Geode/ui/General.hpp"
+#include "cue/ListNode.hpp"
 
 using namespace geode::prelude;
 
@@ -18,11 +18,11 @@ SettingsLayer* SettingsLayer::create() {
 bool SettingsLayer::init() {
     if (!BaseLayer::init()) return false;
 
-    m_bg->removeFromParent();
+    replaceBgToClassic();
 
-    auto newBg = createLayerBG();
-    newBg->setColor({ 0, 102, 255 });
-    addChild(newBg, -1);
+    for (size_t i = 0; i < 4; i++) {
+        
+    }
 
     return true;
 }

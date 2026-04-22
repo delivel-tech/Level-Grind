@@ -10,6 +10,7 @@
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/NineSlice.hpp"
 #include "Geode/ui/Notification.hpp"
+#include "Geode/ui/Popup.hpp"
 #include "Geode/ui/TextInput.hpp"
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
@@ -248,20 +249,30 @@ void UserManagePopup::buildUI() {
                     .parent(self->m_optionsMenu)
                     .id("wipe-pet-btn")
                     .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
-                        uPopup->show();
+                        
+                        createQuickPopup(
+                            "Are you sure?",
+                            fmt::format("Please confirm your decision to wipe the {}'s pet.", self->m_targetUser->m_userName),
+                            "Cancel", "Confirm",
+                            [self](auto, bool btn2) {
+                                if (btn2) {
+                                    auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
+                                    uPopup->show();
 
-                        auto uPopupRef = Ref(uPopup);
+                                    auto uPopupRef = Ref(uPopup);
 
-                        self->m_listener.spawn(
-                            APIClient::getInstance().wipePet(self->m_targetUser->m_accountID),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                auto parsed = APIClient::getInstance().wipePetParse(res);
-                                if (parsed.ok) {
-                                    uPopupRef->showSuccessMessage("Success! Pet wiped.");
-                                } else {
-                                    uPopupRef->showFailMessage("Failed! Try again later");
+                                    self->m_listener.spawn(
+                                        APIClient::getInstance().wipePet(self->m_targetUser->m_accountID),
+                                        [uPopupRef](web::WebResponse res) {
+                                            if (!uPopupRef) return;
+                                            auto parsed = APIClient::getInstance().wipePetParse(res);
+                                            if (parsed.ok) {
+                                                uPopupRef->showSuccessMessage("Success! Pet wiped.");
+                                            } else {
+                                                uPopupRef->showFailMessage("Failed! Try again later");
+                                            }
+                                        }
+                                    );
                                 }
                             }
                         );

@@ -26,6 +26,13 @@ void safeAdd(std::vector<T>& vec, const T& value) {
     }
 }
 
+template <typename T>
+inline void inlineSafeAdd(std::vector<T>& vec, const T& value) {
+    if (std::find(vec.begin(), vec.end(), value) == vec.end()) {
+        vec.push_back(value);
+    }
+}
+
 inline bool getNewTogglerState(CCObject* sender) {
     auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
     if (!toggler) return false;

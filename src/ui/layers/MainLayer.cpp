@@ -1,22 +1,33 @@
 #include "MainLayer.hpp"
 #include "Geode/cocos/CCDirector.h"
+#include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/platform/windows.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/NineSlice.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <UIBuilder.hpp>
-#include <array>
+#include <arc/future/Future.hpp>
 #include <fmt/format.h>
 
 #include "../../utils/globals.hpp"
 #include "../../utils/utils.hpp"
+#include "../../managers/APIClient.hpp"
+#include "../../ui/popups/WeeklyAchievementPopup.hpp"
+#include "../popups/GuidePopup.hpp"
+#include "../popups/AnnouncementsPopup.hpp"
+#include "CustomBrowserLayer.hpp"
 
-#include "../BasePopup.hpp"
+#include "../popups/DifficultySelectorPopup.hpp"
 #include "../popups/DiscordPopup.hpp"
+#include "../popups/CreditsPopup.hpp"
+#include "Geode/ui/Notification.hpp"
+#include "Geode/utils/cocos.hpp"
+#include "Geode/utils/web.hpp"
 #include "SettingsLayer.hpp"
 
 using namespace geode::prelude;
@@ -27,17 +38,6 @@ struct DifficultyFaceInfo {
     const char* spriteFrame;
     const char* id;
     cocos2d::SEL_MenuHandler callback;
-};
-
-struct SplitDifficultyRowInfo {
-    const char* title;
-    int firstValue;
-    int secondValue;
-    const char* firstId;
-    const char* secondId;
-    cocos2d::SEL_MenuHandler firstCallback;
-    cocos2d::SEL_MenuHandler secondCallback;
-    float y;
 };
 
 bool hasDifficulty(const std::vector<int>& values, int value) {
@@ -53,121 +53,6 @@ void applyDifficultyPair(std::vector<int>& values, int first, int second, bool e
     if (firstSelected) safeAdd(values, first);
     if (secondSelected) safeAdd(values, second);
 }
-
-class DifficultySelectorPopup final : public BasePopup {
-public:
-    static DifficultySelectorPopup* create(MainLayer* owner) {
-        auto ret = new DifficultySelectorPopup;
-        if (ret && ret->init(owner)) {
-            ret->autorelease();
-            return ret;
-        }
-        delete ret;
-        return nullptr;
-    }
-
-private:
-    MainLayer* m_owner = nullptr;
-
-    bool init(MainLayer* owner) {
-        if (!BasePopup::init(250.f, 200.f, "GJ_square01.png")) return false;
-
-        m_owner = owner;
-        setTitle("Difficulty Splitter");
-
-        auto hintLabel = Build(CCLabelBMFont::create("Select exact values", "goldFont.fnt"))
-            .scale(0.45f)
-            .opacity(180)
-            .pos(fromTop({ 0.f, 38.f }))
-            .parent(m_mainLayer)
-            .collect();
-
-        static const std::array<SplitDifficultyRowInfo, 3> rows = {{
-            { "Hard", 4, 5, "split-4-toggler", "split-5-toggler", menu_selector(DifficultySelectorPopup::onFourToggler), menu_selector(DifficultySelectorPopup::onFiveToggler), 38.f },
-            { "Harder", 6, 7, "split-6-toggler", "split-7-toggler", menu_selector(DifficultySelectorPopup::onSixToggler), menu_selector(DifficultySelectorPopup::onSevenToggler), -4.f },
-            { "Insane", 8, 9, "split-8-toggler", "split-9-toggler", menu_selector(DifficultySelectorPopup::onEightToggler), menu_selector(DifficultySelectorPopup::onNineToggler), -46.f },
-        }};
-
-        for (auto const& row : rows) {
-            auto label = Build(CCLabelBMFont::create(row.title, "bigFont.fnt"))
-                .scale(0.5f)
-                .pos(fromCenter({ 0.f, row.y }))
-                .parent(m_mainLayer)
-                .collect();
-
-            auto rowMenu = Build<CCMenu>::create()
-                .layout(RowLayout::create()->setGap(12.f))
-                .pos(fromCenter({ 0.f, row.y - 22.f }))
-                .scale(0.7f)
-                .parent(m_mainLayer)
-                .collect();
-
-            auto firstText = fmt::format("{}", row.firstValue);
-            auto firstToggler = Build(CCMenuItemToggler::create(
-                ButtonSprite::create(firstText.c_str(), "goldFont.fnt", "GJ_button_04.png"),
-                ButtonSprite::create(firstText.c_str(), "goldFont.fnt", "GJ_button_02.png"),
-                this,
-                row.firstCallback
-            ))
-                .id(row.firstId)
-                .parent(rowMenu)
-                .collect();
-
-            auto secondText = fmt::format("{}", row.secondValue);
-            auto secondToggler = Build(CCMenuItemToggler::create(
-                ButtonSprite::create(secondText.c_str(), "goldFont.fnt", "GJ_button_04.png"),
-                ButtonSprite::create(secondText.c_str(), "goldFont.fnt", "GJ_button_02.png"),
-                this,
-                row.secondCallback
-            ))
-                .id(row.secondId)
-                .parent(rowMenu)
-                .collect();
-
-            if (firstToggler) firstToggler->toggle(m_owner->isSplitDifficultySelected(row.firstValue));
-            if (secondToggler) secondToggler->toggle(m_owner->isSplitDifficultySelected(row.secondValue));
-
-            rowMenu->updateLayout();
-        }
-
-        return true;
-    }
-
-    void syncVisibleState() {
-        if (!m_owner) return;
-
-        static constexpr std::array<std::pair<int, const char*>, 6> togglers = {{
-            { 4, "split-4-toggler" },
-            { 5, "split-5-toggler" },
-            { 6, "split-6-toggler" },
-            { 7, "split-7-toggler" },
-            { 8, "split-8-toggler" },
-            { 9, "split-9-toggler" },
-        }};
-
-        for (auto const& [value, id] : togglers) {
-            if (auto toggler = typeinfo_cast<CCMenuItemToggler*>(m_mainLayer->getChildByIDRecursive(id))) {
-                toggler->toggle(m_owner->isSplitDifficultySelected(value));
-            }
-        }
-    }
-
-    void onFourToggler(CCObject* sender) { onSplitToggler(sender, 4); }
-    void onFiveToggler(CCObject* sender) { onSplitToggler(sender, 5); }
-    void onSixToggler(CCObject* sender) { onSplitToggler(sender, 6); }
-    void onSevenToggler(CCObject* sender) { onSplitToggler(sender, 7); }
-    void onEightToggler(CCObject* sender) { onSplitToggler(sender, 8); }
-    void onNineToggler(CCObject* sender) { onSplitToggler(sender, 9); }
-
-    void onSplitToggler(CCObject* sender, int difficulty) {
-        auto toggler = typeinfo_cast<CCMenuItemToggler*>(sender);
-        if (!toggler || !m_owner) return;
-
-        m_owner->setSplitDifficultySelected(difficulty, !toggler->isToggled());
-        m_owner->refreshSplitDifficultyFilters();
-        syncVisibleState();
-    }
-};
 
 MainLayer* MainLayer::create() {
     auto ret = new MainLayer;
@@ -185,50 +70,42 @@ bool MainLayer::init() {
     if (!initMainPanel()) return false;
     if (!initMD()) return false;
 
+    this->scheduleUpdate();
+
     return true;
 }
 
 bool MainLayer::initMainPanel() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
-    auto mainPanel = Build(NineSlice::create("GJ_square02.png"))
-        .parent(this)
-        .center()
-        .contentSize({ 420.f, 290.f })
-        .id("main-panel")
-        .collect();
-
-    if (!mainPanel) return false;
-
     auto levelGrindLogo = Build<CCSprite>::create("lg-logo.png"_spr)
         .scale(1.2f)
-        .pos(centerX(), centerY() + 100.f)
+        .pos({ winSize.width / 2, (winSize.height / 4) * 3.3f + 4.f })
         .id("level-grind-logo")
         .parent(this)
         .collect();
 
     if (!levelGrindLogo) return false;
 
-    auto panel = Build(NineSlice::create("square02_small.png"))
+    auto panel = Build(NineSlice::create("GJ_square02.png"))
         .id("search-panel")
-        .contentSize({390.f, 200.f})
-        .pos(centerX(), centerY() - 30.f)
-        .opacity(100)
+        .contentSize({210.f, 140.f})
+        .center()
         .parent(this)
         .collect();
 
     auto optionsPanelFirst = Build(NineSlice::create("square02_small.png"))
         .id("options-panel-first")
-        .contentSize({ winSize.width / 2, 30.f })
-        .pos(centerX(), centerY())
+        .contentSize({ 284.5f, 30.f })
+        .pos({ winSize.width / 2, winSize.height / 4.6f })
         .opacity(100)
         .parent(this)
         .collect();
 
     auto optionsPanelSecond = Build(NineSlice::create("square02_small.png"))
         .id("options-panel-second")
-        .contentSize({ winSize.width / 2, 30.f })
-        .pos(centerX(), centerY() - 40.f)
+        .contentSize({ 284.5f, 30.f })
+        .pos({ winSize.width / 2, winSize.height / 10.f })
         .opacity(100)
         .parent(this)
         .collect();
@@ -247,6 +124,7 @@ bool MainLayer::initMainPanel() {
     if (!ratingsMenu) return false;
 
     std::vector<DifficultyFaceInfo> difficulties = {
+        {"diffIcon_auto_btn_001.png", "auto-difficulty-toggler", makeCb(MainLayer::onAutoToggler)},
         { "diffIcon_01_btn_001.png", "easy-difficulty-toggler", makeCb(MainLayer::onEasyToggler) },
         { "diffIcon_02_btn_001.png", "normal-difficulty-toggler", makeCb(MainLayer::onNormalToggler) },
         { "diffIcon_03_btn_001.png", "hard-difficulty-toggler", makeCb(MainLayer::onHardToggler) },
@@ -264,6 +142,14 @@ bool MainLayer::initMainPanel() {
         Build(CCMenuItemToggler::create(spriteOff, spriteOn, this, difficulty.callback))
             .id(difficulty.id)
             .parent(ratingsMenu)
+            .with([](CCMenuItemToggler* toggler) {
+                auto children = toggler->getChildren();
+
+                for (auto& obj : CCArrayExt(children)) {
+                    auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
+                    btn->m_scaleMultiplier = 1.1f;
+                }
+            })
             .collect();
     }
 
@@ -313,16 +199,476 @@ bool MainLayer::initMainPanel() {
         auto lengthToggler = Build(CCMenuItemToggler::create(labelOff, labelOn, this, length.cb))
             .parent(lengthsMenu)
             .id(length.lengthId)
+            .with([](CCMenuItemToggler* toggler) {
+                auto children = toggler->getChildren();
+
+                for (auto& obj : CCArrayExt(children)) {
+                    auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
+                    btn->m_scaleMultiplier = 1.1f;
+                }
+            })
             .collect();
     }
 
     lengthsMenu->updateLayout();
 
-    
+    auto versionsPanel = Build(NineSlice::create("square02_small.png"))
+        .contentSize({ 30.f, winSize.height / 2.3f })
+        .id("versions-panel")
+        .parent(this)
+        .opacity(100)
+        .pos({ (winSize.width / 2) - 128.f, winSize.height / 2 })
+        .collect();
+
+    auto versionsMenu = Build<CCMenu>::create()
+        .layout(ColumnLayout::create()
+                                ->setGap(25.f)
+                                ->setAxisReverse(true))
+        .parent(this)
+        .pos(versionsPanel->getPosition())
+        .id("versions-menu")
+        .scale(0.4f)
+        .collect();
+
+    std::vector<VersionInfo> versions = {
+        {22, "2.2", "version-22", makeCb(MainLayer::onVer22Toggler)},
+        {21, "2.1", "version-21", makeCb(MainLayer::onVer21Toggler)},
+        {20, "2.0", "version-20", makeCb(MainLayer::onVer20Toggler)},
+        {19, "1.9", "version-19", makeCb(MainLayer::onVer19Toggler)},
+        {18, "<1.9", "version-lower-than-19", makeCb(MainLayer::onVerLower19Toggler)}
+    };
+
+    for (const auto& version : versions) {
+        auto labelOn = Build(CCLabelBMFont::create(version.versionName.c_str(), "bigFont.fnt"))
+            .collect();
+        auto labelOff = Build(CCLabelBMFont::create(version.versionName.c_str(), "bigFont.fnt"))
+            .color({ 100, 100, 100 })
+            .collect();
+
+        auto versionToggler = Build(CCMenuItemToggler::create(labelOff, labelOn, this, version.cb))
+            .parent(versionsMenu)
+            .id(version.versionId)
+            .with([](CCMenuItemToggler* toggler) {
+                auto children = toggler->getChildren();
+
+                for (auto& obj : CCArrayExt(children)) {
+                    auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
+                    btn->m_scaleMultiplier = 1.1f;
+                }
+            })
+            .collect();
+    }
+
+    versionsMenu->updateLayout();
+
+    auto filtersLabel = Build(CCLabelBMFont::create("Filters", "bigFont.fnt"))
+        .id("filters-label")
+        .parent(this)
+        .pos({ winSize.width / 2, (winSize.height / 4) * 2.55f })
+        .collect();
+
+    auto searchMenu = Build(CCMenu::create())
+        .scale(0.8f)
+        .layout(RowLayout::create())
+        .pos({ winSize.width / 2, (winSize.height / 4) * 1.5f })
+        .id("search-menu")
+        .parent(this)
+        .collect();
+
+    auto settingsBtn = Build(CCSprite::createWithSpriteFrameName("GJ_optionsBtn02_001.png"))
+        .scale(0.8f)
+        .intoMenuItem([] {
+            SettingsLayer::create()->open();
+        })
+        .id("settings-btn")
+        .scaleMult(1.1f)
+        .parent(searchMenu)
+        .collect();
+
+    auto searchBtn = Build(ButtonSprite::create("Search", "bigFont.fnt", "GJ_button_01.png"))
+        .scale(0.8f)
+        .intoMenuItem([this] {
+            GetLevelsBody body {
+                m_difficulties, m_lengths, m_demonDifficulties,
+                m_grindTypes, m_versions, true, false
+            };
+            CustomBrowserLayer::create(body, "Grinding Levels")->open();
+        })
+        .id("search-btn")
+        .scaleMult(1.1f)
+        .parent(searchMenu)
+        .collect();
+
+    auto randomBtn = Build<CCSprite>::create("random_btn.png"_spr)
+        .scale(0.55f)
+        .intoMenuItem([this] {
+            GetLevelsBody body {
+                m_difficulties, m_lengths, m_demonDifficulties,
+                m_grindTypes, m_versions, true, false
+            };
+
+            auto ll = levelgrind::LoadingLayer::create("Loading random level...");
+            ll->show();
+
+            m_randomLoadingLayer = Ref(ll);
+
+            auto loadingRef = Ref(ll);
+            auto self = Ref(this);
+
+            auto resetState = [loadingRef, self]() {
+                self->m_randomPending = false;
+                self->m_randomTimer = 0.f;
+                self->m_randomLevelID = -1;
+                self->m_randomKey.clear();
+                if (loadingRef) loadingRef->hide();
+                self->m_randomLoadingLayer = nullptr;
+            };
+
+            m_listener.spawn(
+                APIClient::getInstance().getLevels(body),
+                [self, loadingRef, resetState](web::WebResponse res) {
+                    if (!self) {
+                        resetState();
+                        return;
+                    }
+
+                    auto parsed = APIClient::getInstance().getLevelsParse(res);
+
+                    if (!parsed.ok) {
+                        resetState();
+                        Notification::create("Failed to get random level", NotificationIcon::Error)->show();
+                        return;
+                    }
+
+                    if (parsed.ids.empty()) {
+                        Notification::create("No levels found", NotificationIcon::Info)->show();
+                        resetState();
+                        return;
+                    }
+
+                    std::shuffle(parsed.ids.begin(), parsed.ids.end(), std::mt19937{ std::random_device{}() });
+
+                    bool onlyUncompleted = false;
+                    bool onlyCompleted = false;
+                    if (auto mod = Mod::get()) {
+                        onlyUncompleted = mod->getSavedValue<bool>("only-uncompleted");
+                        onlyCompleted = mod->getSavedValue<bool>("only-completed");
+                    }
+
+                    auto gsm = GameStatsManager::sharedState();
+
+                    int chosenID = -1;
+                    for (auto id : parsed.ids) {
+                        if (gsm) {
+                            bool isCompleted = gsm->hasCompletedOnlineLevel(id);
+                            if (onlyUncompleted && isCompleted) continue;
+                            if (onlyCompleted && !isCompleted) continue;
+                        }
+                        chosenID = id;
+                        break;
+                    }
+
+                    if (chosenID <= 0) {
+                        if (onlyUncompleted)
+                            Notification::create("No uncompleted levels found", NotificationIcon::Info)->show();
+                        else if (onlyCompleted)
+                            Notification::create("No completed levels found", NotificationIcon::Info)->show();
+                        else
+                            Notification::create("No levels found", NotificationIcon::Info)->show();
+                        resetState();
+                        return;
+                    }
+
+                    auto searchObj = GJSearchObject::create(SearchType::Search, numToString(chosenID));
+                    auto key = searchObj->getKey();
+                    auto glm = GameLevelManager::sharedState();
+
+                    if (!glm) {
+                        Notification::create("Failed to access level manager.", NotificationIcon::Error)->show();
+                        resetState();
+                        return;
+                    }
+
+                    auto stored = glm->getStoredOnlineLevels(key);
+                    if (stored && stored->count() > 0) {
+                        auto level = static_cast<GJGameLevel*>(stored->objectAtIndex(0));
+                        if (level && level->m_levelID == chosenID) {
+                            auto scene = LevelInfoLayer::scene(level, false);
+                            auto trans = CCTransitionFade::create(0.5f, scene);
+                            resetState();
+                            CCDirector::sharedDirector()->pushScene(trans);
+                            return;
+                        }
+                    }
+
+                    self->m_randomTimer = 10.f;
+                    self->m_randomLevelID = chosenID;
+                    self->m_randomKey = key;
+                    self->m_randomPending = true;
+
+                    if (glm->m_levelManagerDelegate) {
+                        glm->m_levelManagerDelegate = nullptr;
+                    }
+                    glm->getOnlineLevels(searchObj);
+                    return;
+                }
+            );
+        })
+        .scaleMult(1.1f)
+        .id("random-btn")
+        .parent(searchMenu)
+        .collect();
+
+    searchMenu->updateLayout();
+
+    auto typesBtnMenu = Build(CCMenu::create())
+        .id("types-btn-menu")
+        .layout(RowLayout::create()->setGap(15))
+        .parent(this)
+        .pos({ winSize.width / 2, (winSize.height / 4) * 2.05f })
+        .scale(0.8f)
+        .collect();
+
+    std::vector<FilterInfo> filters = {
+        {"star", "GJ_starsIcon_001.png", "star-toggler", makeCb(MainLayer::onStarToggler)},
+        {"moon", "GJ_moonsIcon_001.png", "moon-toggler", makeCb(MainLayer::onMoonToggler)},
+        {"coin", "GJ_coinsIcon2_001.png", "coin-toggler", makeCb(MainLayer::onCoinToggler)},
+        {"demon", "GJ_demonIcon_001.png", "demon-toggler", makeCb(MainLayer::onDemonToggler)}
+    };
+
+    for (auto const& filter : filters) {
+        auto btnSprOff = Build(CCSprite::create("GJ_button_04.png"))
+            .collect();
+
+        auto btnSprOn = Build(CCSprite::create("GJ_button_02.png"))
+            .collect();
+
+        auto top1 = Build(CCSprite::createWithSpriteFrameName(filter.top.c_str()))
+            .pos({ 20, 20 })
+            .parent(btnSprOff)
+            .collect();
+
+        auto top2 = Build(CCSprite::createWithSpriteFrameName(filter.top.c_str()))
+            .pos({ 20, 20 })
+            .parent(btnSprOn)
+            .collect();
+
+        auto filterToggler = Build(CCMenuItemToggler::create(
+            btnSprOff,
+            btnSprOn,
+            this,
+            filter.cb
+        ))
+            .id(filter.filterId)
+            .with([](CCMenuItemToggler* toggler) {
+                auto children = toggler->getChildren();
+
+                for (auto& obj : CCArrayExt(children)) {
+                    auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
+                    btn->m_scaleMultiplier = 1.1f;
+                }
+            })
+            .parent(typesBtnMenu)
+            .collect();
+
+    }
+
+    typesBtnMenu->updateLayout();
+
+    auto demonsPanel = Build(NineSlice::create("square02_small.png"))
+        .opacity(100)
+        .contentSize({ 30.f, winSize.height / 2.3f })
+        .pos({ (winSize.width / 2) + 128.f, winSize.height / 2 })
+        .id("demons-panel")
+        .visible(false)
+        .parent(this)
+        .collect();
+
+    auto demonsMenu = Build(CCMenu::create())
+        .layout(ColumnLayout::create()->setGap(25.f)->setAxisReverse(true))
+        .scale(0.4f)
+        .pos(demonsPanel->getPosition())
+        .id("demons-menu")
+        .visible(false)
+        .parent(this)
+        .collect();
+
+    m_demonsFilters.first = demonsPanel;
+    m_demonsFilters.second = demonsMenu;
+
+    std::array<int, 5> ddIDs = {3, 4, 0, 5, 6};
+
+    std::vector<DemonDifficultyInfo> demonDifficulties = {
+        {ddIDs[0], "diffIcon_07_btn_001.png", "easy-demon-toggler", makeCb(MainLayer::onEasyDemonToggler)},
+        {ddIDs[1], "diffIcon_08_btn_001.png", "medium-demon-toggler", makeCb(MainLayer::onMediumDemonToggler)},
+        {ddIDs[2], "diffIcon_06_btn_001.png", "hard-demon-toggler", makeCb(MainLayer::onHardDemonToggler)},
+        {ddIDs[3], "diffIcon_09_btn_001.png", "insane-demon-toggler", makeCb(MainLayer::onInsaneDemonToggler)},
+        {ddIDs[4], "diffIcon_10_btn_001.png", "extreme-demon-toggler", makeCb(MainLayer::onExtremeDemonToggler)},
+    };
+
+    for (auto const& demonDifficulty : demonDifficulties) {
+        auto sprOff = Build(CCSprite::createWithSpriteFrameName(demonDifficulty.sprite.c_str()))
+            .color({ 100, 100, 100 })
+            .collect();
+
+        auto sprOn = Build(CCSprite::createWithSpriteFrameName(demonDifficulty.sprite.c_str()))
+            .collect();
+
+        auto ddToggler = Build(CCMenuItemToggler::create(
+            sprOff,
+            sprOn,
+            this,
+            demonDifficulty.cb
+        ))
+            .id(demonDifficulty.id)
+            .with([](CCMenuItemToggler* toggler) {
+                auto children = toggler->getChildren();
+
+                for (auto& obj : CCArrayExt(children)) {
+                    auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
+                    btn->m_scaleMultiplier = 1.1f;
+                }
+            })
+            .parent(m_demonsFilters.second)
+            .collect();
+    }
+
+    m_demonsFilters.second->updateLayout();
 
     updateDifficultySelectorVisibility();
 
     return true;
+}
+
+void MainLayer::update(float dt) {
+    if (m_randomPending) {
+		    if (m_randomTimer > 0.f && m_randomLevelID > 0) {
+			    m_randomTimer -= dt;
+			    auto glm = GameLevelManager::sharedState();
+			    if (glm) {
+				    auto stored = glm->getStoredOnlineLevels(m_randomKey.c_str());
+				    if (stored && stored->count() > 0) {
+					    for (size_t i = 0; i < stored->count(); ++i) {
+						    auto lvl = static_cast<GJGameLevel*>(stored->objectAtIndex(i));
+						    if (lvl && lvl->m_levelID == m_randomLevelID) {
+						    auto scene = LevelInfoLayer::scene(lvl, false);
+						    auto trans = CCTransitionFade::create(0.5f, scene);
+						    CCDirector::sharedDirector()->pushScene(trans);
+						    m_randomPending = false;
+						    m_randomKey.clear();
+						    m_randomLevelID = -1;
+						    m_randomTimer = 0.f;
+						    if (m_randomLoadingLayer) {
+                                m_randomLoadingLayer->hide();
+                                m_randomLoadingLayer = nullptr;
+                            }
+						    return;
+					    }
+				    }
+			    }
+		    }
+
+		    if (m_randomTimer <= 0.f) {
+			    m_randomPending = false;
+			    m_randomKey.clear();
+			    m_randomLevelID = -1;
+			    if (m_randomLoadingLayer) {
+				    m_randomLoadingLayer->hide();
+                    m_randomLoadingLayer = nullptr;
+			    }
+			    Notification::create("Failed to fetch random level", NotificationIcon::Error)->show();
+		    }
+	    }
+    }
+}
+
+void MainLayer::onEasyDemonToggler(CCObject* sender) {
+    processValueOnToggler(sender, m_demonDifficulties, 3);
+}
+
+void MainLayer::onMediumDemonToggler(CCObject* sender) {
+    processValueOnToggler(sender, m_demonDifficulties, 4);
+}
+
+
+void MainLayer::onHardDemonToggler(CCObject* sender) {
+    processValueOnToggler(sender, m_demonDifficulties, 0);
+}
+
+
+void MainLayer::onInsaneDemonToggler(CCObject* sender) {
+    processValueOnToggler(sender, m_demonDifficulties, 5);
+}
+
+
+void MainLayer::onExtremeDemonToggler(CCObject* sender) {
+    processValueOnToggler(sender, m_demonDifficulties, 6);
+}
+
+
+void MainLayer::onStarToggler(CCObject* sender) {
+    bool isToggled = getNewTogglerState(sender);
+
+    if (isToggled) {
+        if (std::find(m_grindTypes.begin(), m_grindTypes.end(), "star") == m_grindTypes.end()) {
+            m_grindTypes.push_back("star");
+        }
+    } else {
+        auto it = std::find(m_grindTypes.begin(), m_grindTypes.end(), "star");
+        if (it != m_grindTypes.end()) {
+            m_grindTypes.erase(it);
+        }
+    }
+}
+
+void MainLayer::onMoonToggler(CCObject* sender) {
+    bool isToggled = getNewTogglerState(sender);
+
+    if (isToggled) {
+        if (std::find(m_grindTypes.begin(), m_grindTypes.end(), "moon") == m_grindTypes.end()) {
+            m_grindTypes.push_back("moon");
+        }
+    } else {
+        auto it = std::find(m_grindTypes.begin(), m_grindTypes.end(), "moon");
+        if (it != m_grindTypes.end()) {
+            m_grindTypes.erase(it);
+        }
+    }
+}
+
+void MainLayer::onCoinToggler(CCObject* sender) {
+    bool isToggled = getNewTogglerState(sender);
+
+    if (isToggled) {
+        if (std::find(m_grindTypes.begin(), m_grindTypes.end(), "coin") == m_grindTypes.end()) {
+            m_grindTypes.push_back("coin");
+        }
+    } else {
+        auto it = std::find(m_grindTypes.begin(), m_grindTypes.end(), "coin");
+        if (it != m_grindTypes.end()) {
+            m_grindTypes.erase(it);
+        }
+    }
+}
+
+void MainLayer::onDemonToggler(CCObject* sender) {
+    bool isToggled = getNewTogglerState(sender);
+
+    if (isToggled) {
+        if (std::find(m_grindTypes.begin(), m_grindTypes.end(), "demon") == m_grindTypes.end()) {
+            m_grindTypes.push_back("demon");
+        }
+        m_demonsFilters.first->setVisible(true);
+        m_demonsFilters.second->setVisible(true);
+    } else {
+        auto it = std::find(m_grindTypes.begin(), m_grindTypes.end(), "demon");
+        if (it != m_grindTypes.end()) {
+            m_grindTypes.erase(it);
+        }
+
+        m_demonsFilters.first->setVisible(false);
+        m_demonsFilters.second->setVisible(false);
+    }
 }
 
 void MainLayer::onShortToggler(CCObject* sender) {
@@ -339,6 +685,11 @@ void MainLayer::onLongToggler(CCObject* sender) {
 
 void MainLayer::onXLToggler(CCObject* sender) {
     processValueOnToggler(sender, m_lengths, int(Length::XL));
+}
+
+void MainLayer::onAutoToggler(CCObject* sender) {
+    processValueOnToggler(sender, m_difficulties, 1);
+    updateDifficultySelectorVisibility();
 }
 
 void MainLayer::onEasyToggler(CCObject* sender) {
@@ -368,6 +719,26 @@ void MainLayer::onInsaneToggler(CCObject* sender) {
 
 void MainLayer::onOpenDifficultySelector(CCObject* sender) {
     DifficultySelectorPopup::create(this)->show();
+}
+
+void MainLayer::onVer22Toggler(CCObject* sender) {
+    processValueOnToggler(sender, m_versions, 22);
+}
+
+void MainLayer::onVer21Toggler(CCObject* sender) {
+    processValueOnToggler(sender, m_versions, 21);
+}
+
+void MainLayer::onVer20Toggler(CCObject* sender) {
+    processValueOnToggler(sender, m_versions, 20);
+}
+
+void MainLayer::onVer19Toggler(CCObject* sender) {
+    processValueOnToggler(sender, m_versions, 19);
+}
+
+void MainLayer::onVerLower19Toggler(CCObject* sender) {
+    processValueOnToggler(sender, m_versions, 18);
 }
 
 bool MainLayer::isSplitDifficultySelected(int difficulty) const {
@@ -421,7 +792,7 @@ void MainLayer::updateDifficultySelectorVisibility() {
     auto selectorMenu = this->getChildByIDRecursive("difficulty-selector-menu");
     if (!selectorMenu) return;
 
-    auto const hasSplitDifficulty =
+    bool const hasSplitDifficulty =
         hasDifficulty(m_difficulties, 4) || hasDifficulty(m_difficulties, 5) ||
         hasDifficulty(m_difficulties, 6) || hasDifficulty(m_difficulties, 7) ||
         hasDifficulty(m_difficulties, 8) || hasDifficulty(m_difficulties, 9);
@@ -448,8 +819,7 @@ bool MainLayer::initFarMenus() {
     auto leftSideMenu = Build<CCMenu>::create()
         .layout(ColumnLayout::create()
                     ->setGap(5)
-                    ->setAxisAlignment(AxisAlignment::Start)
-                    ->setAxisReverse(true))
+                    ->setAxisAlignment(AxisAlignment::Start))
         .parent(this)
         .contentSize(48.f, 250.f)
         .anchorPoint(0.f, 0.f)
@@ -460,20 +830,42 @@ bool MainLayer::initFarMenus() {
 
     if (!leftSideMenu) return false;
 
-    auto settingsBtn = Build<CCSprite>::create("settings01.png"_spr)
-        .intoMenuItem([] { SettingsLayer::create()->open(); })
+    auto announcementBtn = Build<CCSprite>::create("ann_btn.png"_spr)
+        .intoMenuItem([] {
+            AnnouncementsPopup::create()->show();
+        })
         .scaleMult(1.1f)
-        .id("settings-btn")
-        .scale(0.75f)
+        .id("announcement-btn")
         .parent(leftSideMenu)
-        .intoParent()
-        .updateLayout();
+        .collect();
+
+    auto weeklyAchievementBtn = Build(CircleButtonSprite::createWithSpriteFrameName("rankIcon_1_001.png", 1.f, CircleBaseColor::Blue))
+        .scale(1.2f)
+        .intoMenuItem([] {
+            auto wap = WeeklyAchievementPopup::create();
+            wap->show();
+        })
+        .scaleMult(1.1f)
+        .id("weekly-achievement-btn")
+        .parent(leftSideMenu)
+        .collect();
+
+    auto eventBtn = Build(CircleButtonSprite::createWithSpriteFrameName("gj_dailyCrown_001.png", 1.f, CircleBaseColor::Blue))
+        .scale(1.2f)
+        .intoMenuItem([] {
+
+        })
+        .scaleMult(1.1f)
+        .id("event-btn")
+        .parent(leftSideMenu)
+        .collect();
+
+    leftSideMenu->updateLayout();
 
     auto rightSideMenu = Build<CCMenu>::create()
         .layout(ColumnLayout::create()
                     ->setGap(5)
-                    ->setAxisAlignment(AxisAlignment::Start)
-                    ->setAxisReverse(true))
+                    ->setAxisAlignment(AxisAlignment::Start))
         .parent(this)
         .contentSize(48.f, 250.f)
         .scale(0.75f)
@@ -484,10 +876,28 @@ bool MainLayer::initFarMenus() {
 
     if (!rightSideMenu) return false;
 
-    auto discordBtn = Build<CCSprite>::create("discord01.png"_spr)
+    auto infoBtn = Build<CCSprite>::create("info_btn.png"_spr)
+        .intoMenuItem([] {
+            GuidePopup::create(GuidePage::MainPage, GuidePopupState::FromMainLayer)->show();
+        })
+        .scaleMult(1.1f)
+        .id("info-btn")
+        .parent(rightSideMenu)
+        .collect();
+
+    auto discordBtn = Build<CCSprite>::create("discord_btn.png"_spr)
         .intoMenuItem([] { DiscordPopup::create()->show(); })
         .scaleMult(1.1f)
         .id("discord-btn")
+        .parent(rightSideMenu)
+        .collect();
+
+    Build<CCSprite>::create("credits_btn.png"_spr)
+        .intoMenuItem([] {
+            CreditsPopup::create()->show();
+        })
+        .scaleMult(1.1f)
+        .id("credits-btn")
         .parent(rightSideMenu)
         .intoParent()
         .updateLayout();
