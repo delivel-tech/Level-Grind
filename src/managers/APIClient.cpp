@@ -323,7 +323,7 @@ web::WebFuture APIClient::addAnnouncement(std::string title, std::string content
     reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["title"] = title;
     reqBody["content"] = content;
-    reqBody["added_by"] = GJAccountManager::sharedState()->m_username;
+    reqBody["added_by"] = std::string(GJAccountManager::sharedState()->m_username);
 
     req.bodyJSON(reqBody);
     return req.post(fmt::format("{}{}", baseUrl, "/new_announcement"));
