@@ -40,7 +40,10 @@ bool BaseLayer::init() {
     m_backBtn = backBtn;
 
     auto customBg = Build(cue::RepeatingBackground::create("game_bg_01_001.png", 1.0f, cue::RepeatMode::X))
-        .color({ 37, 50, 167 })
+        .color(Mod::get()->getSavedValue<cocos2d::ccColor3B>("rgbBackground"))
+        .with([](cue::RepeatingBackground* bg) {
+            bg->setSpeed(Mod::get()->getSavedValue<float>("background-speed"));
+        })
         .parent(this)
         .collect();
 

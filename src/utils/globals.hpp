@@ -37,6 +37,7 @@ namespace levelgrind {
     };
 
     enum GrindPosition {
+        User = 0,
         Helper = 1,
         Admin = 2,
         Owner = 3
@@ -164,5 +165,10 @@ namespace levelgrind {
         std::string sprite;
         std::string id;
         cocos2d::SEL_MenuHandler cb;
+    };
+
+    struct ReqAccessResponse {
+        bool ok;
+        int pos;
     };
 }

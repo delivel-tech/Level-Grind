@@ -1,9 +1,11 @@
 #include "CreditsPopup.hpp"
 #include "Geode/cocos/base_nodes/CCNode.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
 #include <Geode/Enums.hpp>
+#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/GameManager.hpp>
 #include <Geode/binding/LoadingCircleSprite.hpp>
 #include <Geode/binding/ProfilePage.hpp>
@@ -13,6 +15,11 @@
 #include <cstddef>
 #include <cue/ListNode.hpp>
 #include <cue/PlayerIcon.hpp>
+#include <fmt/format.h>
+#include <unordered_map>
+
+#include "../../utils/globals.hpp"
+#include "GuidePopup.hpp"
 
 using namespace geode::prelude;
 
@@ -116,6 +123,7 @@ public:
     }
 
 private:
+    CCSprite* m_badge = nullptr;
     bool init(const CreditsCategory& cat) {
         CCNode::init();
 
@@ -123,16 +131,69 @@ private:
 
         size_t rows = (cat.users.size() + kPlayersInRow - 1) / kPlayersInRow;
 
-        auto* title = Build<CCLabelBMFont>::create(fmt::format("{} ({})", cat.categoryName, cat.users.size()).c_str(), "bigFont.fnt")
+        auto* titleMenu = Build<CCMenu>::create()
+            .layout(RowLayout::create()->setGap(8)->setAutoScale(false))
             .scale(0.68f)
             .pos(LIST_SIZE.width / 2.f, 3.f)
             .parent(this)
             .collect();
 
+        std::unordered_map<std::string, const char*> badgeNames {
+            {"Owners", "badge_owner.png"_spr},
+            {"Admins", "badge_admin.png"_spr},
+            {"Helpers", "badge_helper.png"_spr},
+            {"Artists", "badge_artist.png"_spr},
+            {"Contributors", "badge_contributor.png"_spr},
+            {"Boosters", "badge_booster.png"_spr}
+        };
+
+        const char* currentCategoryBadgeName = [badgeNames, cat] -> const char* {
+            auto it = badgeNames.find(cat.categoryName);
+            if (it != badgeNames.end()) return it->second;
+            else return nullptr;
+        }();
+
+        if (currentCategoryBadgeName) {
+            auto badge = Build<CCSprite>::create(currentCategoryBadgeName)
+                .parent(titleMenu)
+                .collect();
+
+            m_badge = badge;
+        }
+
+        auto title = Build<CCLabelBMFont>::create(fmt::format("{}", cat.categoryName).c_str(), "bigFont.fnt")
+            .parent(titleMenu)
+            .collect();
+
+        std::unordered_map<std::string, GuidePage> infoPageToOpen {
+            {"Owners", GuidePage::OwnerRoleGuide},
+            {"Admins", GuidePage::AdminRoleGuide},
+            {"Helpers", GuidePage::HelperRoleGuide},
+            {"Artists", GuidePage::ArtistRoleGuide},
+            {"Contributors", GuidePage::ContribRoleGuide},
+            {"Boosters", GuidePage::BoosterRoleGuide}
+        };
+
+        GuidePage infoPage = [infoPageToOpen, cat] -> GuidePage {
+            auto it = infoPageToOpen.find(cat.categoryName);
+            if (it != infoPageToOpen.end()) return it->second;
+            else return GuidePage::MainPage;
+        }();
+
+        auto infoBtn = Build<CCSprite>::create("info_btn.png"_spr)
+            .scale(0.35f)
+            .intoMenuItem([infoPage] {
+                GuidePopup::create(infoPage, GuidePopupState::FromOutside)->show();
+            })
+            .parent(titleMenu)
+            .collect();
+
+        titleMenu->updateLayout();
+
         const float wrapperGap = 8.f;
         auto* playerWrapper = Build<CCNode>::create()
             .layout(ColumnLayout::create()->setAxisReverse(true)->setGap(wrapperGap))
-            .pos(LIST_SIZE.width / 2.f, 0.f)
+            .pos(LIST_SIZE.width / 2.f, 7.f)
             .anchorPoint(0.5f, 0.0f)
             .contentSize(LIST_SIZE.width, 50.f)
             .id("player-wrapper"_spr)
@@ -181,7 +242,19 @@ private:
 
         this->setContentSize(CCSize{LIST_SIZE.width, playerWrapper->getScaledContentSize().height + 8.f + title->getScaledContentSize().height});
 
-        title->setPosition({title->getPositionX(), this->getContentHeight() - 10.f});
+        auto membersAmountLabel = Build(CCLabelBMFont::create(fmt::format("{}", cat.users.size()).c_str(), "chatFont.fnt"))
+            .scale(0.65f)
+            .color({ 0, 0, 0  })
+            .opacity(100)
+            .anchorPoint({ 1.f, 0.5f })
+            .pos({ LIST_SIZE.width - 10, this->getContentHeight() - 10})
+            .parent(this)
+            .collect();
+
+        titleMenu->setPosition({titleMenu->getPositionX(), this->getContentHeight() - 10.f});
+
+        if (m_badge) m_badge->setPositionY(m_badge->getPositionY() - 2);
+        if (infoBtn) infoBtn->setPositionY(infoBtn->getPositionY() - 2);
 
         return true;
     }

@@ -593,6 +593,39 @@ UnbanPetResponse APIClient::unbanPetParse(web::WebResponse res) {
     return ret;
 }
 
+web::WebFuture APIClient::requestStaffAccess() {
+    matjson::Value body;
+    body["account_id"] = GJAccountManager::get()->m_accountID;
+    body["token"] = DataManager::getInstance().getUserToken();
+
+    web::WebRequest req;
+    req.bodyJSON(body);
+
+    return req.post(fmt::format("{}{}", baseUrl, "/check_helper_new"));
+}
+
+ReqAccessResponse APIClient::requestStaffAccessParse(web::WebResponse res) {
+    ReqAccessResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = true;
+    ret.pos = json["pos"].asInt().unwrapOrDefault();
+    return ret;
+}
+
 void APIClient::performGetToken() {
     async::spawn(
         argon::startAuth(),

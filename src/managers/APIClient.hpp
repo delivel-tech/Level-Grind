@@ -79,6 +79,9 @@ public:
     web::WebFuture deleteAnnouncement(int announcementId);
     DeleteAnnouncementResponse deleteAnnouncementParse(web::WebResponse res);
 
+    web::WebFuture requestStaffAccess();
+    ReqAccessResponse requestStaffAccessParse(web::WebResponse res);
+
     // argon
     void performGetToken();
 

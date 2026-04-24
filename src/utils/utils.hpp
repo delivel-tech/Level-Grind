@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "Geode/platform/windows.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 

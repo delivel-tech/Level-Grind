@@ -4,7 +4,6 @@
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
-#include "Geode/platform/windows.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/NineSlice.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
@@ -290,7 +289,7 @@ bool MainLayer::initMainPanel() {
         .intoMenuItem([this] {
             GetLevelsBody body {
                 m_difficulties, m_lengths, m_demonDifficulties,
-                m_grindTypes, m_versions, true, false
+                m_grindTypes, m_versions, Mod::get()->getSavedValue<bool>("newer-first"), Mod::get()->getSavedValue<bool>("recently-added")
             };
             CustomBrowserLayer::create(body, "Grinding Levels")->open();
         })
