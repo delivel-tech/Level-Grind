@@ -82,6 +82,9 @@ public:
     web::WebFuture requestStaffAccess();
     ReqAccessResponse requestStaffAccessParse(web::WebResponse res);
 
+    web::WebFuture getLevelInfo(int levelID);
+    GetLevelInfoResponse getLevelInfoParse(web::WebResponse res);
+
     // argon
     void performGetToken();
 

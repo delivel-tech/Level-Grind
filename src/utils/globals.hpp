@@ -43,6 +43,35 @@ namespace levelgrind {
         Owner = 3
     };
 
+    struct GetLevelInfoResponse {
+        bool ok;
+        bool isAdded;
+        bool isLocked;
+        bool star;
+        bool moon;
+        bool coin;
+        bool demon;
+        std::string addedBy;
+        bool noteExists;
+        std::string note;
+        bool isDaily;
+        bool isDailyPlat;
+        bool isWeekly;
+        bool isWeeklyPlat;
+    };
+
+    struct ManageLevelBody {
+        int id;
+        std::string name;
+        int difficulty;
+        int length;
+        int demonDifficulty;
+        bool star;
+        bool moon;
+        bool coin;
+        bool demon;
+    };
+
     enum GuidePage {
         MainGuide = 0,
         PetGuide = 1,

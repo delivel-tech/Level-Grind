@@ -329,6 +329,65 @@ web::WebFuture APIClient::addAnnouncement(std::string title, std::string content
     return req.post(fmt::format("{}{}", baseUrl, "/new_announcement"));
 }
 
+web::WebFuture APIClient::getLevelInfo(int levelID) {
+    web::WebRequest req = web::WebRequest();
+    matjson::Value reqBody;
+
+    reqBody["token"] = DataManager::getInstance().getUserToken();
+    reqBody["accountId"] = GJAccountManager::sharedState()->m_accountID;
+    reqBody["levelId"] = levelID;
+
+    req.bodyJSON(reqBody);
+    return req.post(fmt::format("{}{}", baseUrl, "/get_level_info_staff"));
+}
+
+GetLevelInfoResponse APIClient::getLevelInfoParse(web::WebResponse res) {
+    GetLevelInfoResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+
+    #define GET_JSON_BOOL(x) json[x].asBool().unwrapOrDefault()
+
+    ret.ok = GET_JSON_BOOL("ok");
+
+    if (!ret.ok) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    ret.isAdded = GET_JSON_BOOL("isAdded");
+    ret.isLocked = GET_JSON_BOOL("isLocked");
+    ret.star = GET_JSON_BOOL("star");
+    ret.moon = GET_JSON_BOOL("moon");
+    ret.coin = GET_JSON_BOOL("coin");
+    ret.demon = GET_JSON_BOOL("demon");
+    ret.addedBy = json["added_by"].asString().unwrapOrDefault();
+    ret.noteExists = GET_JSON_BOOL("noteExists");
+    ret.note = json["noteContent"].asString().unwrapOrDefault();
+    ret.isDaily = GET_JSON_BOOL("isDaily");
+    ret.isDailyPlat = GET_JSON_BOOL("isDailyPlat");
+    ret.isWeekly = GET_JSON_BOOL("isWeekly");
+    ret.isWeeklyPlat = GET_JSON_BOOL("isWeeklyPlat");
+
+    #undef GET_JSON_BOOL
+
+    return ret;
+}
+
 AddAnnouncementResponse APIClient::addAnnouncementParse(web::WebResponse res) {
     AddAnnouncementResponse ret;
 
