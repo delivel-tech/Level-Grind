@@ -18,6 +18,7 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/utils/web.hpp>
 #include <algorithm>
+#include <random>
 
 #include <cue/RepeatingBackground.hpp>
 
@@ -66,6 +67,7 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
     m_completionInfoLabel = nullptr;
     m_pageButtonLabel = nullptr;
     m_pageButton = nullptr;
+    m_randomPageButton = nullptr;
     m_refreshBtn = nullptr;
     m_prevButton = nullptr;
     m_nextButton = nullptr;
@@ -197,8 +199,36 @@ bool LGLevelBrowserLayer::init(GJSearchObject* object) {
                     ->setAxisReverse(true)
                     ->setAxisAlignment(AxisAlignment::End));
             pageMenu->addChild(m_pageButton);
+
+            auto randomPageSpr = CCSprite::create("GJ_button_01.png");
+            if (randomPageSpr) {
+                randomPageSpr->setScale(0.7f);
+
+                auto randomIcon = CCSprite::create("random_btn_2.png"_spr);
+                if (randomIcon) {
+                    auto size = randomPageSpr->getContentSize();
+                    randomIcon->setPosition({ size.width / 2.f, size.height / 2.f });
+                    randomIcon->setAnchorPoint({ 0.5f, 0.5f });
+                    randomIcon->setScale(0.05f);
+                    randomPageSpr->addChild(randomIcon, 1);
+                }
+
+                m_randomPageButton = CCMenuItemSpriteExtra::create(
+                    randomPageSpr, this, menu_selector(LGLevelBrowserLayer::onRandomPage)
+                );
+
+                if (m_randomPageButton) {
+                    m_randomPageButton->setID("random-page-btn");
+                    m_randomPageButton->setVisible(false);
+                    pageMenu->addChild(m_randomPageButton);
+                }
+            }
+
             this->addChild(pageMenu, 10);
             pageMenu->updateLayout();
+            if (m_randomPageButton) {
+                m_randomPageButton->setPosition({ 14.f, 64.f });
+            }
 
             m_pageButtonLabel = CCLabelBMFont::create(numToString(m_page + 1).c_str(), "bigFont.fnt");
 
@@ -344,6 +374,7 @@ void LGLevelBrowserLayer::hideUIElements() {
     if (m_nextButton) m_nextButton->setVisible(false);
     if (m_refreshBtn) m_refreshBtn->setVisible(false);
     if (m_pageButton) m_pageButton->setVisible(false);
+    if (m_randomPageButton) m_randomPageButton->setVisible(false);
     if (m_levelsLabel) m_levelsLabel->setVisible(false);
     if (m_completionInfoLabel) m_completionInfoLabel->setVisible(false);
     if (m_progressBar) m_progressBar->setVisible(false);
@@ -365,6 +396,7 @@ void LGLevelBrowserLayer::showUIElements() {
     if (m_prevButton) m_prevButton->setVisible(m_page > 0);
     if (m_nextButton) m_nextButton->setVisible(m_page + 1 < m_totalPages);
     if (m_pageButton) m_pageButton->setVisible(m_totalPages > 1);
+    if (m_randomPageButton) m_randomPageButton->setVisible(m_totalPages > 1);
 }
 
 void LGLevelBrowserLayer::recalculateCompletionProgress() {
@@ -450,6 +482,26 @@ void LGLevelBrowserLayer::onRefresh(CCObject* sender) {
     this->refreshLevels();
 }
 
+void LGLevelBrowserLayer::onRandomPage(CCObject* sender) {
+    if (!this->getParent() || !this->isRunning()) return;
+    if (m_loading) return;
+    if (m_totalPages <= 1) return;
+
+    static std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> dist(0, m_totalPages - 1);
+
+    int newPage = dist(rng);
+    if (m_totalPages > 1 && newPage == m_page) {
+        newPage = (newPage + 1) % m_totalPages;
+    }
+
+    if (newPage == m_page) return;
+
+    m_page = newPage;
+    this->hideUIElements();
+    this->loadPageFromStoredIDs();
+}
+
 void LGLevelBrowserLayer::loadPageFromStoredIDs() {
     if (m_allLevelIDs.empty() || m_loading) return;
     
@@ -511,6 +563,9 @@ void LGLevelBrowserLayer::updatePageButton() {
     }
     if (m_pageButton) {
         m_pageButton->setVisible(m_totalPages > 1);
+    }
+    if (m_randomPageButton) {
+        m_randomPageButton->setVisible(m_totalPages > 1);
     }
 }
 
@@ -652,6 +707,9 @@ void LGLevelBrowserLayer::update(float dt) {
     }
     if (m_pageButton) {
         m_pageButton->setVisible(m_totalPages > 1);
+    }
+    if (m_randomPageButton) {
+        m_randomPageButton->setVisible(m_totalPages > 1);
     }
 }
 
