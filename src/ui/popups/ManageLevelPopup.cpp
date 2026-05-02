@@ -1,22 +1,26 @@
 #include "ManageLevelPopup.hpp"
+#include "Geode/cocos/base_nodes/CCNode.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/ui/BasedButtonSprite.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
 
+#include <Geode/binding/ProfilePage.hpp>
+#include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
 #include "../../managers/APIClient.hpp"
 #include "../../managers/DataManager.hpp"
-#include "Geode/ui/MDPopup.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/web.hpp"
 
 #include "../../utils/utils.hpp"
+#include <cue/ListNode.hpp>
 
 using namespace geode::prelude;
 
@@ -81,7 +85,7 @@ void ManageLevelPopup::formBody() {
 }
 
 bool ManageLevelPopup::init(GJGameLevel* level) {
-    if (!BasePopup::init({ 280.f, 200.f })) return false;
+    if (!BasePopup::init({ 350.f, 250.f })) return false;
 
     if (DataManager::getInstance().getUserPosition() != GrindPosition::Admin 
     && DataManager::getInstance().getUserPosition() != GrindPosition::Owner 
@@ -146,15 +150,15 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 .layout(layout)
                 .parent(self->m_buttonMenu)
                 .id("helper-buttons-menu")
-                .pos(self->centerX(), (self->m_title->getPositionY() - 20) / 2)
+                .pos(self->centerX() - 85.f, (self->m_title->getPositionY() - 20) / 2)
                 .collect();
 
             self->m_adminButtonsMenu = Build<CCMenu>::create()
-                .scale(0.8f)
+                .scale(0.65f)
                 .layout(layout)
                 .parent(self->m_buttonMenu)
                 .id("admin-buttons-menu")
-                .pos(self->centerX(), (self->m_title->getPositionY() - 20) / 2)
+                .pos(self->centerX() - 85.f, (self->m_title->getPositionY() - 20) / 2)
                 .visible(false)
                 .collect();
 
@@ -206,10 +210,10 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
             auto menuBg = Build(NineSlice::create("square02_small.png"))
                 .contentSize({
-                    self->m_mainLayer->getContentWidth() / 1.2f,
+                    self->m_mainLayer->getContentWidth() / 2.f,
                     self->m_mainLayer->getContentHeight() / 1.5f
                 })
-                .pos(self->centerX(), self->centerY() - 20)
+                .pos(self->centerX() - 85.f, self->centerY() - 20)
                 .id("menu-bg")
                 .scale(0.9f)
                 .opacity(80)
@@ -217,55 +221,58 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 .collect();
 
             // making helper menu
-            if (parsed.isAdded) {
-                Build(ButtonSprite::create("Delete", "bigFont.fnt", "GJ_button_06.png"))
-                    .intoMenuItem([] {
 
-                    })
-                    .parent(self->m_helperButtonsMenu)
-                    .collect();
+            Build(ButtonSprite::create("Accept", "bigFont.fnt", "GJ_button_01.png"))
+                .intoMenuItem([self] {
+                    auto uPopup = UploadActionPopup::create(nullptr, "Adding point...");
+                    uPopup->show();
 
-                Build(ButtonSprite::create("Re-add", "bigFont.fnt", "GJ_button_02.png"))
-                    .intoMenuItem([] {
+                    auto uPopupRef = Ref(uPopup);
 
-                    })
-                    .parent(self->m_helperButtonsMenu)
-                    .collect();
-            } else {
-                Build(ButtonSprite::create("Add", "bigFont.fnt", "GJ_button_01.png"))
-                    .intoMenuItem([] {
+                    self->m_listener.spawn(
+                        APIClient::getInstance().changePoint(PointType::AcceptPoint, self->m_body.coin ? CoinPointType::AcceptCoinPoint : CoinPointType::RejectCoinPoint, self->m_body),
+                        [uPopupRef](web::WebResponse res) {
+                            if (!uPopupRef) return;
+                            auto parsed = APIClient::getInstance().changePointParse(res);
 
-                    })
-                    .parent(self->m_helperButtonsMenu)
-                    .collect();
-            }
-
-            // info button
-            Build<CCSprite>::create("info_btn.png"_spr)
-                .scale(0.4f)
-                .intoMenuItem([parsed] {
-                    MDPopup::create(
-                        "Level Info",
-                        fmt::format(
-                            "# <cy>State:</c> __{}__\n"
-                            "## <cp>Added by:</c> *<cy>{}</c>*\n"
-                            "<cg>Star Filter:</c> __{}__\n\n"
-                            "<cb>Moon Filter:</c> __{}__\n\n"
-                            "<cj>Coin Filter:</c>: __{}__\n\n"
-                            "<cr>Demon Filter:</c>: __{}__\n\n"
-                            "<co>Locked:</c> __{}__",
-                            parsed.isAdded ? "<cg>Added</c>" : "<cr>Not Added</c>",
-                            !parsed.addedBy.empty() ? parsed.addedBy : "Not Added",
-                            parsed.star ? "<cy>Yes</c>" : "<cr>No</c>",
-                            parsed.moon ? "<cy>Yes</c>" : "<cr>No</c>",
-                            parsed.coin ? "<cy>Yes</c>" : "<cr>No</c>",
-                            parsed.demon ? "<cy>Yes</c>" : "<cr>No</c>",
-                            parsed.isLocked ? "<cy>Yes</c>" : "<cr>No</c>"
-                        ).c_str(),
-                        "OK"
-                    )->show();
+                            if (!parsed.ok) {
+                                uPopupRef->showFailMessage("Failed to add point.");
+                                return;
+                            } else {
+                                uPopupRef->showSuccessMessage("Success! Added point.");
+                                return;
+                            }
+                        }
+                    );
                 })
-                .parent(self->m_levelInfoMenu);
+                .parent(self->m_helperButtonsMenu)
+                .collect();
+            
+            Build(ButtonSprite::create("Reject", "bigFont.fnt", "GJ_button_06.png"))
+                .intoMenuItem([self] {
+                    auto uPopup = UploadActionPopup::create(nullptr, "Removing point...");
+                    uPopup->show();
+
+                    auto uPopupRef = Ref(uPopup);
+
+                    self->m_listener.spawn(
+                        APIClient::getInstance().changePoint(PointType::RejectPoint, self->m_body.coin ? CoinPointType::AcceptCoinPoint : CoinPointType::RejectCoinPoint, self->m_body),
+                        [uPopupRef](web::WebResponse res) {
+                            if (!uPopupRef) return;
+                            auto parsed = APIClient::getInstance().changePointParse(res);
+
+                            if (!parsed.ok) {
+                                uPopupRef->showFailMessage("Failed to remove point.");
+                                return;
+                            } else {
+                                uPopupRef->showSuccessMessage("Success! Removed point.");
+                                return;
+                            }
+                        }
+                    );
+                })
+                .parent(self->m_helperButtonsMenu)
+                .collect();
 
             // admin toggler
             if (DataManager::getInstance().getUserPosition() == GrindPosition::Admin
@@ -286,18 +293,38 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     }
                 )
                 .parent(self->m_buttonMenu)
-                .pos({ self->m_buttonMenu->getContentWidth(), 0 })
+                .pos({ self->m_buttonMenu->getContentSize() })
                 .collect();
             }
 
             // notes btn
-            Build<CCSprite>::create("button_edit_note.png"_spr)
+            Build(CircleButtonSprite::createWithSprite("button_edit_note.png"_spr))
                 .scale(0.6f)
                 .intoMenuItem([] {
 
                 })
                 .parent(self->m_buttonMenu)
-                .pos({ self->m_buttonMenu->getContentSize() });
+                .pos({ self->m_mainLayer->getContentWidth(), 0 });
+
+            Build<CCMenuItemToggler>::createToggle(
+                Build<CCSprite>::createSpriteName("GJ_coinsIcon2_001.png").color(100, 100, 100).collect(),
+                Build<CCSprite>::createSpriteName("GJ_coinsIcon2_001.png").collect(),
+                [self](CCMenuItemToggler* toggler) {
+                    bool isToggled = getNewTogglerState(toggler);
+
+                    if (isToggled) {
+                        self->m_body.coin = true;
+                    } else {
+                        self->m_body.coin = false;
+                    }
+                }
+            )
+                .parent(self->m_buttonMenu)
+                .pos({ 0, 0 })
+                .with([self](CCMenuItemToggler* toggler) {
+                    if (self->m_body.coin) toggler->toggle(true);
+                })
+                .collect();
 
             // admin menu
             if (parsed.isLocked) {
@@ -322,6 +349,159 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
+
+            if (parsed.isAdded) {
+                Build(ButtonSprite::create("Delete", "bigFont.fnt", "GJ_button_06.png"))
+                    .intoMenuItem([] {
+
+                    })
+                    .parent(self->m_adminButtonsMenu)
+                    .collect();
+
+                Build(ButtonSprite::create("Re-add", "bigFont.fnt", "GJ_button_02.png"))
+                    .intoMenuItem([] {
+
+                    })
+                    .parent(self->m_adminButtonsMenu)
+                    .collect();
+            } else {
+                Build(ButtonSprite::create("Add", "bigFont.fnt", "GJ_button_01.png"))
+                    .intoMenuItem([] {
+
+                    })
+                    .parent(self->m_adminButtonsMenu)
+                    .collect();
+            }
+
+            auto pointsListNode = Build(cue::ListNode::create({self->m_mainLayer->getContentWidth() / 2.f,
+                    self->m_mainLayer->getContentHeight() / 1.5f}))
+                .pos(self->centerX() + 85.f, self->centerY() - 20)
+                .scale(0.9f)
+                .id("points-list-node")
+                .parent(self->m_mainLayer)
+                .with([](cue::ListNode* list) {
+                    list->setAutoUpdate(true);
+                })
+                .collect();
+
+            auto createListCell = [self, pointsListNode](PointInfo pointInfo) {
+                CCNode* cell = Build(CCNode::create())
+                    .contentSize({
+                        self->m_mainLayer->getContentWidth() / 2.f,
+                        self->m_mainLayer->getContentHeight() / 8.f
+                    })
+                    .collect();
+
+                CCMenu* cellMenu = Build(CCMenu::create())
+                    .layout(RowLayout::create()->setGap(10))
+                    .parent(cell)
+                    .scale(0.8f)
+                    .center()
+                    .collect();
+
+                auto staffUsernameBtn = Build(CCLabelBMFont::create(fmt::format("{}", pointInfo.staffUsername).c_str(), "goldFont.fnt"))
+                    .limitLabelWidth(100, 1.f, 0.2f)
+                    .intoMenuItem([pointInfo] {
+                        ProfilePage::create(pointInfo.staffId, false)->show();
+                    })
+                    .parent(cellMenu)
+                    .collect();
+
+                if (pointInfo.point == 1) {
+                    auto acceptedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png"))
+                        .intoMenuItem([self] {
+                            Notification::create(fmt::format("This user accepted {}.", self->m_body.name), NotificationIcon::Success)->show();
+                        })
+                        .parent(cellMenu)
+                        .collect();
+                } else if (pointInfo.point == -1) {
+                    auto rejectedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))
+                        .intoMenuItem([self] {
+                            Notification::create(fmt::format("This user rejected {}.", self->m_body.name), NotificationIcon::Error)->show();
+                        })
+                        .parent(cellMenu)
+                        .collect();
+                } else {
+                    auto warningBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+                        .intoMenuItem([] {
+                            Notification::create("Something went wrong.", NotificationIcon::Warning)->show();
+                        })
+                        .parent(cellMenu)
+                        .collect();
+                }
+
+                if (pointInfo.coinPoint == 1) {
+                    auto acceptedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png"))
+                        .intoMenuItem([self] {
+                            Notification::create(fmt::format("This user accepted coin for {}.", self->m_body.name), NotificationIcon::Success)->show();
+                        })
+                        .parent(cellMenu)
+                        .collect();
+                } else if (pointInfo.coinPoint == -1) {
+                    auto rejectedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon_gray_001.png"))
+                        .intoMenuItem([self] {
+                            Notification::create(fmt::format("This user rejected coin for {}.", self->m_body.name), NotificationIcon::Error)->show();
+                        })
+                        .parent(cellMenu)
+                        .collect();
+                } else {
+                    auto warningBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+                        .intoMenuItem([] {
+                            Notification::create("Something went wrong.", NotificationIcon::Warning)->show();
+                        })
+                        .parent(cellMenu)
+                        .collect();
+                }
+
+                cellMenu->updateLayout();
+                pointsListNode->addCell(cell);
+                return;
+            };
+
+            auto createInfoCells = [parsed, self, pointsListNode] {
+                CCNode* cellPoints = Build(CCNode::create())
+                    .contentSize({
+                        self->m_mainLayer->getContentWidth() / 2.f,
+                        self->m_mainLayer->getContentHeight() / 8.f
+                    })
+                    .collect();
+
+                CCNode* cellCoinPoints = Build(CCNode::create())
+                    .contentSize({
+                        self->m_mainLayer->getContentWidth() / 2.f,
+                        self->m_mainLayer->getContentHeight() / 8.f
+                    })
+                    .collect();
+                
+                Build(CCLabelBMFont::create(fmt::format("Points: {}", parsed.points).c_str(), "bigFont.fnt"))
+                    .scale(0.6f)
+                    .parent(cellPoints)
+                    .center()
+                    .collect();
+
+                Build(CCLabelBMFont::create(fmt::format("Coin Points: {}", parsed.coinPoints).c_str(), "bigFont.fnt"))
+                    .scale(0.5f)
+                    .parent(cellCoinPoints)
+                    .center()
+                    .collect();
+
+                pointsListNode->addCell(cellPoints);
+                pointsListNode->addCell(cellCoinPoints);
+                return;
+            };
+
+            if (parsed.pointsInfo.empty()) {
+                Build(CCLabelBMFont::create("No points info found.", "bigFont.fnt"))
+                    .scale(0.4f)
+                    .parent(pointsListNode)
+                    .center()
+                    .collect();
+            } else {
+                createInfoCells();
+                for (auto const& val : parsed.pointsInfo) {
+                    createListCell(val);
+                }
+            }
 
             self->m_adminButtonsMenu->updateLayout();
             self->m_helperButtonsMenu->updateLayout();

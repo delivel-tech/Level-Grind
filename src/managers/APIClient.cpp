@@ -2,6 +2,7 @@
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
+#include <fmt/format.h>
 #include <matjson.hpp>
 #include <string>
 #include <unordered_set>
@@ -341,6 +342,52 @@ web::WebFuture APIClient::getLevelInfo(int levelID) {
     return req.post(fmt::format("{}{}", baseUrl, "/get_level_info_staff"));
 }
 
+web::WebFuture APIClient::changePoint(PointType type, CoinPointType coinType, ManageLevelBody levelBody) {
+    auto req = web::WebRequest();
+    matjson::Value reqBody;
+
+    reqBody["point"] = static_cast<int>(type);
+    reqBody["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    reqBody["token"] = DataManager::getInstance().getUserToken();
+    reqBody["username"] = GJAccountManager::sharedState()->m_username.c_str();
+    reqBody["levelID"] = levelBody.id;
+    reqBody["levelName"] = levelBody.name;
+    reqBody["coinPoint"] = static_cast<int>(coinType);
+    reqBody["length"] = levelBody.length;
+    reqBody["difficulty"] = levelBody.difficulty;
+
+    if (levelBody.difficulty == 10) reqBody["demon_difficulty"] = levelBody.demonDifficulty;
+    if (levelBody.star) reqBody["star"] = levelBody.star;
+    if (levelBody.moon) reqBody["moon"] = levelBody.moon;
+    if (levelBody.demon) reqBody["demon"] = levelBody.demon;
+
+    req.bodyJSON(reqBody);
+    return req.post(fmt::format("{}{}", baseUrl, "/change_point"));
+}
+
+ChangePointResponse APIClient::changePointParse(web::WebResponse res) {
+    ChangePointResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+
+    return ret;
+}
+
 GetLevelInfoResponse APIClient::getLevelInfoParse(web::WebResponse res) {
     GetLevelInfoResponse ret;
 
@@ -382,8 +429,39 @@ GetLevelInfoResponse APIClient::getLevelInfoParse(web::WebResponse res) {
     ret.isDailyPlat = GET_JSON_BOOL("isDailyPlat");
     ret.isWeekly = GET_JSON_BOOL("isWeekly");
     ret.isWeeklyPlat = GET_JSON_BOOL("isWeeklyPlat");
+    ret.demon = GET_JSON_BOOL("hasPoints");
 
     #undef GET_JSON_BOOL
+
+    ret.points = json["points"].asInt().unwrapOrDefault();
+    ret.coinPoints = json["coinPoints"].asInt().unwrapOrDefault();
+
+    ret.pointsInfo = [&] -> std::vector<PointInfo> {
+        std::vector<PointInfo> toReturn;
+        auto pointsInfo = json["pointsInfo"].asArray();
+        if (!pointsInfo) {
+            log::error("bad web req, code: {}", res.code());
+            ret.ok = false;
+            return toReturn;
+        }
+
+        for (const auto& val : pointsInfo.unwrap()) {
+            PointInfo info;
+            info.point = val["point"].asInt().unwrapOrDefault();
+            info.coinPoint = val["coinPoint"].asInt().unwrapOrDefault();
+            info.staffId = val["staffId"].asInt().unwrapOrDefault();
+            info.staffUsername = val["staffUsername"].asString().unwrapOrDefault();
+            toReturn.push_back(info);
+        }
+
+        return toReturn;
+    }();
+
+    if (!ret.ok) {
+        log::error("bad web req, code: {}", res.code());
+        ret.ok = false;
+        return ret;
+    }
 
     return ret;
 }

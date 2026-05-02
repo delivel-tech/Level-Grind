@@ -19,6 +19,7 @@
 #include "../../ui/popups/WeeklyAchievementPopup.hpp"
 #include "../popups/GuidePopup.hpp"
 #include "../popups/AnnouncementsPopup.hpp"
+#include "../popups/EventPopup.hpp"
 #include "CustomBrowserLayer.hpp"
 
 #include "../popups/DifficultySelectorPopup.hpp"
@@ -852,7 +853,7 @@ bool MainLayer::initFarMenus() {
     auto eventBtn = Build(CircleButtonSprite::createWithSpriteFrameName("gj_dailyCrown_001.png", 1.f, CircleBaseColor::Blue))
         .scale(1.2f)
         .intoMenuItem([] {
-
+            EventPopup::create(EventType::Daily)->show();
         })
         .scaleMult(1.1f)
         .id("event-btn")

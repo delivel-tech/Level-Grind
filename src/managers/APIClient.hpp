@@ -85,6 +85,9 @@ public:
     web::WebFuture getLevelInfo(int levelID);
     GetLevelInfoResponse getLevelInfoParse(web::WebResponse res);
 
+    web::WebFuture changePoint(PointType type, CoinPointType coinType, ManageLevelBody levelBody);
+    ChangePointResponse changePointParse(web::WebResponse res);
+
     // argon
     void performGetToken();
 

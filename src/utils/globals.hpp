@@ -43,6 +43,13 @@ namespace levelgrind {
         Owner = 3
     };
 
+    struct PointInfo {
+        int point;
+        int coinPoint;
+        int staffId;
+        std::string staffUsername;
+    };
+
     struct GetLevelInfoResponse {
         bool ok;
         bool isAdded;
@@ -58,6 +65,24 @@ namespace levelgrind {
         bool isDailyPlat;
         bool isWeekly;
         bool isWeeklyPlat;
+        bool hasPoints;
+        int points;
+        int coinPoints;
+        std::vector<PointInfo> pointsInfo;
+    };
+
+    enum PointType {
+        AcceptPoint = 1,
+        RejectPoint = -1
+    };
+
+    enum CoinPointType {
+        AcceptCoinPoint = 1,
+        RejectCoinPoint = -1
+    };
+
+    struct ChangePointResponse {
+        bool ok;
     };
 
     struct ManageLevelBody {
@@ -90,6 +115,11 @@ namespace levelgrind {
     enum GuidePopupState {
         FromMainLayer = 0,
         FromOutside = 1
+    };
+
+    enum EventType {
+        Daily = 0,
+        Weekly = 1
     };
 
     struct AnnouncementInfo {
