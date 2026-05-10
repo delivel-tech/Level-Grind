@@ -101,6 +101,13 @@ private:
             .center()
             .collect();
 
+        if (i == 3) {
+            auto completedSpr = Build(CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png"))
+                .parent(progressBar)
+                .pos({ progressBar->getContentWidth() - 20.f, progressBar->getContentHeight() / 2 })
+                .collect();
+        }
+
         auto difficultySprite = Build(CCSprite::createWithSpriteFrameName([packInfo] -> const char* {
             switch (packInfo.difficulty) {
                 case levelgrind::CustomDifficultyEnum::Auto: return "diffIcon_auto_btn_001.png"; break;
@@ -121,6 +128,7 @@ private:
             .collect();
 
         auto titleLabel = Build(CCLabelBMFont::create(packInfo.title.c_str(), "bigFont.fnt"))
+            .limitLabelWidth(270, 1.f, 0.4f)
             .color(packInfo.color)
             .parent(infoMenu)
             .collect();

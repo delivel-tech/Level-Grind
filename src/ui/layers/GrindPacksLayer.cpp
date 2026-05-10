@@ -123,6 +123,10 @@ bool GrindPacksLayer::init() {
             }
 
             countLabelRef->setString(fmt::format("{} packs found", parsed.packs.size()).c_str());
+
+            s->m_listNode->updateLayout();
+            s->m_listNode->getScrollLayer()->m_contentLayer->updateLayout();
+            s->m_listNode->scrollToTop();
         }
     );
 
