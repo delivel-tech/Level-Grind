@@ -337,7 +337,7 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
     if (tag == 1) {
         FLAlertLayer::create(
             "Owners",
-            "<co>Owners</c> are main people in <cp>Level Grind</c>. " \
+            "<co>Owners</c> are the main people in <cp>Level Grind</c>. " \
             "They are responsible for <cg>development</c>, <cy>leading the project</c>, <cf>making final decisions</c>, and <cl>managing all roles</c>.",
             "OK"
         )->show();
@@ -377,7 +377,7 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
     if (tag == 5) {
         FLAlertLayer::create(
             "Artists",
-            "<cy>Artists</c> are responsible for <cg>visual part of the mod</c>. " \
+            "<cy>Artists</c> are responsible for <cg>visual parts of the mod</c>. " \
             "Their <cp>work is greatly appreciated</c>!",
             "OK"
         )->show();
@@ -386,7 +386,7 @@ void LGCreditsPopup::onHeaderInfo(CCObject* sender) {
     if (tag == 6) {
         FLAlertLayer::create(
             "Boosters",
-            "<cy>Boosters</c> boost the <cp>Level Grind Discord server</c>. " \
+            "<cy>Boosters</c> boosted the <cp>Level Grind Discord server</c>. " \
             "Their <cy>support is greatly appreciated</c>!",
             "OK"
         )->show();
@@ -398,7 +398,7 @@ void LGCreditsPopup::onInfo(CCObject* sender) {
         "Credits Info",
         "These <cy>users</c> help with <cp>Level Grind</c>!\n\n" \
         "<cg>Helpers</c> are people who are responsible for <cf>adding / deleting levels</c> in the project.\n" \
-        "<cy>Contributors</c> are people who contribute to the project in other helpful ways.\n" \
+        "<cy>Contributors</c> are people who contributed to the project in other helpful ways.\n" \
         "<cr>Admins</c> are people who have the same permissions as helpers, but also have the <cl>ability to manage helpers</c>!\n" \
         "Want to become a helper? Join our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y) and fill out an [<cy>application form</c>](https://docs.google.com/forms/d/e/1FAIpQLScOUeCa13hvgnaWoJzkK1DXdOOhoNWwDmepYV4Tg2zj1prmMQ/viewform?usp=publish-editor)!\n\n" \
         "Have any <cy>suggestions</c> or want to <cy>report a bug</c>? Join our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y) and let us know!",
