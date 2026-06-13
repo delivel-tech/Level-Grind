@@ -284,7 +284,7 @@ bool MainLayer::initMainPanel() {
         .parent(searchMenu)
         .collect();
 
-    auto searchBtn = Build(ButtonSprite::create("Search", "bigFont.fnt", "GJ_button_01.png"))
+    auto searchBtn = Build(ButtonSprite::create("Search", "goldFont.fnt", "GJ_button_01.png"))
         .scale(0.8f)
         .intoMenuItem([this] {
             GetLevelsBody body {

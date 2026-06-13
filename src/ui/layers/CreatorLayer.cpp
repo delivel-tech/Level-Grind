@@ -2,9 +2,11 @@
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/platform/windows.hpp"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/Layout.hpp"
 
+#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <UIBuilder.hpp>
 
 #include "../popups/AnnouncementsPopup.hpp"
@@ -16,6 +18,7 @@
 #include "../../managers/DataManager.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../popups/StaffPopup.hpp"
+#include "Geode/utils/cocos.hpp"
 #include "Geode/utils/web.hpp"
 #include "GrindPacksLayer.hpp"
 #include "MainLayer.hpp"
@@ -133,6 +136,13 @@ bool CreatorLayer::init() {
         .parent(catMenu)
         .id("helper-suggestions-cat")
         .collect();
+
+    // making scale mult for all category buttons smaller
+
+    for (const auto& obj : CCArrayExt(catMenu->m_pChildren)) {
+        CCMenuItemSpriteExtra* currentCat = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
+        currentCat->m_scaleMultiplier = 1.1f;
+    }
 
     catMenu->updateLayout();
 
