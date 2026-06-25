@@ -22,6 +22,7 @@
 #include "Geode/utils/web.hpp"
 #include "GrindPacksLayer.hpp"
 #include "MainLayer.hpp"
+#include "SuggestionsLayer.hpp"
 
 namespace levelgrind {
 
@@ -131,7 +132,7 @@ bool CreatorLayer::init() {
 
     auto helperSuggestionsCat = Build(CCSprite::create("helper_suggestions_cat.png"_spr))
         .intoMenuItem([] {
-
+            SuggestionsLayer::create()->open();
         })
         .parent(catMenu)
         .id("helper-suggestions-cat")

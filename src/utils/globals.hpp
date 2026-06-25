@@ -23,6 +23,11 @@ namespace levelgrind {
         int count;
         std::vector<int> ids;
     };
+
+    struct LevelSuggestion {
+        int id;
+        int points;
+    };
     
     // Body returned from bootup_get
     struct BootupGetResponse {

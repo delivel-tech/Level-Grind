@@ -22,6 +22,29 @@ class $modify(GrindProfilePage, ProfilePage) {
 		if (!leftMenu) return;
 
         GrindPosition pos = DataManager::getInstance().getUserPosition();
+        
+        // holy wall of checks lmao
+        if (auto child = getChildByIDRecursive("manage-user-btn")) {
+            child->removeFromParent();
+        }
+        if (auto child = getChildByIDRecursive("grind-owner-badge"_spr)) {
+            child->removeFromParent();
+        }
+        if (auto child = getChildByIDRecursive("grind-admin-badge"_spr)) {
+            child->removeFromParent();
+        }
+        if (auto child = getChildByIDRecursive("grind-helper-badge"_spr)) {
+            child->removeFromParent();
+        }
+        if (auto child = getChildByIDRecursive("grind-contrib-badge"_spr)) {
+            child->removeFromParent();
+        }
+        if (auto child = getChildByIDRecursive("grind-artist-badge"_spr)) {
+            child->removeFromParent();
+        }
+        if (auto child = getChildByIDRecursive("grind-booster-badge"_spr)) {
+            child->removeFromParent();
+        }
 
         if (pos == GrindPosition::Admin || pos == GrindPosition::Owner) {
             auto manageUserBtn = Build<CCSprite>::create("button_add_2.png"_spr)

@@ -25,7 +25,7 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 CPMAddPackage("gh:GlobedGD/argon@1.4.6")
 target_link_libraries(${PROJECT_NAME} argon)
 
-CPMAddPackage("gh:dankmeme01/cue#211f644")
+CPMAddPackage("gh:dankmeme01/cue#main")
 target_link_libraries(${PROJECT_NAME} cue)
 
 CPMAddPackage("gh:camila314/UIBuilder#main")
