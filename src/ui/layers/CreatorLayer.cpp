@@ -1,8 +1,11 @@
 #include "CreatorLayer.hpp"
+#include "Geode/cocos/actions/CCActionEase.h"
+#include "Geode/cocos/actions/CCActionInterval.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
+#include "Geode/cocos/particle_nodes/CCParticleExamples.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
-#include "Geode/platform/windows.hpp"
+#include "Geode/ui/BasedButtonSprite.hpp"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/Layout.hpp"
 
@@ -23,6 +26,9 @@
 #include "GrindPacksLayer.hpp"
 #include "MainLayer.hpp"
 #include "SuggestionsLayer.hpp"
+#include "SettingsLayer.hpp"
+#include "PetLayer.hpp"
+#include "../../managers/PetManager.hpp"
 
 namespace levelgrind {
 
@@ -44,8 +50,8 @@ bool CreatorLayer::init() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
     auto levelGrindLogo = Build<CCSprite>::create("lg-logo.png"_spr)
-        .scale(1.2f)
-        .pos({ winSize.width / 2, (winSize.height / 4) * 3.3f + 4.f })
+        .scale(1.1f)
+        .pos({ winSize.width / 2, (winSize.height / 4) * 3.3f + 14.f })
         .id("level-grind-logo")
         .parent(this)
         .collect();
@@ -98,9 +104,43 @@ bool CreatorLayer::init() {
         .id("weekly-ach-cat")
         .collect();
 
-    auto petCat = Build(CCSprite::create("pet_cat.png"_spr))
-        .intoMenuItem([] {
+    auto petCatSpr = CCSprite::create("pet_cat.png"_spr);
+    auto topPetSpr = []() {
+		if (Mod::get()->getSavedValue<int>("last-pet-lvl") < 1 || Mod::get()->getSavedValue<int>("last-pet-lvl") > 30) {
+			auto spr =  PetManager::getInstance().getPetSprByStyle(PetManager::PetStyle::StandardCube);
+			return spr;
+		} else {
+			auto spr = PetManager::getInstance().getPetSprByStyle(PetManager::getInstance().getStyleByLevel(Mod::get()->getSavedValue<int>("last-pet-lvl")));
+			return spr;
+		}
+	};
+	auto top = topPetSpr();
+    
+    top->setScale(0.5f);
 
+    auto pulseSeq = CCSequence::create(
+        CCEaseInOut::create(CCScaleTo::create(1.1f, 1.4f), 2.f),
+        CCEaseInOut::create(CCScaleTo::create(1.1f, 1.25f), 2.f), nullptr
+    );
+    top->runAction(CCRepeatForever::create(pulseSeq));
+
+    auto particles = CCParticleGalaxy::create();
+    particles->setLife(0.8f);
+    petCatSpr->addChild(particles);
+    particles->setPosition({
+        petCatSpr->getContentWidth() / 2,
+        petCatSpr->getContentHeight() / 2 + 8
+    });
+
+    petCatSpr->addChild(top);
+    top->setPosition({
+        petCatSpr->getContentWidth() / 2,
+        petCatSpr->getContentHeight() / 2 + 8
+    });
+
+    auto petCat = Build(petCatSpr)
+        .intoMenuItem([] {
+            PetLayer::create()->open();
         })
         .parent(catMenu)
         .id("pet-cat")
@@ -172,6 +212,21 @@ bool CreatorLayer::initFarMenus() {
         })
         .scaleMult(1.1f)
         .id("announcement-btn")
+        .parent(leftSideMenu)
+        .collect();
+
+    auto settingsBtn = Build(CircleButtonSprite::createWithSprite("settings_gear.png"_spr, 1.f, CircleBaseColor::Blue))
+        .with([](CircleButtonSprite* spr) {
+            spr->getTopNode()->setPosition(
+                spr->getTopNode()->getPositionX() + 1.f, spr->getTopNode()->getPositionY() - 0.5f
+            );
+        })
+        .scale(1.2f)
+        .intoMenuItem([] {
+            SettingsLayer::create()->open();
+        })
+        .scaleMult(1.1f)
+        .id("settings-btn")
         .parent(leftSideMenu)
         .collect();
 

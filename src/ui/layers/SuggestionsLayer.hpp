@@ -89,6 +89,7 @@ private:
     CCMenuItemSpriteExtra* m_filterBtn = nullptr;
 
     int m_page = 0;
+    int m_suggestionsMode = 0;
 
     PointsFilterOp m_pointsFilterOp = PointsFilterOp::More;
     int m_pointsFilterValue = 0;

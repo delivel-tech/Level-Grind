@@ -21,7 +21,6 @@
 #include "../popups/GuidePopup.hpp"
 #include "../popups/AnnouncementsPopup.hpp"
 #include "../popups/EventPopup.hpp"
-#include "GrindPacksLayer.hpp"
 #include "CustomBrowserLayer.hpp"
 
 #include "../popups/DifficultySelectorPopup.hpp"
@@ -78,8 +77,8 @@ bool MainLayer::initMainPanel() {
     auto winSize = CCDirector::sharedDirector()->getWinSize();
 
     auto levelGrindLogo = Build<CCSprite>::create("lg-logo.png"_spr)
-        .scale(1.2f)
-        .pos({ winSize.width / 2, (winSize.height / 4) * 3.3f + 4.f })
+        .scale(1.1f)
+        .pos({ winSize.width / 2, (winSize.height / 4) * 3.3f + 14.f })
         .id("level-grind-logo")
         .parent(this)
         .collect();
@@ -272,16 +271,6 @@ bool MainLayer::initMainPanel() {
         .pos({ winSize.width / 2, (winSize.height / 4) * 1.5f })
         .id("search-menu")
         .parent(this)
-        .collect();
-
-    auto settingsBtn = Build(CCSprite::createWithSpriteFrameName("GJ_optionsBtn02_001.png"))
-        .scale(0.8f)
-        .intoMenuItem([] {
-            SettingsLayer::create()->open();
-        })
-        .id("settings-btn")
-        .scaleMult(1.1f)
-        .parent(searchMenu)
         .collect();
 
     auto searchBtn = Build(ButtonSprite::create("Search", "goldFont.fnt", "GJ_button_01.png"))

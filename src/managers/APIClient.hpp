@@ -97,6 +97,8 @@ public:
     web::WebFuture getGrindPacks();
     GetGrindPacksResponse getGrindPacksParse(web::WebResponse res);
 
+    web::WebFuture syncPet();
+
     web::WebFuture health();
     bool healthParse(web::WebResponse res);
 

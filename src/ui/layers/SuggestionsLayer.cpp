@@ -3,8 +3,10 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/utils/web.hpp"
 #include "../../managers/DataManager.hpp"
+#include "../../utils/utils.hpp"
 
 #include <Geode/binding/ButtonSprite.hpp>
+#include <Geode/binding/CCMenuItemToggler.hpp>
 #include <UIBuilder.hpp>
 #include <cue/ListNode.hpp>
 
@@ -109,10 +111,23 @@ bool SuggestionsLayer::init() {
                 filterBtnSpr->addChild(filterBtnSprTop);
                 filterBtnSprTop->setPosition({ 21, 20 });
                 filterBtnSprTop->setScale(1.2f);
-                auto filterBtn = Build(filterBtnSpr)
+                m_filterBtn = Build(filterBtnSpr)
                     .intoMenuItem([this] {
                         this->onFilterButton(nullptr);
                     })
+                    .parent(pageMenu)
+                    .collect();
+
+                auto modeToggler = Build<CCMenuItemToggler>::createToggle(
+                    Build(CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png")).scale(0.9f).collect(),
+                    Build(CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png")).scale(0.9f).collect(),
+                    [this](CCMenuItemToggler* toggler) {
+                        bool newState = getNewTogglerState(toggler);
+                        this->m_suggestionsMode = newState ? 1 : 0;
+                        this->m_page = 0;
+                        this->refreshLevels();
+                    }
+                )
                     .parent(pageMenu)
                     .collect();
             }
@@ -260,6 +275,7 @@ void SuggestionsLayer::showUIElements() {
 void SuggestionsLayer::refreshLevels() {
     if (m_loading) return;
 
+    m_page = 0;
     m_allLevelIDs.clear();
 
     this->hideUIElements();
@@ -579,8 +595,9 @@ void SuggestionsLayer::performFetchLevels() {
     auto req = web::WebRequest();
     WeakRef<SuggestionsLayer> weakSelf = this;
 
+    auto url = fmt::format("https://api.delivel.tech/get_suggestions?mode={}", m_suggestionsMode);
     m_searchTask.spawn(
-        req.get("https://api.delivel.tech/get_suggestions"),
+        req.get(url),
         [weakSelf](web::WebResponse const& res) {
             auto self = weakSelf.lock();
             if (!self) return;

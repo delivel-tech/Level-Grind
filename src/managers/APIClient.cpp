@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "DataManager.hpp"
+#include "PetManager.hpp"
 
 using namespace geode::prelude;
 
@@ -36,6 +37,28 @@ GetLevelsBody APIClient::makeGetLevelsBody(
     ret.isRecentlyAdded = isRecentlyAdded;
 
     return ret;
+}
+
+web::WebFuture APIClient::syncPet() {
+    auto req = web::WebRequest();
+    matjson::Value body;
+
+    body["accountId"] = GJAccountManager::get()->m_accountID;
+    body["username"] = GJAccountManager::get()->m_username;
+    body["token"] = DataManager::getInstance().getUserToken();
+
+    if (PetManager::getInstance().shouldUpdatePetStars()) {
+        body["shouldUpdateStars"] = PetManager::getInstance().shouldUpdatePetStars();
+		body["starsDelta"] = PetManager::getInstance().getPetStarsDelta();
+    }
+
+    if (PetManager::getInstance().shouldUpdatePetMoons()) {
+		body["shouldUpdateMoons"] = PetManager::getInstance().shouldUpdatePetMoons();
+		body["moonsDelta"] = PetManager::getInstance().getPetMoonsDelta();
+	}
+	req.bodyJSON(body);
+
+    return req.post(fmt::format("{}{}", baseUrl, "/get_create_pet"));
 }
 
 web::WebFuture APIClient::health() {

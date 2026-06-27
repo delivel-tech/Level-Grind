@@ -123,10 +123,10 @@ void GuidePopup::addGrindLogo() {
     auto grindLogo = Build(CCSprite::create("lg-logo.png"_spr))
         .pos(
             m_mainLayer->getContentWidth() / 2.f,
-            m_mainLayer->getContentHeight() / 1.2f + 10.f
+            m_mainLayer->getContentHeight() / 1.2f + 17.f
         )
         .parent(m_mainLayer)
-        .scale(0.9f)
+        .scale(0.8f)
         .id("grind-logo")
         .collect();
 
