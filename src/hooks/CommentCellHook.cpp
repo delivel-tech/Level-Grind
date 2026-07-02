@@ -1,3 +1,5 @@
+// this entire source file is now unused, see main.cpp for all badges
+/*
 #include <Geode/Geode.hpp>
 #include <Geode/modify/CommentCell.hpp>
 
@@ -111,3 +113,4 @@ class $modify(GrindCommentCell, CommentCell) {
         );
     }
 };
+*/

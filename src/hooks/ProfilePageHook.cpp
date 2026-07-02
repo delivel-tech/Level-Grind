@@ -11,6 +11,8 @@
 
 using namespace geode::prelude;
 
+// most of this entire source file is now unused, see main.cpp for all badges
+
 class $modify(UserManage, ProfilePage) {
 	struct Fields {
 		int m_targetAccountID;
@@ -25,12 +27,14 @@ class $modify(UserManage, ProfilePage) {
 		ProfilePage::loadPageFromUserInfo(score);
 
 		if (auto mngBtn = getChildByIDRecursive("lg-manage-btn")) mngBtn->removeFromParent();
+		/*
 		if (auto badgeBtn = getChildByIDRecursive("grind-helper-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-admin-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-contributor-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-artist-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-booster-badge")) badgeBtn->removeFromParent();
 		if (auto badgeBtn = getChildByIDRecursive("grind-owner-badge")) badgeBtn->removeFromParent();
+		*/
 
 		m_fields->m_targetAccountID = score->m_accountID;
 		m_fields->m_username = score->m_userName.c_str();
@@ -53,6 +57,7 @@ class $modify(UserManage, ProfilePage) {
 		);
 		manageBtn->setID("lg-manage-btn");
 
+		/*
 		auto usernameMenu = getChildByIDRecursive("username-menu");
 		bool hasModBadge = getChildByIDRecursive("mod-badge") != nullptr;
 		bool noBadgeForMods = Mod::get()->getSavedValue<bool>("no-badge-for-mods");
@@ -152,6 +157,7 @@ class $modify(UserManage, ProfilePage) {
 				usernameMenu->updateLayout();
 			}
 		}
+		*/
 
 		if (!LGManager::get()->isAdmin()) return;
 
@@ -170,6 +176,7 @@ class $modify(UserManage, ProfilePage) {
 		)->show();
 	}
 
+	/*
 	void onHelperBadge(CCObject* sender) {
 		FLAlertLayer::create(
 			"Grind Helper",
@@ -233,4 +240,5 @@ class $modify(UserManage, ProfilePage) {
 			}
 		);
 	}
+	*/
 };
