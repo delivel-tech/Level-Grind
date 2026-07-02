@@ -84,6 +84,7 @@ $on_mod(Loaded) {
         [] (const alpha::badgify::Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 			if (Mod::get()->getSavedValue<bool>("no-badge-for-mods") && static_cast<int>(badge.modStatus) != 0) return;
+			if (badge.user.data()->m_accountID == 13678537) return;
 			
 			const auto& owners = LGManager::get()->getStaff().owners;
 			if (std::find(owners.begin(), owners.end(), badge.user.data()->m_accountID) == owners.end()) return;
