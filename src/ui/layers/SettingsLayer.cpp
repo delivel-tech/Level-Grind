@@ -256,7 +256,6 @@ void SettingsLayer::applyDefaultSettings() {
     Mod::get()->setSavedValue("enable-auto-notes", false);
     Mod::get()->setSavedValue("rgbBackground", cocos2d::ccColor3B { 37, 50, 167 });
     Mod::get()->setSavedValue("background-speed", 1.f);
-    Mod::get()->setSavedValue("show-badge-for-mods", false);
     Mod::get()->setSavedValue("disable-badges", false);
     Mod::get()->setSavedValue("disable-pet", false);
 }
@@ -531,13 +530,6 @@ void SettingsLayer::createAppearanceList() {
     ));
 
     list->addCell(makeHeaderCell("Badge Settings"));
-
-    list->addCell(makeToggleCell(
-        "Show Grind Badges for GD Mods",
-        "Disabled by default. Choose whether you want to see Grind Badge on GD Staff profiles.",
-        "show-badge-for-mods",
-        this
-    ));
 
     list->addCell(makeToggleCell(
         "Disable Badges",

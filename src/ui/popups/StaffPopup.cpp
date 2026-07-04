@@ -4,7 +4,9 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include <UIBuilder.hpp>
 
+#include "Geode/ui/BasedButtonSprite.hpp"
 #include "SyncLevelsPopup.hpp"
+#include "EventsManagePopup.hpp"
 
 namespace levelgrind {
 
@@ -68,11 +70,21 @@ bool StaffPopup::init() {
         .zOrder(1)
         .collect();
 
-    auto syncBtn = Build(CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png"))
+    if (pos == GrindPosition::Owner) {
+        auto syncBtn = Build(CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png"))
+            .intoMenuItem([] {
+                SyncLevelsPopup::create()->show();
+            })
+            .id("sync-btn")
+            .parent(buttonsMenu)
+            .collect();
+    }
+
+    auto eventsBtn = Build(CircleButtonSprite::createWithSpriteFrameName("gj_dailyCrown_001.png"))
         .intoMenuItem([] {
-            SyncLevelsPopup::create()->show();
+            EventsManagePopup::create()->show();
         })
-        .id("sync-btn")
+        .id("events-btn")
         .parent(buttonsMenu)
         .collect();
 

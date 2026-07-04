@@ -15,6 +15,7 @@
 #include "../../managers/APIClient.hpp"
 #include "../popups/PetRenamePopup.hpp"
 #include "../popups/PetUpgradePopup.hpp"
+#include "../popups/PetCustomizePopup.hpp"
 #include "Geode/ui/ProgressBar.hpp"
 #include "Geode/utils/web.hpp"
 
@@ -248,6 +249,8 @@ void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
                 )->show();
                 return;
             }
+
+            PetCustomisePopup::create(data)->show();
         })
         .id("customize-btn")
         .parent(downBtnMenu)

@@ -1,5 +1,6 @@
 #include "PetManager.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
+#include <Geode/binding/GameManager.hpp>
 
 using namespace geode::prelude;
 
@@ -20,33 +21,83 @@ bool PetManager::isMaxLevel(int petLevel) {
 }
 
 CCSprite* PetManager::getPetSprByStyle(PetStyle style) {
+    return getPetSprByStyle(style, getSelectedCubeIconId());
+}
+
+CCSprite* PetManager::getPetSprByStyle(PetStyle style, int iconFrameId) {
     CCSprite* sprite = nullptr;
+    int resolvedFrame = 2;
+
+    if (Mod::get()->getSavedValue<bool>("custom-icon-enabled")) {
+        if (style == PetStyle::StandardCube) {
+            resolvedFrame = iconFrameId > 0 ? iconFrameId : 2;
+        } else {
+            resolvedFrame = iconFrameId > 0 ? iconFrameId : GameManager::sharedState()->m_playerFrame;
+        }
+    } else {
+        if (style == PetStyle::StandardCube) resolvedFrame = 2;
+        else resolvedFrame = GameManager::sharedState()->m_playerFrame;
+    }
+
+    if (resolvedFrame <= 0) resolvedFrame = 2;
+
     if (style == PetStyle::StandardCube) {
         auto helperSpr = CCSprite::create();
-        auto playerSpr = SimplePlayer::create(2);
-        playerSpr->updatePlayerFrame(2, IconType::Cube);
-        playerSpr->setColors({111, 255, 0}, {0, 251, 255});
+        auto playerSpr = SimplePlayer::create(resolvedFrame);
+        playerSpr->updatePlayerFrame(resolvedFrame, IconType::Cube);
+        if (Mod::get()->getSavedValue<bool>("custom-colors-enabled")) {
+            playerSpr->setColors(
+                Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-color-main"),
+                Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-color-sec")
+            );
+        } else {
+            playerSpr->setColors({111, 255, 0}, {0, 251, 255});
+        }
+        if (Mod::get()->getSavedValue<bool>("custom-glow-enabled")) {
+            playerSpr->setGlowOutline(Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-glow"));
+        }
         helperSpr->addChild(playerSpr);
         sprite = helperSpr;
     } else if (style == PetStyle::OwnCube) {
         auto helperSpr = CCSprite::create();
-        auto playerSpr = SimplePlayer::create(GameManager::sharedState()->m_playerFrame);
-        playerSpr->updatePlayerFrame(GameManager::sharedState()->m_playerFrame, IconType::Cube);
-        playerSpr->setColors({111, 255, 0}, {0, 251, 255});
+        auto playerSpr = SimplePlayer::create(resolvedFrame);
+        playerSpr->updatePlayerFrame(resolvedFrame, IconType::Cube);
+        if (Mod::get()->getSavedValue<bool>("custom-colors-enabled")) {
+            playerSpr->setColors(
+                Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-color-main"),
+                Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-color-sec")
+            );
+        } else {
+            playerSpr->setColors({111, 255, 0}, {0, 251, 255});
+        }
+        if (Mod::get()->getSavedValue<bool>("custom-glow-enabled")) {
+            playerSpr->setGlowOutline(Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-glow"));
+        }
         helperSpr->addChild(playerSpr);
         sprite = helperSpr;
     } else {
         auto helperSpr = CCSprite::create();
-        auto playerSpr = SimplePlayer::create(GameManager::sharedState()->m_playerFrame);
-        playerSpr->updatePlayerFrame(GameManager::sharedState()->m_playerFrame, IconType::Cube);
-        playerSpr->setColors(
-            GameManager::sharedState()->colorForIdx(GameManager::sharedState()->m_playerColor),
-            GameManager::sharedState()->colorForIdx(GameManager::sharedState()->m_playerColor2)
-        );
-        if (GameManager::sharedState()->m_playerGlow != 0) {
-            playerSpr->setGlowOutline(
-                GameManager::sharedState()->colorForIdx(GameManager::sharedState()->m_playerGlowColor)
+        auto playerSpr = SimplePlayer::create(resolvedFrame);
+        playerSpr->updatePlayerFrame(resolvedFrame, IconType::Cube);
+        if (Mod::get()->getSavedValue<bool>("custom-colors-enabled")) {
+            playerSpr->setColors(
+                Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-color-main"),
+                Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-color-sec")
             );
+        } else {
+            playerSpr->setColors(
+                GameManager::sharedState()->colorForIdx(GameManager::sharedState()->m_playerColor),
+                GameManager::sharedState()->colorForIdx(GameManager::sharedState()->m_playerColor2)
+            );
+        }
+        if (Mod::get()->getSavedValue<bool>("custom-glow-enabled")) {
+            playerSpr->setGlowOutline(Mod::get()->getSavedValue<cocos2d::ccColor3B>("pet-glow"));
+        } else {
+            if (GameManager::sharedState()->m_playerGlow != 0) {
+                playerSpr->setGlowOutline(
+                    GameManager::sharedState()->colorForIdx(GameManager::sharedState()->m_playerGlowColor)
+                );
+            }
         }
         helperSpr->addChild(playerSpr);
         sprite = helperSpr;
@@ -54,6 +105,20 @@ CCSprite* PetManager::getPetSprByStyle(PetStyle style) {
 
     sprite->setID("pet-sprite");
     return sprite;
+}
+
+int PetManager::getSelectedCubeIconId() {
+    int savedIcon = Mod::get()->getSavedValue<int>("pet-custom-icon-id");
+    if (savedIcon > 0) return savedIcon;
+    return GameManager::sharedState()->m_playerFrame;
+}
+
+void PetManager::setSelectedCubeIconId(int iconFrameId) {
+    if (iconFrameId > 0) {
+        Mod::get()->setSavedValue("pet-custom-icon-id", iconFrameId);
+    } else {
+        Mod::get()->setSavedValue("pet-custom-icon-id", -1);
+    }
 }
 
 PetManager::PetStyle PetManager::getStyleByLevel(int petLevel) {

@@ -40,6 +40,9 @@ public:
     float getPetScale(int level);
     std::string getRarityFromInt(int rarity);
     CCSprite* getPetSprByStyle(PetStyle style);
+    CCSprite* getPetSprByStyle(PetStyle style, int iconFrameId);
+    int getSelectedCubeIconId();
+    void setSelectedCubeIconId(int iconFrameId);
     PetStyle getStyleByLevel(int petLevel);
 
     int addStarsToPetStarsDelta(int value) {

@@ -44,7 +44,7 @@ web::WebFuture APIClient::syncPet() {
     matjson::Value body;
 
     body["accountId"] = GJAccountManager::get()->m_accountID;
-    body["username"] = GJAccountManager::get()->m_username;
+    body["username"] = GJAccountManager::get()->m_username.c_str();
     body["token"] = DataManager::getInstance().getUserToken();
 
     if (PetManager::getInstance().shouldUpdatePetStars()) {
@@ -63,6 +63,101 @@ web::WebFuture APIClient::syncPet() {
 
 web::WebFuture APIClient::health() {
     return web::WebRequest().get(fmt::format("{}{}", baseUrl, "/health"));
+}
+
+web::WebFuture APIClient::setEvents(int mode, int classicID, int platID) {
+    auto req = web::WebRequest();
+    matjson::Value body;
+
+    body["accountID"] = GJAccountManager::get()->m_accountID;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["mode"] = mode;
+    body["classicId"] = classicID;
+    body["platformerId"] = platID;
+    body["addedBy"] = GJAccountManager::get()->m_username.c_str();
+
+    req.bodyJSON(body);
+
+    return req.post(fmt::format("{}{}", baseUrl, "/set_events"));
+}
+
+web::WebFuture APIClient::getEvents(int mode) {
+    auto req = web::WebRequest();
+    req.param("mode", fmt::format("{}", mode));
+    return req.get(fmt::format("{}{}", baseUrl, "/get_events_new"));
+}
+
+Events APIClient::getEventsParse(web::WebResponse res) {
+    Events ret;
+    ret.ok = false;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+
+    if (!ret.ok) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    matjson::Value events = json["events"];
+
+    bool classicAdded = false;
+    bool platAdded = false;
+
+    for (const auto& event : events) {
+        int type = event["type"].asInt().unwrapOrDefault();
+        if (type == 0) {
+            if (classicAdded) continue;
+            ret.classicEvent.exists = true;
+            ret.classicEvent.id = event["id"].asInt().unwrapOrDefault();
+            ret.classicEvent.levelId = event["levelId"].asInt().unwrapOrDefault();
+            classicAdded = true;
+            ret.classicEvent.secondsLeft = event["secondsLeft"].asDouble().unwrapOrDefault();
+        }
+        if (type == 1) {
+            if (platAdded) continue;
+            ret.platEvent.exists = true;
+            ret.platEvent.id = event["id"].asInt().unwrapOrDefault();
+            ret.platEvent.levelId = event["levelId"].asInt().unwrapOrDefault();
+            platAdded = true;
+            ret.platEvent.secondsLeft = event["secondsLeft"].asDouble().unwrapOrDefault();
+        }
+    }
+
+    return ret;
+}
+
+bool APIClient::setEventsParse(web::WebResponse res) {
+    bool ret = false;
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+
+    ret = json["ok"].asBool().unwrapOrDefault();
+    return ret;
 }
 
 bool APIClient::healthParse(web::WebResponse res) {

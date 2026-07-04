@@ -206,15 +206,6 @@ bool CreatorLayer::initFarMenus() {
 
     if (!leftSideMenu) return false;
 
-    auto announcementBtn = Build<CCSprite>::create("ann_btn.png"_spr)
-        .intoMenuItem([] {
-            AnnouncementsPopup::create()->show();
-        })
-        .scaleMult(1.1f)
-        .id("announcement-btn")
-        .parent(leftSideMenu)
-        .collect();
-
     auto settingsBtn = Build(CircleButtonSprite::createWithSprite("settings_gear.png"_spr, 1.f, CircleBaseColor::Blue))
         .with([](CircleButtonSprite* spr) {
             spr->getTopNode()->setPosition(
@@ -227,6 +218,15 @@ bool CreatorLayer::initFarMenus() {
         })
         .scaleMult(1.1f)
         .id("settings-btn")
+        .parent(leftSideMenu)
+        .collect();
+
+    auto announcementBtn = Build<CCSprite>::create("ann_btn.png"_spr)
+        .intoMenuItem([] {
+            AnnouncementsPopup::create()->show();
+        })
+        .scaleMult(1.1f)
+        .id("announcement-btn")
         .parent(leftSideMenu)
         .collect();
 

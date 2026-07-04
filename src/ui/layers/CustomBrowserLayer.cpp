@@ -19,6 +19,7 @@
 
 #include <UIBuilder.hpp>
 #include <cue/ListNode.hpp>
+#include <fmt/format.h>
 
 using namespace geode::prelude;
 
@@ -27,9 +28,9 @@ static constexpr int PER_PAGE = 10;
 
 namespace levelgrind {
 
-CustomBrowserLayer* CustomBrowserLayer::create(GetLevelsBody body, std::string title) {
+CustomBrowserLayer* CustomBrowserLayer::create(GetLevelsBody body, std::string title, CustomBrowserType type, EventType eventType) {
     auto ret = new CustomBrowserLayer;
-    if (ret && ret->init(body, title)) {
+    if (ret && ret->init(body, title, type, eventType)) {
         ret->autorelease();
         return ret;
     }
@@ -37,11 +38,13 @@ CustomBrowserLayer* CustomBrowserLayer::create(GetLevelsBody body, std::string t
     return nullptr;
 }
 
-bool CustomBrowserLayer::init(GetLevelsBody body, std::string title) {
+bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrowserType type, EventType eventType) {
     if (!BaseLayer::init()) return false;
 
     m_body = body;
     m_title = title;
+    m_type = type;
+    m_eventType = eventType;
 
     replaceBgToClassic();
 
@@ -508,22 +511,41 @@ void CustomBrowserLayer::performFetchLevels() {
 
     this->startLoading();
 
-    matjson::Value body;
-    if (!m_body.difficulties.empty()) body["difficulties"] = m_body.difficulties;
-    if (!m_body.lengths.empty()) body["lengths"] = m_body.lengths;
-    if (!m_body.demonDifficulties.empty()) body["demonDifficulties"] = m_body.demonDifficulties;
-    if (!m_body.grindTypes.empty()) body["grindTypes"] = m_body.grindTypes;
-    if (!m_body.versions.empty()) body["versions"] = m_body.versions;
-    body["newerFirst"] = m_body.isNewerFirst;
-    body["recentlyAdded"] = m_body.isRecentlyAdded;
-
     auto req = web::WebRequest();
-    req.bodyJSON(body);
+
+    if (m_type == CustomBrowserType::Search) {
+        matjson::Value body;
+        if (!m_body.difficulties.empty()) body["difficulties"] = m_body.difficulties;
+        if (!m_body.lengths.empty()) body["lengths"] = m_body.lengths;
+        if (!m_body.demonDifficulties.empty()) body["demonDifficulties"] = m_body.demonDifficulties;
+        if (!m_body.grindTypes.empty()) body["grindTypes"] = m_body.grindTypes;
+        if (!m_body.versions.empty()) body["versions"] = m_body.versions;
+        body["newerFirst"] = m_body.isNewerFirst;
+        body["recentlyAdded"] = m_body.isRecentlyAdded;
+        req.bodyJSON(body);
+    }
 
     WeakRef<CustomBrowserLayer> weakSelf = this;
 
+    auto getURL = [this, &req](CustomBrowserType type, EventType eventType) {
+        if (type == CustomBrowserType::Search) {
+            return "https://api.delivel.tech/get_levels";
+        } else {
+            req.param("mode", fmt::format("{}", static_cast<int>(m_eventType)));
+            return "https://api.delivel.tech/get_events_history";
+        }
+    };
+
+    auto getFuture = [&](CustomBrowserType type) {
+        if (type == CustomBrowserType::Search) {
+            return req.post(getURL(m_type, m_eventType));
+        } else {
+            return req.get(getURL(m_type, m_eventType));
+        }
+    };
+
     m_searchTask.spawn(
-        req.post("https://api.delivel.tech/get_levels"),
+        getFuture(m_type),
         [weakSelf](web::WebResponse const& res) {
             auto self = weakSelf.lock();
             if (!self) return;
@@ -597,6 +619,7 @@ void CustomBrowserLayer::performFetchLevels() {
             bool onlyUncompleted = false;
             bool onlyCompleted = false;
 
+            if (self->m_type == CustomBrowserType::Search) {
             if (auto mod = Mod::get()) {
                 onlyUncompleted = mod->getSavedValue<bool>("only-uncompleted");
                 onlyCompleted = mod->getSavedValue<bool>("only-completed");
@@ -661,6 +684,7 @@ void CustomBrowserLayer::performFetchLevels() {
                     filteredIDs = allIDs;
                 }
             }
+            } else {filteredIDs = allIDs;}
 
             self->m_allLevelIDs = filteredIDs;
             self->m_totalLevels = static_cast<int>(filteredIDs.size());

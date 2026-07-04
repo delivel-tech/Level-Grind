@@ -97,6 +97,12 @@ public:
     web::WebFuture getGrindPacks();
     GetGrindPacksResponse getGrindPacksParse(web::WebResponse res);
 
+    web::WebFuture setEvents(int mode, int classicID, int platID);
+    bool setEventsParse(web::WebResponse res);
+
+    web::WebFuture getEvents(int mode);
+    Events getEventsParse(web::WebResponse res);
+
     web::WebFuture syncPet();
 
     web::WebFuture health();

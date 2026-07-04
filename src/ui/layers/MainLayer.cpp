@@ -280,7 +280,7 @@ bool MainLayer::initMainPanel() {
                 m_difficulties, m_lengths, m_demonDifficulties,
                 m_grindTypes, m_versions, Mod::get()->getSavedValue<bool>("newer-first"), Mod::get()->getSavedValue<bool>("recently-added")
             };
-            CustomBrowserLayer::create(body, "Grinding Levels")->open();
+            CustomBrowserLayer::create(body, "Grinding Levels", CustomBrowserType::Search, EventType::Daily)->open(); // eventtype is just a placeholder
         })
         .id("search-btn")
         .scaleMult(1.1f)

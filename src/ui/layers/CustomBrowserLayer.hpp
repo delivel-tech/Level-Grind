@@ -18,7 +18,7 @@ namespace levelgrind {
 
 class CustomBrowserLayer : public BaseLayer, public LevelManagerDelegate, public SetIDPopupDelegate {
 public:
-    static CustomBrowserLayer* create(GetLevelsBody body, std::string title);
+    static CustomBrowserLayer* create(GetLevelsBody body, std::string title, CustomBrowserType type, EventType eventType);
     void keyBackClicked() override;
 
     ~CustomBrowserLayer() {
@@ -30,7 +30,7 @@ public:
     }
 
 private:
-    bool init(GetLevelsBody body, std::string title);
+    bool init(GetLevelsBody body, std::string title, CustomBrowserType type, EventType eventType);
 
     void onInfoButton(CCObject* sender);
     void onPageButton(CCObject* sender);
@@ -58,6 +58,8 @@ private:
 
     GetLevelsBody m_body;
     std::string m_title;
+    CustomBrowserType m_type;
+    EventType m_eventType;
 
     geode::async::TaskHolder<web::WebResponse> m_searchTask;
 
