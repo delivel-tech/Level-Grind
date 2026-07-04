@@ -124,6 +124,8 @@ bool CreatorLayer::init() {
     );
     top->runAction(CCRepeatForever::create(pulseSeq));
 
+    #ifndef GEODE_IS_IOS
+
     auto particles = CCParticleGalaxy::create();
     particles->setLife(0.8f);
     petCatSpr->addChild(particles);
@@ -131,6 +133,8 @@ bool CreatorLayer::init() {
         petCatSpr->getContentWidth() / 2,
         petCatSpr->getContentHeight() / 2 + 8
     });
+
+    #endif
 
     petCatSpr->addChild(top);
     top->setPosition({
