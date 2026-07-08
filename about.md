@@ -1,55 +1,44 @@
 # Level Grind
 
-### A big <cg>database</c> of <cy>grinding worthy</c> <co>levels</c>!
+**A big <cl>database</c> of <cy>grinding-worthy</c> levels!**
 
-This mod is created for <cr>grinders</c>, who want to easily search for <cg>levels</c>.  
-Level Grind offers you <cy>additional searching options</c>, such as <cb>version selection</c>, or <cp>difficulty separator</c>  
-(for example, when you choose <cr>Hard</c>, you can additionally choose only <cy>4</c> or <co>5</c> stars / moons).
+---
 
-This <cg>database</c> is actively filled by our <cp>helpers</c>,  
-and we hope you will find this mod a <cy>great place</c> to evolve your <cr>account stats</c>!
+### About
+<cp>Level Grind</c> is designed specifically for stats grinders who want a streamlined way to find easy, readable, and fun levels.
 
-### Our <cb>Discord Server</c>!
+The mod offers advanced search filters, including <cb>version selection</c> and a <cs>difficulty separator</c> (for example, filtering the <cy>Hard</c> difficulty to show only <cy>4</c> star or <cy>5</c> star/moon levels).
 
-<cy>Level Grind</c> has been growing as a <cr>big community of grinders</c>, therefore, <cy>consider joining our</c> [<cp>Discord Server</c>](https://discord.gg/tmf5xtCX5y). In this server you can <cb>suggest levels for adding</c>, or communicate with <cj>other mod players</c>. As well, you will be able to achieve <cp>exclusive Booster badge</c> in-game if you boost the server!
+The <cl>database</c> is actively filled by our <cc>Admins</c> and <cg>Helpers</c>, making it a great place to evolve your account stats!
 
-### <cy>Grinding Pet</c>!
+<cs>**You can access Level Grind by clicking the loupe button located in the Level Search Layer!**</c>
 
-Since <cp>1.4.0</c>, <cy>Level Grind</c> introduces <cg>Grinding Pet</c>!
-<cg>Grinding Pet</c> is a <cb>pet</c> that you can <cy>evolve by grinding stats</c>.
-In order to use the pet, click the <cj>cube button</c> on the main layer of the mod.
+---
 
-### <cg>Event Levels</c>!
+### Features
+- <cl>**Grindable Levels Database**</c>: A large database of readable and easy levels, actively updated by <cc>Admins</c> with suggestions taken from our <cg>Helpers</c>. Additionally, you can toggle the <cc>coin</c> button to search specifically for levels with easy/free <cc>coins</c>.
+- <cs>**Event Levels**</c>: These include daily, weekly, and monthly levels that are regularly selected by <cc>Admins</c>.
+- <ca>**Level Notes**</c>: Our staff team can add notes to levels, pointing out details like coin locations, tricky timings, difficult sections, or anything else that the player should know. When a level has a note attached, you can read it by clicking the button on the left side of the level's page.
+- <cf>**Grind Packs**</c>: Similar to RobTop's "Map Packs" but with actually fun and readable levels! Featuring both <cy>Classic</c> and <cb>Platformer</c> packs, with new ones being added regularly.
+- <cd>**Grinding Pet**</c>: Your own companion that evolves when you grind stats!
+- <cy>**Weekly Achievements**</c>: Each week, the best achievements from the grinding community are chosen for display.
+- <cg>**Helper Suggestions Tab**</c>: In here, you can find levels suggested by our <cg>Helpers</c>! These may eventually be added to the main <cl>Database</c>.
+- <cs>**QOL Features**</c>: Various quality of life improvements!
 
-There are <cy>2 types</c> of <cp>Event Levels</c>: <cg>Daily and Weekly levels</c>! <cp>Grind Admins</c> set <cj>classic & platformer</c> pair of levels every day and week. Weekly events are demon levels.
+---
 
-### <cp>Level Notes</c>!
+### Upcoming Features
+- <cy>**New Filters**</c>: We're planning to add filtering levels based on <cp>amount of coins</c> and <cg>level rating</c>! However, it is delayed. We're working on getting our server whitelisted by RobTop hard in order to implement this.
+- <cp>**Grinding Lists**</c>: This feature has been requested a lot. Unfortunately, due to RobTop API's restrictions, it's hard to implement to make it safe. However, we're working on it!
 
-Our <cr>Staff team</c> can now add <cg>Notes</c> to any levels. In these notes, you can find out about <cj>difficult moments of the level</c>, 
-<cy>coins explanations</c> and more!
+---
 
-### <cr>Weekly achievements</c>!
+### <cb>Discord Server</c>
+<cp>Level Grind</c> is a rapidly growing community! Consider joining our <cb>Discord</c> server, where you can suggest levels, chat with other players, and unlock an exclusive in-game <cb>Booster badge</c> by boosting the server!</c>
 
-Every week, <cy>Grind Admins</c> choose <cp>the best achievement of the week</c> in <cy>grinding community</c>. 
-This achievement can be found <cg>on the main layer of the mod</c>.
+---
 
-### <cy>How to use:</c>
-
-* Go to <cg>search layer</c>, find a <cy>loupe button</c> and click it.
-* Choose <cp>grinding options</c>, click on <cg>search button</c>.
-* Additionally open <co>settings button</c> and choose more <cy>settings</c>.
-* Enjoy playing <cg>easy</c> and <cy>readable</c> levels!
-
-### <cp>Want to become a Helper?</c>
-
-* Fill out an [<cy>application form</c>](https://docs.google.com/forms/d/e/1FAIpQLScOUeCa13hvgnaWoJzkK1DXdOOhoNWwDmepYV4Tg2zj1prmMQ/viewform?usp=publish-editor).
-* We may <cg>give</c> or <cr>not give</c> you <co>Helper perms</c> based off of different aspects.
-* Keep in mind that it may take a while to make a decision after you applied, please be patient!
-
-### <cy>Credits:</c>
-
-* <cp>Mod logo & sprites</c> - [<cy>iDust</c>](user:20851829)!
-* Helping with <cj>making sprites</c> - [<cy>Dasshu</c>](user:1975253)
-* Making <cy>Argon and cue</c> - [<cr>dankmeme01</c>](user:9735891) :3
-* <cj>Credits popup design</c> & <cy>partly code</c> - [<cr>dankmeme01</c>](user:9735891) <3
-* A lot of <cg>levels</c> in the database - <cp>our helpers</c> <3
+### Credits
+- <cl>**Texture Designs**</c>: [iDust](user:20851829) & [Dasshu](user:1975253)
+- <cl>**Making Argon and cue**</c>: [dankmeme01](user:9735891) :3
+- <cl>**A lot of levels in the database**</c>: our <cg>Helpers</c> <3

@@ -9,6 +9,7 @@
 #include "Geode/ui/NineSlice.hpp"
 
 #include <Geode/Enums.hpp>
+#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/binding/GJSearchObject.hpp>
 #include <Geode/binding/GameLevelManager.hpp>
@@ -56,6 +57,11 @@ static void fixCell(LevelCell* cell) {
         creatorButton->setAnchorPoint({0.f, 0.5f});
     }
     if (viewButton) {
+        if (auto castedViewBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(viewButton)) {
+            auto spr = CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png");
+            spr->setScale(0.7f);
+            castedViewBtn->setSprite(spr);
+        }
         viewButton->setPosition({
             cell->getContentSize().width - 40,
             cell->getContentSize().height / 2.f

@@ -111,6 +111,12 @@ public:
     web::WebFuture newGrindPack(NewGrindPackBody body);
     bool newGrindPackParse(web::WebResponse res);
 
+    web::WebFuture newWeeklyAch(AchievementCellInfo info1, AchievementCellInfo info2, AchievementCellInfo info3);
+    bool newWeeklyAchParse(web::WebResponse res);
+
+    web::WebFuture getWeeklyAch();
+    WeeklyAchResponse getWeeklyAchParse(web::WebResponse res);
+
     // argon
     void performGetToken();
 

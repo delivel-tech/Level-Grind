@@ -6,6 +6,7 @@
 #include <UIBuilder.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/ui/BasedButtonSprite.hpp"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/NineSlice.hpp"
@@ -15,6 +16,7 @@
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 #include "RoleSelectorPopup.hpp"
+#include "WeeklyAchievementConfigurePopup.hpp"
 
 using namespace geode::prelude;
 
@@ -346,6 +348,14 @@ void UserManagePopup::buildUI() {
                         .collect();
                 }
             }
+
+            auto weeklyAchBtn = Build(CircleButtonSprite::createWithSpriteFrameName("rankIcon_1_001.png"))
+                .intoMenuItem([self] {
+                    WeeklyAchievementConfigurePopup::create(self->m_targetUser)->show();
+                })
+                .id("weekly-ach-btn")
+                .parent(self->m_optionsMenu)
+                .collect();
 
             self->m_optionsMenu->updateLayout();
             self->m_targetLabelMenu->updateLayout();
