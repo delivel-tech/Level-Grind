@@ -21,6 +21,7 @@
 #include <UIBuilder.hpp>
 #include <cue/ListNode.hpp>
 #include <fmt/format.h>
+#include <random>
 
 using namespace geode::prelude;
 
@@ -149,6 +150,35 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
 
     auto prevSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png");
 
+    m_randomPageBtn = Build(CCSprite::create("random_btn_2.png"_spr))
+        .scale(0.91f)
+        .intoMenuItem([this] {
+            if (!this->getParent() || !this->isRunning()) return;
+            if (m_loading) return;
+            if (m_totalPages <= 1) return;
+
+            static std::mt19937 range(std::random_device{}());
+            std::uniform_int_distribution<int> dist(0, m_totalPages - 1);
+
+            int newPage = dist(range);
+            if (m_totalPages > 1 && newPage == m_page) {
+                newPage = (newPage + 1) % m_totalPages;
+            }
+
+            if (newPage == m_page) return;
+
+            m_page = newPage;
+
+            this->hideUIElements();
+            this->loadPageFromStoredIDs();
+        })
+        .id("random-page-btn")
+        .visible(false)
+        .parent(this->getChildByID("cb-page-menu"))
+        .collect();
+
+    m_randomPageBtn->getParent()->updateLayout();
+
     m_prevButton = CCMenuItemSpriteExtra::create(
         prevSpr,
         this,
@@ -231,6 +261,8 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
             .collect();
     }
 
+    m_randomPageBtn->getParent()->updateLayout();
+
     this->performFetchLevels();
 
     return true;
@@ -277,6 +309,7 @@ void CustomBrowserLayer::stopLoading() {
     }
 
     this->showUIElements();
+    if (m_randomPageBtn) m_randomPageBtn->getParent()->updateLayout();
 }
 
 void CustomBrowserLayer::hideUIElements() {
@@ -284,6 +317,7 @@ void CustomBrowserLayer::hideUIElements() {
     if (m_refreshBtn) m_refreshBtn->setVisible(false);
     if (m_pageButton) m_pageButton->setVisible(false);
     if (m_levelsLabel) m_levelsLabel->setVisible(false);
+    if (m_randomPageBtn) m_randomPageBtn->setVisible(false);
 }
 
 void CustomBrowserLayer::showUIElements() {
@@ -293,6 +327,7 @@ void CustomBrowserLayer::showUIElements() {
     if (m_prevButton) m_prevButton->setVisible(m_page > 0);
     if (m_nextButton) m_nextButton->setVisible(m_page + 1 < m_totalPages);
     if (m_pageButton) m_pageButton->setVisible(m_totalPages > 1);
+    if (m_randomPageBtn) m_randomPageBtn->setVisible(m_totalPages > 1);
 }
 
 void CustomBrowserLayer::refreshLevels() {
@@ -318,6 +353,7 @@ void CustomBrowserLayer::onNextPage(CCObject* sender) {
         this->hideUIElements();
 
         this->loadPageFromStoredIDs();
+        if (m_randomPageBtn) m_randomPageBtn->getParent()->updateLayout();
     }
 }
 
@@ -394,6 +430,7 @@ void CustomBrowserLayer::updatePageButton() {
     if (m_pageButton) {
         m_pageButton->setVisible(m_totalPages > 1);
     }
+    if (m_randomPageBtn) m_randomPageBtn->setVisible(m_totalPages > 1);
 }
 
 void CustomBrowserLayer::onPageButton(CCObject* sender) {

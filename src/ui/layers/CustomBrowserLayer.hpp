@@ -87,6 +87,8 @@ private:
     ProgressBar* m_progressBar = nullptr;
     CCLabelBMFont* m_completionInfoLabel = nullptr;
 
+    CCMenuItemSpriteExtra* m_randomPageBtn = nullptr;
+
     int m_page = 0;
 };
 
