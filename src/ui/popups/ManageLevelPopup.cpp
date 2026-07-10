@@ -3,7 +3,8 @@
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
-#include "Geode/ui/BasedButtonSprite.hpp"
+#include "Geode/loader/Log.hpp"
+#include <cue/RadioLogic.hpp>
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
@@ -16,10 +17,12 @@
 #include <fmt/format.h>
 #include "../../managers/APIClient.hpp"
 #include "../../managers/DataManager.hpp"
+#include "Geode/ui/NineSlice.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/web.hpp"
 
 #include "../../utils/utils.hpp"
+#include "AddNotePopup.hpp"
 #include <cue/ListNode.hpp>
 
 using namespace geode::prelude;
@@ -123,6 +126,40 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
             self->setTitle("Manage Level");
 
+            auto leftNineSlice = Build(NineSlice::create("GJ_square01.png"))
+                .contentSize({50, 150})
+                .parent(self->m_mainLayer)
+                .pos({-30, self->centerY()})
+                .id("left-nine-slice")
+                .collect();
+
+            auto rightNineSlice = Build(NineSlice::create("GJ_square01.png"))
+                .contentSize({50, 150})
+                .parent(self->m_mainLayer)
+                .pos({self->m_mainLayer->getContentWidth() + 30, self->centerY()})
+                .id("right-nine-slice")
+                .collect();
+
+            auto leftCoinMenu = Build(CCMenu::create())
+                .layout(ColumnLayout::create()->setAxisReverse(true))
+                .parent(self->m_buttonMenu)
+                .contentSize(leftNineSlice->getContentSize())
+                .pos(leftNineSlice->getPosition())
+                .id("left-coin-menu")
+                .scale(0.8f)
+                .zOrder(1)
+                .collect();
+
+            auto rightButtonsMenu = Build(CCMenu::create())
+                .layout(ColumnLayout::create()->setAxisReverse(true))
+                .parent(self->m_buttonMenu)
+                .contentSize(rightNineSlice->getContentSize())
+                .pos(rightNineSlice->getPosition())
+                .id("right-buttons-menu")
+                .scale(0.8f)
+                .zOrder(1)
+                .collect();
+
             if (parsed.coin) {
                 self->m_body.coin = true;
             } else {
@@ -192,7 +229,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 self->m_levelInfoMenu->addChild(
                     Build<CCSprite>::createSpriteName("GJ_lock_001.png")
                         .intoMenuItem([] {
-                            Notification::create("This level has been locked. You cannot change it.", NotificationIcon::Warning)->show();
+                            Notification::create("This level has been locked. Voting won't be considered while syncing.", NotificationIcon::Warning)->show();
                         })
                         .collect()
                 );
@@ -200,7 +237,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 self->m_levelInfoMenu->addChild(
                     Build<CCSprite>::createSpriteName("GJ_lock_open_001.png")
                         .intoMenuItem([] {
-                            Notification::create("This level is not locked. You are able to change it.", NotificationIcon::Success)->show();
+                            Notification::create("This level is not locked. Voting will be considered while syncing.", NotificationIcon::Success)->show();
                         })
                         .collect()
                 );
@@ -230,7 +267,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     auto uPopupRef = Ref(uPopup);
 
                     self->m_listener.spawn(
-                        APIClient::getInstance().changePoint(PointType::AcceptPoint, self->m_body.coin ? CoinPointType::AcceptCoinPoint : CoinPointType::RejectCoinPoint, self->m_body),
+                        APIClient::getInstance().changePoint(PointType::AcceptPoint, self->m_body.coin, self->m_body),
                         [uPopupRef](web::WebResponse res) {
                             if (!uPopupRef) return;
                             auto parsed = APIClient::getInstance().changePointParse(res);
@@ -274,12 +311,24 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 .parent(self->m_helperButtonsMenu)
                 .collect();
 
+            auto adminTogglerOffSpr = CCSprite::create("GJ_button_04.png");
+            auto adminTogglerOffSprTop = CCSprite::create("badge_admin.png"_spr);
+            adminTogglerOffSpr->addChild(adminTogglerOffSprTop);
+            adminTogglerOffSprTop->setPosition({20, 20});
+            adminTogglerOffSprTop->setScale(1.2f);
+
+            auto adminTogglerOnSpr = CCSprite::create("GJ_button_02.png");
+            auto adminTogglerOnSprTop = CCSprite::create("badge_admin.png"_spr);
+            adminTogglerOnSpr->addChild(adminTogglerOnSprTop);
+            adminTogglerOnSprTop->setPosition({20, 20});
+            adminTogglerOnSprTop->setScale(1.2f);
+
             // admin toggler
             if (DataManager::getInstance().getUserPosition() == GrindPosition::Admin
             || DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
                 Build<CCMenuItemToggler>::createToggle(
-                    Build<CCSprite>::create("badge_admin.png"_spr).color({ 100, 100, 100 }).collect(),
-                    Build<CCSprite>::create("badge_admin.png"_spr).collect(),
+                    adminTogglerOffSpr,
+                    adminTogglerOnSpr,
                     [self](CCMenuItemToggler* toggler) {
                         bool isToggled = getNewTogglerState(toggler);
 
@@ -292,52 +341,168 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                         }
                     }
                 )
-                .parent(self->m_buttonMenu)
-                .pos({ self->m_buttonMenu->getContentSize() })
+                .parent(rightButtonsMenu)
                 .collect();
             }
 
+            auto notesSpr = CCSprite::create(parsed.noteExists ? "GJ_button_03.png" : "GJ_button_01.png");
+            auto notesSprTop = CCSprite::create("button_edit_note.png"_spr);
+            notesSpr->addChild(notesSprTop);
+            notesSprTop->setPosition({20, 20});
+            notesSprTop->setScale(0.6f);
+
             // notes btn
-            Build(CircleButtonSprite::createWithSprite("button_edit_note.png"_spr))
-                .scale(0.6f)
-                .intoMenuItem([] {
-
+            Build(notesSpr)
+                .intoMenuItem([self] {
+                    AddNotePopup::create(self->m_level->m_levelID, self->m_level->m_levelName.c_str())->show();
                 })
-                .parent(self->m_buttonMenu)
-                .pos({ self->m_mainLayer->getContentWidth(), 0 });
+                .parent(rightButtonsMenu);
 
-            Build<CCMenuItemToggler>::createToggle(
-                Build<CCSprite>::createSpriteName("GJ_coinsIcon2_001.png").color(100, 100, 100).collect(),
-                Build<CCSprite>::createSpriteName("GJ_coinsIcon2_001.png").collect(),
-                [self](CCMenuItemToggler* toggler) {
-                    bool isToggled = getNewTogglerState(toggler);
+            if (parsed.noteExists) {
+                auto deleteNotesSpr = CCSprite::create("GJ_button_06.png");
+                auto deleteNotesSprTop = CCSprite::create("button_edit_note.png"_spr);;
+                deleteNotesSpr->addChild(deleteNotesSprTop);
+                deleteNotesSprTop->setPosition({20, 20});
+                deleteNotesSprTop->setScale(0.6f);
 
-                    if (isToggled) {
-                        self->m_body.coin = true;
-                    } else {
-                        self->m_body.coin = false;
-                    }
-                }
-            )
-                .parent(self->m_buttonMenu)
-                .pos({ 0, 0 })
-                .with([self](CCMenuItemToggler* toggler) {
-                    if (self->m_body.coin) toggler->toggle(true);
-                })
+                Build(deleteNotesSpr)
+                    .intoMenuItem([self] {
+                        auto uPopup = UploadActionPopup::create(nullptr, "Deleting notes...");
+                        uPopup->show();
+
+                        auto uPopupRef = Ref(uPopup);
+
+                        self->m_listener.spawn(
+                            APIClient::getInstance().deleteNotes(
+                                self->m_level->m_levelID,
+                                self->m_level->m_levelName.empty() ? "blank name" : self->m_level->m_levelName.c_str()
+                            ),
+                            [uPopupRef](web::WebResponse res) {
+                                if (!uPopupRef) return;
+                                if (!res.ok()) {
+                                    log::error("bad web req");
+                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                    return;
+                                } else {
+                                    uPopupRef->showSuccessMessage("Success! Notes deleted.");
+                                }
+                            }
+                        );
+                    })
+                    .parent(rightButtonsMenu);
+            }
+
+            enum class CoinManage {
+                Reject = -1,
+                NoVote = 0,
+                Accept = 1
+            };
+
+            cue::RadioLogic<CoinManage> radio;
+
+            auto rejectSprOff = CCSprite::create("GJ_button_06.png");
+            auto rejectSprOffTop = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+            rejectSprOff->addChild(rejectSprOffTop);
+            rejectSprOffTop->setPosition({20, 20});
+
+            rejectSprOff->setColor({100, 100, 100});
+
+            auto rejectSprOn = CCSprite::create("GJ_button_06.png");
+            auto rejectSprOnTop = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+            rejectSprOn->addChild(rejectSprOnTop);
+            rejectSprOnTop->setPosition({20, 20});
+
+            auto novoteSprOff = CCSprite::create("GJ_button_04.png");
+            auto novoteSprOffTop = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+            novoteSprOff->addChild(novoteSprOffTop);
+            novoteSprOffTop->setPosition({20, 20});
+
+            novoteSprOff->setColor({100, 100, 100});
+
+            auto novoteSprOn = CCSprite::create("GJ_button_04.png");
+            auto novoteSprOnTop = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+            novoteSprOn->addChild(novoteSprOnTop);
+            novoteSprOnTop->setPosition({20, 20});
+
+            auto acceptSprOff = CCSprite::create("GJ_button_01.png");
+            auto acceptSprOffTop = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+            acceptSprOff->addChild(acceptSprOffTop);
+            acceptSprOffTop->setPosition({20, 20});
+
+            acceptSprOff->setColor({100, 100, 100});
+
+            auto acceptSprOn = CCSprite::create("GJ_button_01.png");
+            auto acceptSprOnTop = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
+            acceptSprOn->addChild(acceptSprOnTop);
+            acceptSprOnTop->setPosition({20, 20});
+
+            auto rejectCoinToggler = Build(radio.createToggler(CoinManage::Reject, rejectSprOff, rejectSprOn))
+                .parent(leftCoinMenu)
                 .collect();
+
+            auto novoteCoinToggler = Build(radio.createToggler(CoinManage::NoVote, novoteSprOff, novoteSprOn))
+                .parent(leftCoinMenu)
+                .collect();
+
+            auto acceptCoinToggler = Build(radio.createToggler(CoinManage::Accept, acceptSprOff, acceptSprOn))
+                .parent(leftCoinMenu)
+                .collect();
+
+            leftCoinMenu->updateLayout();
+
+            radio.select(CoinManage::NoVote);
+
+            radio.setCallback([self](CoinManage which) {
+                self->m_body.coin = static_cast<int>(which);
+            });
 
             // admin menu
             if (parsed.isLocked) {
                 Build(ButtonSprite::create("Unlock", "bigFont.fnt", "GJ_button_06.png"))
-                    .intoMenuItem([] {
+                    .intoMenuItem([self] {
+                        auto uPopup = UploadActionPopup::create(nullptr, "Unlocking level...");
+                        uPopup->show();
 
+                        auto uPopupRef = Ref(uPopup);
+
+                        self->m_listener.spawn(
+                            APIClient::getInstance().unlockLevel(self->m_level->m_levelID, self->m_level->m_levelName.empty() ? std::string("blank name") : self->m_level->m_levelName),
+                            [uPopupRef](web::WebResponse res) {
+                                if (!uPopupRef) return;
+                                if (!res.ok()) {
+                                    log::error("bad web req");
+                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                } else {
+                                    uPopupRef->showSuccessMessage("Success! Level unlocked.");
+                                }
+                            }
+                        );
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
             } else {
                 Build(ButtonSprite::create("Lock", "bigFont.fnt", "GJ_button_01.png"))
-                    .intoMenuItem([] {
+                    .intoMenuItem([self] {
+                        auto uPopup = UploadActionPopup::create(nullptr, "Locking level...");
+                        uPopup->show();
 
+                        auto uPopupRef = Ref(uPopup);
+
+                        self->m_listener.spawn(
+                            APIClient::getInstance().lockLevel(
+                                self->m_level->m_levelID, 
+                                self->m_level->m_levelName.empty() ? std::string("blank name") : self->m_level->m_levelName
+                            ),
+                            [uPopupRef](web::WebResponse res) {
+                                if (!uPopupRef) return;
+                                if (!res.ok()) {
+                                    log::error("bad web req");
+                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                } else {
+                                    uPopupRef->showSuccessMessage("Success! Level locked.");
+                                }
+                            }
+                        );
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
@@ -345,8 +510,24 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
             if (parsed.isAdded) {
                 Build(ButtonSprite::create("Delete", "bigFont.fnt", "GJ_button_06.png"))
-                    .intoMenuItem([] {
+                    .intoMenuItem([self] {
+                        auto uPopup = UploadActionPopup::create(nullptr, "Deleting level...");
+                        uPopup->show();
 
+                        auto uPopupRef = Ref(uPopup);
+
+                        self->m_listener.spawn(
+                            APIClient::getInstance().deleteLevel(self->m_level->m_levelID),
+                            [uPopupRef](web::WebResponse res) {
+                                if (!uPopupRef) return;
+                                if (!res.ok()) {
+                                    log::error("bad web req");
+                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                } else {
+                                    uPopupRef->showSuccessMessage("Success! Level deleted.");
+                                }
+                            }
+                        );
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
@@ -462,7 +643,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 }
 
                 if (pointInfo.coinPoint == 1) {
-                    auto acceptedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png"))
+                    auto acceptedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon_001.png"))
                         .intoMenuItem([self] {
                             Notification::create(fmt::format("This user accepted coin for {}.", self->m_body.name), NotificationIcon::Success)->show();
                         })
@@ -476,9 +657,9 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                         .parent(cellMenu)
                         .collect();
                 } else {
-                    auto warningBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
-                        .intoMenuItem([] {
-                            Notification::create("Something went wrong.", NotificationIcon::Warning)->show();
+                    auto novoteBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png"))
+                        .intoMenuItem([self] {
+                            Notification::create(fmt::format("This user stayed neutral about the coin for {}.", self->m_body.name), NotificationIcon::Info)->show();
                         })
                         .parent(cellMenu)
                         .collect();
@@ -537,6 +718,8 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
             self->m_adminButtonsMenu->updateLayout();
             self->m_helperButtonsMenu->updateLayout();
             self->m_levelInfoMenu->updateLayout();
+
+            rightButtonsMenu->updateLayout();
 
             return;
         }

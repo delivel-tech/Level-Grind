@@ -1,4 +1,5 @@
 #include "APIClient.hpp"
+#include "Geode/loader/Log.hpp"
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
@@ -634,23 +635,75 @@ BootupGetResponse APIClient::bootupGetParse(web::WebResponse res) {
         return ret;
     }
 
-    std::unordered_map<int, std::string> notesMap;
+    std::unordered_multimap<int, NoteInfo> notesMap;
 
     for (auto const& val : notes.unwrap()) {
         auto levelID = val["levelID"].asInt();
         auto note = val["note"].asString();
+        auto addedBy = val["addedBy"].asString();
 
-        if (!levelID || !note) {
+        if (!levelID || !note || !addedBy) {
             continue;
         }
 
-        notesMap[levelID.unwrap()] = note.unwrap();
+        NoteInfo info;
+        info.levelID = levelID.unwrap();
+        info.note = note.unwrap();
+        info.senderUsername = addedBy.unwrap();
+
+        notesMap.insert({levelID.unwrap(), info});
     }
 
     ret.notes = notesMap;
     ret.ok = true;
 
     return ret;
+}
+
+web::WebFuture APIClient::deleteLevel(int levelId) {
+    auto req = web::WebRequest();
+
+    matjson::Value body;
+
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["account_id"] = GJAccountManager::get()->m_accountID;
+    body["id"] = levelId;
+
+    req.bodyJSON(body);
+
+    return req.post(fmt::format("{}{}", baseUrl, "/delete_level"));
+}
+
+web::WebFuture APIClient::unlockLevel(int levelId, std::string levelName) {
+    auto req = web::WebRequest();
+
+    matjson::Value body;
+
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["accountId"] = GJAccountManager::get()->m_accountID;
+    body["levelId"] = levelId;
+    body["levelName"] = levelName;
+    body["unbannedBy"] = GJAccountManager::get()->m_username.c_str();
+
+    req.bodyJSON(body);
+
+    return req.post(fmt::format("{}{}", baseUrl, "/unban_level"));
+}
+
+web::WebFuture APIClient::lockLevel(int levelId, std::string levelName) {
+    auto req = web::WebRequest();
+
+    matjson::Value body;
+
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["accountId"] = GJAccountManager::get()->m_accountID;
+    body["levelId"] = levelId;
+    body["levelName"] = levelName;
+    body["bannedBy"] = GJAccountManager::get()->m_username.c_str();
+
+    req.bodyJSON(body);
+
+    return req.post(fmt::format("{}{}", baseUrl, "/ban_level"));
 }
 
 web::WebFuture APIClient::getAnnouncements() {
@@ -746,7 +799,7 @@ web::WebFuture APIClient::getLevelInfo(int levelID) {
     return req.post(fmt::format("{}{}", baseUrl, "/get_level_info_staff"));
 }
 
-web::WebFuture APIClient::changePoint(PointType type, CoinPointType coinType, ManageLevelBody levelBody) {
+web::WebFuture APIClient::changePoint(PointType type, int coinType, ManageLevelBody levelBody) {
     auto req = web::WebRequest();
     matjson::Value reqBody;
 
@@ -756,7 +809,7 @@ web::WebFuture APIClient::changePoint(PointType type, CoinPointType coinType, Ma
     reqBody["username"] = GJAccountManager::sharedState()->m_username.c_str();
     reqBody["levelID"] = levelBody.id;
     reqBody["levelName"] = levelBody.name;
-    reqBody["coinPoint"] = static_cast<int>(coinType);
+    reqBody["coinPoint"] = coinType;
     reqBody["length"] = levelBody.length;
     reqBody["difficulty"] = levelBody.difficulty;
 
@@ -767,6 +820,59 @@ web::WebFuture APIClient::changePoint(PointType type, CoinPointType coinType, Ma
 
     req.bodyJSON(reqBody);
     return req.post(fmt::format("{}{}", baseUrl, "/change_point"));
+}
+
+web::WebFuture APIClient::deleteNotes(int levelId, std::string levelName) {
+    auto req = web::WebRequest();
+    matjson::Value reqBody;
+
+    reqBody["token"] = DataManager::getInstance().getUserToken();
+    reqBody["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    reqBody["levelID"] = levelId;
+    reqBody["levelName"] = levelName;
+    reqBody["deletedBy"] = GJAccountManager::get()->m_username.c_str();
+
+    req.bodyJSON(reqBody);
+    return req.post(fmt::format("{}{}", baseUrl, "/delete_note"));
+}
+
+web::WebFuture APIClient::getIndicators(int levelID) {
+    auto req = web::WebRequest();
+
+    req.param("id", fmt::format("{}", levelID));
+
+    return req.get(fmt::format("{}{}", baseUrl, "/get_indicators"));
+}
+
+Indicators APIClient::getIndicatorsParse(web::WebResponse res) {
+    Indicators indicators;
+
+    indicators.ok = false;
+
+    if (!res.ok()) {
+        log::error("bad web req");
+        return indicators;
+    }
+
+    auto jsonRes = res.json();
+
+    if (!jsonRes) {
+        log::error("bad web req");
+        return indicators;
+    }
+
+    auto json = jsonRes.unwrap();
+
+    auto indicatorsJson = json["indicators"];
+
+    indicators.ok = json["ok"].asBool().unwrapOrDefault();
+
+    indicators.added = indicatorsJson["added"].asBool().unwrapOrDefault();
+    indicators.coin = indicatorsJson["coin"].asBool().unwrapOrDefault();
+    indicators.event = indicatorsJson["event"].asBool().unwrapOrDefault();
+    indicators.pack = indicatorsJson["pack"].asBool().unwrapOrDefault();
+
+    return indicators;
 }
 
 ChangePointResponse APIClient::changePointParse(web::WebResponse res) {

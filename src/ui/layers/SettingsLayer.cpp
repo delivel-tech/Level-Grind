@@ -253,11 +253,13 @@ void SettingsLayer::applyDefaultSettings() {
     Mod::get()->setSavedValue("only-uncompleted", false);
     Mod::get()->setSavedValue("only-completed", false);
     Mod::get()->setSavedValue("recently-added", false);
-    Mod::get()->setSavedValue("enable-auto-notes", false);
     Mod::get()->setSavedValue("rgbBackground", cocos2d::ccColor3B { 37, 50, 167 });
     Mod::get()->setSavedValue("background-speed", 1.f);
     Mod::get()->setSavedValue("disable-badges", false);
     Mod::get()->setSavedValue("disable-pet", false);
+    Mod::get()->setSavedValue("enable-indicators", true);
+    Mod::get()->setSavedValue("enable-completion-info", false);
+    Mod::get()->setSavedValue("enable-progress-bar", false);
 }
 
 CCMenu* SettingsLayer::makeFloatCell(
@@ -491,9 +493,9 @@ void SettingsLayer::createGrindList() {
     ));
 
     list->addCell(makeToggleCell(
-        "Enable Auto Notes",
-        "If enabled, notes will be shown when you click play button on Level Info Layer.",
-        "enable-auto-notes",
+        "Enable Indicators",
+        "Shows an info button next to level name that shows information about the level in Grind Database.",
+        "enable-indicators",
         this
     ));
 
@@ -527,6 +529,20 @@ void SettingsLayer::createAppearanceList() {
         "background-speed",
         0.0f,
         5.f
+    ));
+
+    list->addCell(makeToggleCell(
+        "Enable Completion Info",
+        "Shows a completion information at the top of Level Browser Layer of Level Grind.",
+        "enable-completion-info",
+        this
+    ));
+
+    list->addCell(makeToggleCell(
+        "Enable Progress Bar",
+        "Shows a progress bar in Level Browser Layer of Level Grind.",
+        "enable-progress-bar",
+        this
     ));
 
     list->addCell(makeHeaderCell("Badge Settings"));
@@ -666,15 +682,7 @@ void SettingsLayer::createOtherList() {
 
             auto& dm = DataManager::getInstance();
 
-            dm.getSharedData().admins.clear();
-            dm.getSharedData().owners.clear();
-            dm.getSharedData().helpers.clear();
-            dm.getSharedData().artists.clear();
-            dm.getSharedData().contributors.clear();
-            dm.getSharedData().boosters.clear();
-            dm.getSharedData().notes.clear();
-            dm.getSharedData().levelsWithCoins.clear();
-            dm.getSharedData().levelsWithoutCoins.clear();
+            dm.clearSharedData();
 
             m_listener.spawn(
                 APIClient::getInstance().bootupGet(),

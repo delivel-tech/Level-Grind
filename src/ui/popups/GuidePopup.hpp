@@ -37,6 +37,11 @@ private:
     bool initArtistRoleGuidePage();
     bool initContribRoleGuidePage();
     bool initBoosterRoleGuidePage();
+    bool initEventsGuidePage();
+    bool initGrindPacksGuide();
+    bool initHelperSuggestionsGuide();
+    bool initLevelIndicatorsGuide();
+    bool initCreditsInfoGuide();
 
     void removePrevious();
 };

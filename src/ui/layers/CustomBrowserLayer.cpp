@@ -8,6 +8,7 @@
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/Notification.hpp"
+#include "Geode/ui/ProgressBar.hpp"
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/binding/GJListLayer.hpp>
 #include <Geode/binding/GameLevelManager.hpp>
@@ -194,6 +195,41 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
         .parent(m_listNode)
         .zOrder(1)
         .collect();
+
+    bool enableCompletionInfo = false;
+    bool enableProgressBar = false;
+    if (auto mod = Mod::get()) {
+        enableCompletionInfo = mod->getSavedValue<bool>("enable-completion-info");
+        enableProgressBar = mod->getSavedValue<bool>("enable-progress-bar");
+    }
+
+    if (enableCompletionInfo) {
+        m_completionInfoLabel = Build(CCLabelBMFont::create("Completed 0 from 0", "goldFont.fnt"))
+            .pos({winSize.width / 2, winSize.height - 5})
+            .anchorPoint({0.5f, 1.f})
+            .scale(0.45f)
+            .parent(this)
+            .zOrder(10)
+            .collect();
+    }
+
+    if (enableProgressBar) {
+        m_progressBar = Build(ProgressBar::create(ProgressBarStyle::Slider))
+            .scale(0.8f)
+            .rotation(-90.f)
+            .collect();
+
+        constexpr float gapFromList = 24.f;
+        float listLeftX = m_listNode->getContentWidth() / 2;
+        float listCenterY = winSize.height / 4 - 10;
+
+        CCPoint barPos {this->getContentWidth() / 2 - listLeftX - gapFromList, listCenterY};
+
+        Build(m_progressBar)
+            .pos(barPos)
+            .parent(this)
+            .collect();
+    }
 
     this->performFetchLevels();
 
@@ -691,6 +727,34 @@ void CustomBrowserLayer::performFetchLevels() {
             self->m_totalPages = (self->m_totalLevels + PER_PAGE - 1) / PER_PAGE;
             if (self->m_totalPages < 1) {
                 self->m_totalPages = 1;
+            }
+
+            if (self->m_completionInfoLabel) {
+                auto gsm = GameStatsManager::get();
+                int completedLevels = 0;
+                if (gsm) {
+                    for (auto levelID : self->m_allLevelIDs) {
+                        if (gsm->hasCompletedOnlineLevel(levelID)) completedLevels++;
+                    }
+                }
+
+                self->m_completionInfoLabel->setString(
+                    fmt::format("Completed {} from {}", completedLevels, self->m_allLevelIDs.size()).c_str()
+                );
+            }
+
+            if (self->m_progressBar) {
+                auto gsm = GameStatsManager::get();
+                int completedLevels = 0;
+                if (gsm) {
+                    for (auto levelID : self->m_allLevelIDs) {
+                        if (gsm->hasCompletedOnlineLevel(levelID)) completedLevels++;
+                    }
+                }
+
+                float perc = ((float)completedLevels / self->m_allLevelIDs.size()) * 100;
+
+                self->m_progressBar->updateProgress(perc);
             }
 
             if (self->m_page >= self->m_totalPages) {

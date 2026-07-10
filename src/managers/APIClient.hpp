@@ -85,7 +85,7 @@ public:
     web::WebFuture getLevelInfo(int levelID);
     GetLevelInfoResponse getLevelInfoParse(web::WebResponse res);
 
-    web::WebFuture changePoint(PointType type, CoinPointType coinType, ManageLevelBody levelBody);
+    web::WebFuture changePoint(PointType type, int coinType, ManageLevelBody levelBody);
     ChangePointResponse changePointParse(web::WebResponse res);
 
     web::WebFuture syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold);
@@ -116,6 +116,15 @@ public:
 
     web::WebFuture getWeeklyAch();
     WeeklyAchResponse getWeeklyAchParse(web::WebResponse res);
+
+    web::WebFuture deleteLevel(int levelId);
+
+    web::WebFuture lockLevel(int levelId, std::string levelName);
+    web::WebFuture unlockLevel(int levelId, std::string levelName);
+    web::WebFuture deleteNotes(int levelId, std::string levelName);
+
+    web::WebFuture getIndicators(int levelID);
+    Indicators getIndicatorsParse(web::WebResponse res);
 
     // argon
     void performGetToken();

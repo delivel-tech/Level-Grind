@@ -28,6 +28,12 @@ namespace levelgrind {
         int id;
         int points;
     };
+
+    struct NoteInfo {
+        int levelID;
+        std::string note;
+        std::string senderUsername;
+    };
     
     // Body returned from bootup_get
     struct BootupGetResponse {
@@ -38,7 +44,7 @@ namespace levelgrind {
         std::vector<int> artists;
         std::vector<int> boosters;
         std::vector<int> contributors;
-        std::unordered_map<int, std::string> notes;
+        std::unordered_multimap<int, NoteInfo> notes;
         std::unordered_set<int> levelsWithCoins;
         std::unordered_set<int> levelsWithoutCoins;
     };
@@ -107,7 +113,7 @@ namespace levelgrind {
         int demonDifficulty;
         bool star;
         bool moon;
-        bool coin;
+        int coin;
         bool demon;
     };
 
@@ -122,7 +128,20 @@ namespace levelgrind {
         ArtistRoleGuide = 7,
         ContribRoleGuide = 8,
         BoosterRoleGuide = 9,
-        MainPage = 11
+        MainPage = 11,
+        EventsGuide = 12,
+        GrindPacksGuide = 13,
+        HelperSuggestionsGuide = 14,
+        LevelIndicatorsGuide = 15,
+        CreditsInfo = 16
+    };
+
+    struct Indicators {
+        bool ok;
+        bool added;
+        bool coin;
+        bool event;
+        bool pack;
     };
 
     enum GuidePopupState {

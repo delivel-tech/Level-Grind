@@ -19,8 +19,9 @@ public:
     void setSharedData(BootupGetResponse sharedDataArg);
     void setUserPosition(GrindPosition pos);
     void setUserToken(const std::string& token);
+    void clearSharedData();
 
-    BootupGetResponse getSharedData();
+    BootupGetResponse const& getSharedData() const;
     GrindPosition getUserPosition();
     GrindPosition getUserPosFromSaved();
     std::string getUserToken();

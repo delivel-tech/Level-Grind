@@ -1,3 +1,4 @@
+#include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "managers/APIClient.hpp"
 #include "managers/DataManager.hpp"
 #include "ui/layers/SettingsLayer.hpp"
@@ -17,7 +18,9 @@ $execute {
     alpha::badgify::registerBadge(
         "grind-owner-badge"_spr,
         "Grind Owner",
-        "This user is <cy>an Owner</c> of the <cp>Level Grind</c> mod. They are <cg>responsible for leading the project</c>, <cj>development</c>, <cy>making final decisions</c> etc.",
+        "# <cp>Owner Role</c>\n\n"
+        "<cp>Owners</c> are <cy>responsible for</c> leading the <cg>Level Grind</c> project.\n"
+        "They manage <cr>development</c>, make <cj>final decisions</c>, and oversee all roles.",
         [] (const alpha::badgify::Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 			if (badge.user.data()->m_accountID != 13678537) return;
@@ -31,14 +34,20 @@ $execute {
 
             if (!ownerFound) return;
 
-            CCSprite* theBadgeSprite = CCSprite::create("badge_owner.png"_spr);
-			alpha::badgify::showBadge(badge, theBadgeSprite);
+            if (badge.location == alpha::badgify::Location::Profile || badge.location == alpha::badgify::Location::Comment) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_owner.png"_spr));
+            }
+            if (badge.location == alpha::badgify::Location::InfoPopup) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_owner_big.png"_spr));
+            }
         }
     );
     alpha::badgify::registerBadge(
         "grind-co-owner-badge"_spr,
         "Grind Co-Owner",
-        "This user is <cy>a Co-Owner</c> of the <cp>Level Grind</c> mod. They are <cg>responsible for leading the project</c>, <cj>development</c>, <cy>making final decisions</c> etc.",
+        "# <cp>Owner Role</c>\n\n"
+        "<cp>Owners</c> are <cy>responsible for</c> leading the <cg>Level Grind</c> project.\n"
+        "They manage <cr>development</c>, make <cj>final decisions</c>, and oversee all roles.",
         [] (const alpha::badgify::Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 			if (badge.user.data()->m_accountID == 13678537) return;
@@ -52,14 +61,21 @@ $execute {
 
             if (!ownerFound) return;
 
-            CCSprite* theBadgeSprite = CCSprite::create("badge_owner.png"_spr);
-			alpha::badgify::showBadge(badge, theBadgeSprite);
+            if (badge.location == alpha::badgify::Location::Profile || badge.location == alpha::badgify::Location::Comment) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_owner.png"_spr));
+            }
+            if (badge.location == alpha::badgify::Location::InfoPopup) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_owner_big.png"_spr));
+            }
         }
     );
     alpha::badgify::registerBadge(
         "grind-admin-badge"_spr,
         "Grind Admin",
-        "This user is an <cg>Admin</c> on the <cp>Level Grind</c> mod. They can do everything a <cj>Helper</c> can do, but they can also manage the staff team on the <cp>Level Grind</c> mod.",
+        "# <cc>Admin Role</c>\n\n"
+        "<cc>Admins</c> manage the <cp>Level Grind</c> <cl>database</c>.\n\n"
+        "They are responsible for <cg>adding</c> and <co>deleting</c> levels, selecting <cr>Event</c> levels, choosing <cy>Weekly Achievements</c>, and more.\n\n"
+        "They also manage the <cg>Helper</c> team to ensure the project stays organized.\n",
         [] (const alpha::badgify::Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
@@ -72,14 +88,21 @@ $execute {
 
             if (!adminFound) return;
 
-            CCSprite* theBadgeSprite = CCSprite::create("badge_admin.png"_spr);
-			alpha::badgify::showBadge(badge, theBadgeSprite);
+            if (badge.location == alpha::badgify::Location::Profile || badge.location == alpha::badgify::Location::Comment) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_admin.png"_spr));
+            }
+            if (badge.location == alpha::badgify::Location::InfoPopup) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_admin_big.png"_spr));
+            }
         }
     );
     alpha::badgify::registerBadge(
         "grind-helper-badge"_spr,
         "Grind Helper",
-        "This user is a <cg>Helper</c> on the <cp>Level Grind</c> mod. They <cj>help</c> with adding and <cr>deleting</c> levels on the <cp>Level Grind</c> database.",
+        "# <cg>Helper Role</c>\n\n"
+        "<cg>Helpers</c> are an integral part of the <cp>Level Grind</c> mod.\n\n"
+        "They are responsible for suggesting levels, providing helpful <ca>Level Notes</c>, and more.\n\n"
+        "You can join our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server to learn more about the role and how you can become one too! :)\n",
         [] (const alpha::badgify::Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
@@ -92,14 +115,19 @@ $execute {
 
             if (!helperFound) return;
 
-            CCSprite* theBadgeSprite = CCSprite::create("badge_helper.png"_spr);
-			alpha::badgify::showBadge(badge, theBadgeSprite);
+            if (badge.location == alpha::badgify::Location::Profile || badge.location == alpha::badgify::Location::Comment) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_helper.png"_spr));
+            }
+            if (badge.location == alpha::badgify::Location::InfoPopup) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_helper_big.png"_spr));
+            }
         }
     );
     alpha::badgify::registerBadge(
         "grind-contributor-badge"_spr,
         "Grind Contributor",
-        "This user is a <cg>Contributor</c> on the <cp>Level Grind</c> mod. They help the project through various contributions, such as art, testing and so on.",
+        "# <cy>Contributor Role</c>\n\n"
+        "<cy>Contributors</c> are the people who have supported the project through <cy>Boosty</c> donations or by providing other meaningful help to the <cp>Level Grind</c> mod.\n",
         [] (const alpha::badgify::Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
@@ -112,14 +140,20 @@ $execute {
 
             if (!contFound) return;
 
-            CCSprite* theBadgeSprite = CCSprite::create("badge_contributor.png"_spr);
-			alpha::badgify::showBadge(badge, theBadgeSprite);
+            if (badge.location == alpha::badgify::Location::Profile || badge.location == alpha::badgify::Location::Comment) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_contributor.png"_spr));
+            }
+            if (badge.location == alpha::badgify::Location::InfoPopup) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_contributor_big.png"_spr));
+            }
         }
     );
     alpha::badgify::registerBadge(
         "grind-artist-badge"_spr,
         "Grind Artist",
-        "This user is an <cp>Artist</c> on the <cy>Level Grind</c> mod. They are <cr>responsible for the visual part</c> of the mod.",
+        "# <cp>Artist Role</c>\n\n"
+        "<cp>Artists</c> are responsible for <cy>visual part of the mod</c>, including sprites, textures, and more.\n"
+        "Their support is <cg>greatly appreciated <3</c>",
         [] (const alpha::badgify::Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
@@ -132,14 +166,20 @@ $execute {
 
             if (!artistFound) return;
 
-            CCSprite* theBadgeSprite = CCSprite::create("badge_artist.png"_spr);
-			alpha::badgify::showBadge(badge, theBadgeSprite);
+            if (badge.location == alpha::badgify::Location::Profile || badge.location == alpha::badgify::Location::Comment) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_artist.png"_spr));
+            }
+            if (badge.location == alpha::badgify::Location::InfoPopup) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_artist_big.png"_spr));
+            }
         }
     );
     alpha::badgify::registerBadge(
         "grind-booster-badge"_spr,
         "Grind Booster",
-		"This user is a <cp>Booster</c> of <cy>Level Grind Discord server</c>. Their <cg>support is greatly appreciated</c>! <cl>[Join the server?](https://discord.gg/tmf5xtCX5y)</c>",
+		"# <ca>Booster Role</c>\n\n"
+        "<ca>Boosters</c> help our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server by providing server <ca>boosts</c>.\n\n"
+        "Their support is greatly appreciated! :3\n",
         [] (const alpha::badgify::Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
@@ -152,8 +192,12 @@ $execute {
 
             if (!boosterFound) return;
 
-            CCSprite* theBadgeSprite = CCSprite::create("badge_booster.png"_spr);
-			alpha::badgify::showBadge(badge, theBadgeSprite);
+            if (badge.location == alpha::badgify::Location::Profile || badge.location == alpha::badgify::Location::Comment) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_booster.png"_spr));
+            }
+            if (badge.location == alpha::badgify::Location::InfoPopup) {
+                alpha::badgify::showBadge(badge, CCSprite::create("badge_booster_big.png"_spr));
+            }
         }
     );
 }

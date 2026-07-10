@@ -68,6 +68,8 @@ private:
                 .parent(this)
                 .collect();
 
+        if (user.glowColor == 0) playerIcon->disableGlowOutline();
+
         auto* playerShadow = Build<CCSprite>::createSpriteName("chest_shadow_001.png")
             .scale(0.4f)
             .pos(0.f, -15.f)
@@ -297,26 +299,6 @@ bool CreditsPopup::init() {
         })
         .parent(m_buttonMenu)
         .centerX()
-        .collect();
-
-    auto* infoBtn = Build<CCSprite>::createSpriteName("GJ_infoIcon_001.png")
-        .intoMenuItem([]() {
-            MDPopup::create(
-                "Credits Info",
-                "These <cy>users</c> help with <cp>Level Grind</c>!\n\n" \
-                "<cg>Helpers</c> are people who are responsible for <cf>adding / deleting levels</c> in the project.\n" \
-                "<cy>Contributors</c> are people who contribute to the project in other helpful ways.\n" \
-                "<cr>Admins</c> are people who have the same permissions as helpers, but also have the <cl>ability to manage helpers</c>!\n" \
-                "Want to become a helper? Join our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y) and fill out an [<cy>application form</c>](https://docs.google.com/forms/d/e/1FAIpQLScOUeCa13hvgnaWoJzkK1DXdOOhoNWwDmepYV4Tg2zj1prmMQ/viewform?usp=publish-editor)!\n\n" \
-                "Have any <cy>suggestions</c> or want to <cy>report a bug</c>? Join our [<cg>Discord server</c>](https://discord.gg/tmf5xtCX5y) and let us know!",
-                "OK"
-            )->show();
-        })
-        .parent(m_buttonMenu)
-        .pos(
-            m_mainLayer->getContentSize().width,
-            m_mainLayer->getContentSize().height - 3
-        )
         .collect();
 
     auto* scrollBar = Build<Scrollbar>::create(m_list->getScrollLayer())

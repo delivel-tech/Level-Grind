@@ -142,13 +142,15 @@ bool CreatorLayer::init() {
         petCatSpr->getContentHeight() / 2 + 8
     });
 
-    auto petCat = Build(petCatSpr)
-        .intoMenuItem([] {
-            PetLayer::create()->open();
-        })
-        .parent(catMenu)
-        .id("pet-cat")
-        .collect();
+    if (!Mod::get()->getSavedValue<bool>("disable-pet")) {
+        auto petCat = Build(petCatSpr)
+            .intoMenuItem([] {
+                PetLayer::create()->open();
+            })
+            .parent(catMenu)
+            .id("pet-cat")
+            .collect();
+    }
 
     auto dailyCat = Build(CCSprite::create("daily_cat.png"_spr))
         .intoMenuItem([] {
@@ -244,12 +246,6 @@ bool CreatorLayer::initFarMenus() {
     if (DataManager::getInstance().getUserPosition() == GrindPosition::Admin
     || DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
         auto staffBtn = Build(CircleButtonSprite::createWithSprite(getBadge(), 0.8f, CircleBaseColor::Blue))
-            .with([](CircleButtonSprite* spr) {
-                spr->getTopNode()->setPosition({
-                    spr->getTopNode()->getPositionX() + 1,
-                    spr->getTopNode()->getPositionY() - 1
-                });
-            })
             .scale(1.2f)
             .intoMenuItem([] {
                 StaffPopup::create()->show();

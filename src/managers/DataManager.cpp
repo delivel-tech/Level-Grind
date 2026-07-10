@@ -5,12 +5,16 @@ using namespace geode::prelude;
 namespace levelgrind {
 
 void DataManager::setSharedData(BootupGetResponse sharedDataArg) {
-    sharedData = sharedDataArg;
+    sharedData = std::move(sharedDataArg);
     return;
 }
 
-BootupGetResponse DataManager::getSharedData() {
+BootupGetResponse const& DataManager::getSharedData() const {
     return sharedData;
+}
+
+void DataManager::clearSharedData() {
+    sharedData = {};
 }
 
 void DataManager::setUserPosition(GrindPosition pos) {

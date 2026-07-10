@@ -523,6 +523,75 @@ bool MainLayer::initMainPanel() {
 
     m_demonsFilters.second->updateLayout();
 
+    if (auto mod = Mod::get()) {
+        m_splitHard4 = mod->getSavedValue<bool>("split-4-enabled");
+        m_splitHard5 = mod->getSavedValue<bool>("split-5-enabled");
+        m_splitHarder6 = mod->getSavedValue<bool>("split-6-enabled");
+        m_splitHarder7 = mod->getSavedValue<bool>("split-7-enabled");
+        m_splitInsane8 = mod->getSavedValue<bool>("split-8-enabled");
+        m_splitInsane9 = mod->getSavedValue<bool>("split-9-enabled");
+        
+        auto normalizePair = [](bool& a, bool& b) {
+            if (!a && !b) {
+                a = true;
+                b = true;
+            }
+        };
+        normalizePair(m_splitHard4, m_splitHard5);
+        normalizePair(m_splitHarder6, m_splitHarder7);
+        normalizePair(m_splitInsane8, m_splitInsane9);
+
+        auto setTogglerState = [this](const char* id, bool on) {
+            auto toggler = typeinfo_cast<CCMenuItemToggler*>(this->getChildByIDRecursive(id));
+            if (toggler) toggler->toggle(on);
+        };
+
+        if (mod->getSavedValue<bool>("star-enabled")) {
+            setTogglerState("star-toggler", true);
+            m_grindTypes.push_back("star");
+        }
+        if (mod->getSavedValue<bool>("moon-enabled")) {
+            setTogglerState("moon-toggler", true);
+            m_grindTypes.push_back("moon");
+        }
+        if (mod->getSavedValue<bool>("coin-enabled")) {
+            setTogglerState("coin-toggler", true);
+            m_grindTypes.push_back("coin");
+        }
+        if (mod->getSavedValue<bool>("demon-enabled")) {
+            setTogglerState("demon-toggler", true);
+            m_grindTypes.push_back("demon");
+            m_demonsFilters.first->setVisible(true);
+            m_demonsFilters.second->setVisible(true);
+        }
+
+        if (mod->getSavedValue<bool>("short-enabled")) { setTogglerState("short-length", true); m_lengths.push_back(int(Length::Short)); }
+        if (mod->getSavedValue<bool>("medium-enabled")) { setTogglerState("medium-length", true); m_lengths.push_back(int(Length::Medium)); }
+        if (mod->getSavedValue<bool>("long-enabled")) { setTogglerState("long-length", true); m_lengths.push_back(int(Length::Long)); }
+        if (mod->getSavedValue<bool>("xl-enabled")) { setTogglerState("xl-length", true); m_lengths.push_back(int(Length::XL)); }
+
+        if (mod->getSavedValue<bool>("version-22-enabled")) { setTogglerState("version-22", true); m_versions.push_back(22); }
+        if (mod->getSavedValue<bool>("version-21-enabled")) { setTogglerState("version-21", true); m_versions.push_back(21); }
+        if (mod->getSavedValue<bool>("version-20-enabled")) { setTogglerState("version-20", true); m_versions.push_back(20); }
+        if (mod->getSavedValue<bool>("version-19-enabled")) { setTogglerState("version-19", true); m_versions.push_back(19); }
+        if (mod->getSavedValue<bool>("version-lower-than-19-enabled")) { setTogglerState("version-lower-than-19", true); m_versions.push_back(18); }
+
+        if (mod->getSavedValue<bool>("auto-enabled")) { setTogglerState("auto-difficulty-toggler", true); m_difficulties.push_back(1); }
+        if (mod->getSavedValue<bool>("easy-enabled")) { setTogglerState("easy-difficulty-toggler", true); m_difficulties.push_back(2); }
+        if (mod->getSavedValue<bool>("normal-enabled")) { setTogglerState("normal-difficulty-toggler", true); m_difficulties.push_back(3); }
+
+        if (mod->getSavedValue<bool>("hard-enabled")) setTogglerState("hard-difficulty-toggler", true);
+        if (mod->getSavedValue<bool>("harder-enabled")) setTogglerState("harder-difficulty-toggler", true);
+        if (mod->getSavedValue<bool>("insane-enabled")) setTogglerState("insane-difficulty-toggler", true);
+
+        if (mod->getSavedValue<bool>("easy-demon-enabled")) { setTogglerState("easy-demon-toggler", true); m_demonDifficulties.push_back(3); }
+        if (mod->getSavedValue<bool>("medium-demon-enabled")) { setTogglerState("medium-demon-toggler", true); m_demonDifficulties.push_back(4); }
+        if (mod->getSavedValue<bool>("hard-demon-enabled")) { setTogglerState("hard-demon-toggler", true); m_demonDifficulties.push_back(0); }
+        if (mod->getSavedValue<bool>("insane-demon-enabled")) { setTogglerState("insane-demon-toggler", true); m_demonDifficulties.push_back(5); }
+        if (mod->getSavedValue<bool>("extreme-demon-enabled")) { setTogglerState("extreme-demon-toggler", true); m_demonDifficulties.push_back(6); }
+    }
+
+    refreshSplitDifficultyFilters();
     updateDifficultySelectorVisibility();
 
     return true;
@@ -572,25 +641,30 @@ void MainLayer::update(float dt) {
 
 void MainLayer::onEasyDemonToggler(CCObject* sender) {
     processValueOnToggler(sender, m_demonDifficulties, 3);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("easy-demon-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onMediumDemonToggler(CCObject* sender) {
     processValueOnToggler(sender, m_demonDifficulties, 4);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("medium-demon-enabled", getNewTogglerState(sender));
 }
 
 
 void MainLayer::onHardDemonToggler(CCObject* sender) {
     processValueOnToggler(sender, m_demonDifficulties, 0);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("hard-demon-enabled", getNewTogglerState(sender));
 }
 
 
 void MainLayer::onInsaneDemonToggler(CCObject* sender) {
     processValueOnToggler(sender, m_demonDifficulties, 5);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("insane-demon-enabled", getNewTogglerState(sender));
 }
 
 
 void MainLayer::onExtremeDemonToggler(CCObject* sender) {
     processValueOnToggler(sender, m_demonDifficulties, 6);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("extreme-demon-enabled", getNewTogglerState(sender));
 }
 
 
@@ -607,6 +681,7 @@ void MainLayer::onStarToggler(CCObject* sender) {
             m_grindTypes.erase(it);
         }
     }
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("star-enabled", isToggled);
 }
 
 void MainLayer::onMoonToggler(CCObject* sender) {
@@ -622,6 +697,7 @@ void MainLayer::onMoonToggler(CCObject* sender) {
             m_grindTypes.erase(it);
         }
     }
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("moon-enabled", isToggled);
 }
 
 void MainLayer::onCoinToggler(CCObject* sender) {
@@ -637,6 +713,7 @@ void MainLayer::onCoinToggler(CCObject* sender) {
             m_grindTypes.erase(it);
         }
     }
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("coin-enabled", isToggled);
 }
 
 void MainLayer::onDemonToggler(CCObject* sender) {
@@ -657,52 +734,63 @@ void MainLayer::onDemonToggler(CCObject* sender) {
         m_demonsFilters.first->setVisible(false);
         m_demonsFilters.second->setVisible(false);
     }
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("demon-enabled", isToggled);
 }
 
 void MainLayer::onShortToggler(CCObject* sender) {
     processValueOnToggler(sender, m_lengths, int(Length::Short));
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("short-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onMediumToggler(CCObject* sender) {
     processValueOnToggler(sender, m_lengths, int(Length::Medium));
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("medium-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onLongToggler(CCObject* sender) {
     processValueOnToggler(sender, m_lengths, int(Length::Long));
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("long-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onXLToggler(CCObject* sender) {
     processValueOnToggler(sender, m_lengths, int(Length::XL));
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("xl-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onAutoToggler(CCObject* sender) {
     processValueOnToggler(sender, m_difficulties, 1);
     updateDifficultySelectorVisibility();
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("auto-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onEasyToggler(CCObject* sender) {
     processValueOnToggler(sender, m_difficulties, 2);
     updateDifficultySelectorVisibility();
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("easy-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onNormalToggler(CCObject* sender) {
     processValueOnToggler(sender, m_difficulties, 3);
     updateDifficultySelectorVisibility();
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("normal-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onHardToggler(CCObject* sender) {
     applyDifficultyPair(m_difficulties, 4, 5, getNewTogglerState(sender), m_splitHard4, m_splitHard5);
     updateDifficultySelectorVisibility();
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("hard-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onHarderToggler(CCObject* sender) {
     applyDifficultyPair(m_difficulties, 6, 7, getNewTogglerState(sender), m_splitHarder6, m_splitHarder7);
     updateDifficultySelectorVisibility();
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("harder-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onInsaneToggler(CCObject* sender) {
     applyDifficultyPair(m_difficulties, 8, 9, getNewTogglerState(sender), m_splitInsane8, m_splitInsane9);
     updateDifficultySelectorVisibility();
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("insane-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onOpenDifficultySelector(CCObject* sender) {
@@ -711,22 +799,27 @@ void MainLayer::onOpenDifficultySelector(CCObject* sender) {
 
 void MainLayer::onVer22Toggler(CCObject* sender) {
     processValueOnToggler(sender, m_versions, 22);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("version-22-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onVer21Toggler(CCObject* sender) {
     processValueOnToggler(sender, m_versions, 21);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("version-21-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onVer20Toggler(CCObject* sender) {
     processValueOnToggler(sender, m_versions, 20);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("version-20-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onVer19Toggler(CCObject* sender) {
     processValueOnToggler(sender, m_versions, 19);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("version-19-enabled", getNewTogglerState(sender));
 }
 
 void MainLayer::onVerLower19Toggler(CCObject* sender) {
     processValueOnToggler(sender, m_versions, 18);
+    if (auto mod = Mod::get()) mod->setSavedValue<bool>("version-lower-than-19-enabled", getNewTogglerState(sender));
 }
 
 bool MainLayer::isSplitDifficultySelected(int difficulty) const {
@@ -762,6 +855,20 @@ void MainLayer::setSplitDifficultySelected(int difficulty, bool selected) {
     if (difficulty == 4 || difficulty == 5) normalizePair(m_splitHard4, m_splitHard5);
     if (difficulty == 6 || difficulty == 7) normalizePair(m_splitHarder6, m_splitHarder7);
     if (difficulty == 8 || difficulty == 9) normalizePair(m_splitInsane8, m_splitInsane9);
+    if (auto mod = Mod::get()) {
+        if (difficulty == 4 || difficulty == 5) {
+            mod->setSavedValue<bool>("split-4-enabled", m_splitHard4);
+            mod->setSavedValue<bool>("split-5-enabled", m_splitHard5);
+        } else if (difficulty == 6 || difficulty == 7) {
+            mod->setSavedValue<bool>("split-6-enabled", m_splitHarder6);
+            mod->setSavedValue<bool>("split-7-enabled", m_splitHarder7);
+        } else if (difficulty == 8 || difficulty == 9) {
+            mod->setSavedValue<bool>("split-8-enabled", m_splitInsane8);
+            mod->setSavedValue<bool>("split-9-enabled", m_splitInsane9);
+        } else {
+            mod->setSavedValue<bool>(fmt::format("split-{}-enabled", difficulty), selected);
+        }
+    }
 }
 
 void MainLayer::refreshSplitDifficultyFilters() {

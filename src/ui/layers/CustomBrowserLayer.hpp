@@ -7,6 +7,7 @@
 #include <Geode/modify/GameLevelManager.hpp>
 #include "../BaseLayer.hpp"
 #include "../../utils/globals.hpp"
+#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 
@@ -82,6 +83,9 @@ private:
     CCMenuItemSpriteExtra* m_refreshBtn = nullptr;
     CCMenuItemSpriteExtra* m_prevButton = nullptr;
     CCMenuItemSpriteExtra* m_nextButton = nullptr;
+
+    ProgressBar* m_progressBar = nullptr;
+    CCLabelBMFont* m_completionInfoLabel = nullptr;
 
     int m_page = 0;
 };
