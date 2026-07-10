@@ -466,7 +466,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                         auto uPopupRef = Ref(uPopup);
 
                         self->m_listener.spawn(
-                            APIClient::getInstance().unlockLevel(self->m_level->m_levelID, self->m_level->m_levelName.empty() ? std::string("blank name") : self->m_level->m_levelName),
+                            APIClient::getInstance().unlockLevel(self->m_level->m_levelID, self->m_level->m_levelName),
                             [uPopupRef](web::WebResponse res) {
                                 if (!uPopupRef) return;
                                 if (!res.ok()) {
@@ -491,7 +491,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                         self->m_listener.spawn(
                             APIClient::getInstance().lockLevel(
                                 self->m_level->m_levelID, 
-                                self->m_level->m_levelName.empty() ? std::string("blank name") : self->m_level->m_levelName
+                                self->m_level->m_levelName
                             ),
                             [uPopupRef](web::WebResponse res) {
                                 if (!uPopupRef) return;
