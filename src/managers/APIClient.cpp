@@ -875,6 +875,20 @@ Indicators APIClient::getIndicatorsParse(web::WebResponse res) {
     return indicators;
 }
 
+web::WebFuture APIClient::deleteGrindPack(int ID) {
+    auto req = web::WebRequest();
+
+    matjson::Value body;
+
+    body["accountID"] = GJAccountManager::get()->m_accountID;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["id"] = ID;
+
+    req.bodyJSON(body);
+
+    return req.post(fmt::format("{}{}", baseUrl, "/delete_grind_pack"));
+}
+
 ChangePointResponse APIClient::changePointParse(web::WebResponse res) {
     ChangePointResponse ret;
 

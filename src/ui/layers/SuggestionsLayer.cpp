@@ -10,6 +10,8 @@
 #include <UIBuilder.hpp>
 #include <cue/ListNode.hpp>
 
+#include "../popups/GuidePopup.hpp"
+
 using namespace geode::prelude;
 
 static constexpr CCSize LIST_SIZE {356.f, 220.f};
@@ -43,12 +45,7 @@ bool SuggestionsLayer::init() {
 
     auto infoButton = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
         .intoMenuItem([] {
-            FLAlertLayer::create(
-                "Helper Suggestions",
-                "Here you can find <cp>levels</c> suggested by Grind Helpers for <cy>grinding</c>!\n"
-                "These levels may be eventually added later to the main <cj>search system</c>.\n",
-                "OK"
-            )->show();
+            GuidePopup::create(GuidePage::HelperSuggestionsGuide, GuidePopupState::FromOutside)->show();
         })
         .pos({ 25, 25 })
         .parent(uiMenu)

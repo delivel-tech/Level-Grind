@@ -67,6 +67,16 @@ bool WeeklyAchievementPopup::init() {
         .pos(mainMenu->getContentSize() / 2)
         .collect();
 
+    auto infoBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+        .intoMenuItem([] {
+            GuidePopup::create(GuidePage::WeeklyAchievementsGuide, GuidePopupState::FromOutside)->show();
+        })
+        .parent(m_buttonMenu)
+        .pos(
+            m_buttonMenu->getContentSize()
+        )
+        .collect();
+
     auto loadingRef = Ref(loading);
     auto self = Ref(this);
     auto mainMenuRef = Ref(mainMenu);

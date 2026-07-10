@@ -19,6 +19,8 @@
 #include "Geode/ui/ProgressBar.hpp"
 #include "Geode/utils/web.hpp"
 
+#include "../popups/GuidePopup.hpp"
+
 using namespace geode::prelude;
 
 namespace levelgrind {
@@ -84,18 +86,7 @@ bool PetLayer::init() {
     auto infoBtn = Build(CCSprite::create("info_btn.png"_spr))
         .scale(0.7f)
         .intoMenuItem([] {
-            MDPopup::create(
-                "Grinding Pet Information",
-                "# <cg>Grinding Pet</c>\n\n"
-                "<cg>Grinding Pet</c> is your own <cj>companion</c> that evolves when you <cy>grind stats</c>!\n\n"
-                "## <cp>How does it work?</c>\n\n"
-                "- <cy>Pet stars and Pet moons</c> are the currencies of <cg>Grinding Pet</c>, you can use them to <cl>upgrade your pet</c>!\n"
-                "- You can <cp>earn them</c> by grinding stats as usual.\n"
-                "- There are <cr>30 levels in total</c>, for each one, your <cr>pet will become bigger</c> and may <cy>change its style</c>!\n"
-                "- At level <co>15</c>, you can open <cp>Icon Selector</c>!\n"
-                "# <cy>Enjoy the game</c>!",
-                "OK"
-            )->show();
+            GuidePopup::create(GuidePage::PetGuide, GuidePopupState::FromOutside)->show();
         })
         .id("info-btn")
         .parent(infoBtnMenu)

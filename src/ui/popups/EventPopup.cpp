@@ -20,6 +20,8 @@
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/web.hpp"
 
+#include "GuidePopup.hpp"
+
 #include "../layers/CustomBrowserLayer.hpp"
 
 using namespace geode::prelude;
@@ -187,6 +189,18 @@ bool EventPopup::init(EventType type) {
     m_timer->setPosition(centerX(), 20);
     m_timer->setScale(0.6f);
     m_mainLayer->addChild(m_timer);
+
+    auto infoBtn = Build(CCSprite::create("info_btn.png"_spr))
+        .scale(0.65f)
+        .intoMenuItem([type]{
+            GuidePopup::create(GuidePage::EventsGuide, GuidePopupState::FromOutside)->show();
+        })
+        .parent(m_buttonMenu)
+        .pos({
+            m_buttonMenu->getContentWidth() - 25,
+            25
+        })
+        .collect();
 
     m_spinner = Build(LoadingSpinner::create(50))
         .id("spinner")

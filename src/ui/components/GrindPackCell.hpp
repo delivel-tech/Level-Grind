@@ -16,14 +16,19 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/ProgressBar.hpp"
+#include "Geode/utils/async.hpp"
+#include "Geode/utils/web.hpp"
 #include "ccTypes.h"
 
 #include <Geode/binding/LevelBrowserLayer.hpp>
+#include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
 #include <fmt/base.h>
 #include <fmt/format.h>
 
 #include "../layers/PackBrowserLayer.hpp"
+#include "../../managers/DataManager.hpp"
+#include "../../managers/APIClient.hpp"
 
 using namespace geode::prelude;
 
@@ -162,11 +167,45 @@ private:
             .parent(viewBtnMenu)
             .collect();
 
+        if (DataManager::getInstance().getUserPosition() == GrindPosition::Owner || 
+        DataManager::getInstance().getUserPosition() == GrindPosition::Admin) {
+            auto deleteBtn = Build(CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))
+                .scale(0.5f)
+                .intoMenuItem([this, packInfo] {
+                    auto uPopup = UploadActionPopup::create(nullptr, "Deleting pack...");
+                    uPopup->show();
+
+                    auto uPopupRef = Ref(uPopup);
+
+                    this->m_listener.spawn(
+                        APIClient::getInstance().deleteGrindPack(packInfo.id),
+                        [uPopupRef](web::WebResponse res) {
+                            if (!uPopupRef) return;
+                            if (!res.ok()) {
+                                log::error("bad web req");
+                                uPopupRef->showFailMessage("Failed! Try again later.");
+                                return;
+                            } else {
+                                uPopupRef->showSuccessMessage("Success! Pack deleted.");
+                            }
+                        }
+                    );
+                })
+                .parent(viewBtnMenu)
+                .posX(-45)
+                .collect();
+        }
+
+
         infoMenu->updateLayout();
         otherMenu->updateLayout();
 
         return true;
     }
+
+    TaskHolder<web::WebResponse> m_listener;
+
+    ~GrindPackCell() {m_listener.cancel();}
 };
 
 }

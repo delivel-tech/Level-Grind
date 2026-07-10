@@ -315,6 +315,16 @@ bool CreditsPopup::init() {
         .center()
         .collect();
 
+    auto infoBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+        .intoMenuItem([] {
+            GuidePopup::create(GuidePage::CreditsInfo, GuidePopupState::FromOutside)->show();
+        })
+        .parent(m_buttonMenu)
+        .pos(
+            m_buttonMenu->getContentSize()
+        )
+        .collect();
+
     Ref<LoadingSpinner> loadingRef = loading;
     Ref<CreditsPopup> self = this;
 

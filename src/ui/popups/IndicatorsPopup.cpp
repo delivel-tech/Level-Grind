@@ -9,6 +9,8 @@
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/web.hpp"
 
+#include "GuidePopup.hpp"
+
 #include <UIBuilder.hpp>
 
 namespace levelgrind {
@@ -69,6 +71,16 @@ bool IndicatorsPopup::init(int levelID) {
     m_statusSpinner = Build(LoadingSpinner::create(20))
         .id("status-spinner")
         .parent(m_statusMenu)
+        .collect();
+
+    auto infoBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+        .intoMenuItem([] {
+            GuidePopup::create(GuidePage::LevelIndicatorsGuide, GuidePopupState::FromOutside)->show();
+        })
+        .parent(m_buttonMenu)
+        .pos(
+            m_buttonMenu->getContentSize()
+        )
         .collect();
 
     m_statusMenu->updateLayout();

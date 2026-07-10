@@ -126,6 +126,8 @@ public:
     web::WebFuture getIndicators(int levelID);
     Indicators getIndicatorsParse(web::WebResponse res);
 
+    web::WebFuture deleteGrindPack(int ID);
+
     // argon
     void performGetToken();
 

@@ -159,6 +159,7 @@ void WeeklyAchCandidateCell::createUI(AchievementCellInfo candidateInfo, Achieve
     auto titleInput = Build(TextInput::create(80, "200K"))
         .with([candidateInfo](TextInput* input) {
             input->setMaxCharCount(255);
+            input->setCommonFilter(CommonFilter::Any);
             if (candidateInfo.title != "") input->setString(candidateInfo.title);
         })
         .parent(titleMenu)
@@ -208,6 +209,7 @@ void WeeklyAchCandidateCell::createUI(AchievementCellInfo candidateInfo, Achieve
     auto infoInput = Build(TextInput::create(80, "Desc."))
         .with([candidateInfo](TextInput* input) {
             input->setMaxCharCount(255);
+            input->setCommonFilter(CommonFilter::Any);
             if (candidateInfo.info != "") input->setString(candidateInfo.info);
         })
         .parent(infoMenu)

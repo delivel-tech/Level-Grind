@@ -1,7 +1,6 @@
 #include "GrindPacksLayer.hpp"
 
 #include "../../managers/APIClient.hpp"
-#include "../../managers/DataManager.hpp"
 #include "../popups/AddPackPopup.hpp"
 #include "../components/GrindPackCell.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
@@ -15,7 +14,7 @@
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
 #include <algorithm>
-
+#include "../popups/GuidePopup.hpp"
 static constexpr CCSize LIST_SIZE {356.f, 220.f};
 static constexpr int PER_PAGE = 10;
 
@@ -187,21 +186,33 @@ bool GrindPacksLayer::init() {
         }
     );
 
-    if (DataManager::getInstance().getUserPosition() != GrindPosition::Owner) return true;
-
     auto addPackMenu = Build(CCMenu::create())
-        .pos({ 25, 25 })
-        .parent(this)
-        .id("add-pack-menu")
-        .collect();
+            .pos({ 25, 25 })
+            .parent(this)
+            .id("add-pack-menu")
+            .collect();
 
-    Build(CCSprite::createWithSpriteFrameName("GJ_listAddBtn_001.png"))
+    auto infoBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
         .intoMenuItem([] {
-            AddPackPopup::create()->show();
+            GuidePopup::create(GuidePage::GrindPacksGuide, GuidePopupState::FromOutside)->show();
         })
         .parent(addPackMenu)
-        .id("add-pack-btn")
+        .id("info-btn")
         .collect();
+
+
+    if (DataManager::getInstance().getUserPosition() == GrindPosition::Owner || 
+    DataManager::getInstance().getUserPosition() == GrindPosition::Admin) {
+
+        Build(CCSprite::createWithSpriteFrameName("GJ_listAddBtn_001.png"))
+            .intoMenuItem([] {
+                AddPackPopup::create()->show();
+            })
+            .parent(addPackMenu)
+            .posY(35)
+            .id("add-pack-btn")
+            .collect();
+    }
 
     return true;
 }
