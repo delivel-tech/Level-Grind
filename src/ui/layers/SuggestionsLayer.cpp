@@ -109,7 +109,7 @@ bool SuggestionsLayer::init() {
                 filterBtnSpr->setScale(0.7f);
                 auto filterBtnSprTop = CCSprite::create("badge_helper.png"_spr);
                 filterBtnSpr->addChild(filterBtnSprTop);
-                filterBtnSprTop->setPosition({ 21, 20 });
+                filterBtnSprTop->setPosition({ 19.5f, 20.5f });
                 filterBtnSprTop->setScale(1.2f);
                 m_filterBtn = Build(filterBtnSpr)
                     .intoMenuItem([this] {
