@@ -173,7 +173,7 @@ void WeeklyAchievementCell::buildPodium() {
         switch (type) {
         case levelgrind::AchievementCellType::First: return "rankIcon_1_001.png";
         case levelgrind::AchievementCellType::Second: return "rankIcon_top50_001.png";
-        case levelgrind::AchievementCellType::Third: return "rankIcon_top2500_001.png";
+        case levelgrind::AchievementCellType::Third: return "rankIcon_top100_001.png";
         }
     };
 

@@ -4,6 +4,7 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/MDTextArea.hpp"
+#include "GuidePopup.hpp"
 
 #include <Geode/binding/ProfilePage.hpp>
 #include <UIBuilder.hpp>
@@ -47,6 +48,16 @@ bool NoteViewerPopup::init(std::vector<NoteInfo> notes) {
         .pos({
             m_buttonMenu->getContentWidth() + 20, centerY()
         })
+        .collect();
+
+    auto infoBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+        .intoMenuItem([] {
+            GuidePopup::create(GuidePage::NotesGuide, GuidePopupState::FromOutside)->show();
+        })
+        .parent(m_buttonMenu)
+        .pos(
+            m_buttonMenu->getContentSize()
+        )
         .collect();
 
     this->updatePage();
