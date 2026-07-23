@@ -32,6 +32,8 @@ class $modify(GrindPauseLayer, PauseLayer) {
             notes_vec.push_back(it->second);
         }
 
+        if (notes_vec.empty()) return;
+
         auto noteBtn = Build(CircleButtonSprite::createWithSprite("button_note.png"_spr))
             .scale(0.625f)
             .intoMenuItem([notes_vec] {

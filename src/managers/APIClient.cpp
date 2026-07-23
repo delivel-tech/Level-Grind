@@ -1,8 +1,10 @@
 #include "APIClient.hpp"
 #include "Geode/loader/Log.hpp"
+#include "Geode/ui/Notification.hpp"
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
+#include <arc/future/Future.hpp>
 #include <fmt/format.h>
 #include <matjson.hpp>
 #include <string>
@@ -1329,13 +1331,21 @@ ReqAccessResponse APIClient::requestStaffAccessParse(web::WebResponse res) {
 }
 
 void APIClient::performGetToken() {
-    async::spawn(
-        argon::startAuth(),
-        [](Result<std::string> res) {
-            if (!res.ok()) return;
-			auto token = std::move(res).unwrap();
-			Mod::get()->setSavedValue("argon_token", token);
+    auto accountData = argon::getGameAccountData();
+
+    async::spawn([data = std::move(accountData)] -> arc::Future<> {
+            auto res = co_await argon::startAuth(data);
+
+            if (!res.ok()) {
+                Notification::create("[Level Grind] Failed to get Argon token!", NotificationIcon::Error)->show();
+                co_return;
+            }
+
+            auto token = std::move(res).unwrap();
+            Mod::get()->setSavedValue("argon_token", token);
             DataManager::getInstance().setUserToken(token);
+
+            co_return;
         }
     );
 }

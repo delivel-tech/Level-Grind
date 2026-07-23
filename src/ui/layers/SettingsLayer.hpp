@@ -3,7 +3,9 @@
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/BasedButton.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
+#include <Geode/Result.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <Geode/binding/ColorChannelSprite.hpp>
@@ -84,6 +86,12 @@ private:
     static constexpr CCSize CELL_SIZE = {356.f, 28.f};
 
     TaskHolder<web::WebResponse> m_listener;
+    TaskHolder<Result<std::string>> m_argonListener;
+
+    ~SettingsLayer() {
+        m_listener.cancel();
+        m_argonListener.cancel();
+    }
 };
 
 }

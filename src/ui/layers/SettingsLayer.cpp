@@ -30,6 +30,8 @@
 #include "../../managers/APIClient.hpp"
 #include "../../managers/DataManager.hpp"
 
+#include <argon/argon.hpp>
+
 using namespace geode::prelude;
 
 namespace levelgrind {
@@ -708,6 +710,67 @@ void SettingsLayer::createOtherList() {
         .collect();
 
     list->addCell(syncCell);
+
+    // argon cell
+
+    auto argonCell = Build(CCMenu::create())
+        .ignoreAnchorPointForPos(false)
+        .contentSize(CELL_SIZE)
+        .collect();
+
+    auto labelArgon = Build(CCLabelBMFont::create("Request Argon Token", "bigFont.fnt"))
+        .limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f)
+        .anchorPoint({ 0, 0.5f })
+        .pos({ 8, CELL_SIZE.height / 2 })
+        .parent(argonCell)
+        .collect();
+
+    auto infoBtnArgon = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+        .scale(0.5f)
+        .intoMenuItem([] {
+            FLAlertLayer::create(
+                "Request Argon Token",
+                "Requests Argon Token, which is used for authentification in some Level Grind API endpoints.\n"
+                "Only use it if you're experiencing problems with accessing Level Grind partially or if you were told to do so by Delivel.",
+                "OK"
+            )->show();
+        })
+        .pos({ 8 + labelArgon->getScaledContentWidth() + 10, CELL_SIZE.height / 2 })
+        .parent(argonCell)
+        .collect();
+
+    auto reqArgonBtn = Build(ButtonSprite::create("Req", "bigFont.fnt", "GJ_button_04.png", 0.8f))
+        .scale(0.55f)
+        .intoMenuItem([this] {
+            auto uPopup = UploadActionPopup::create(nullptr, "Requesting argon...");
+            uPopup->show();
+
+            auto uPopupRef = Ref(uPopup);
+
+            m_argonListener.spawn(
+                argon::startAuth(),
+                [uPopupRef](Result<std::string> res) {
+                    if (!uPopupRef) return;
+
+                    if (!res.ok()) {
+                        uPopupRef->showFailMessage("Failed! Try again later.");
+                        return;
+                    } else {
+                        auto token = std::move(res).unwrap();
+                        Mod::get()->setSavedValue("argon_token", token);
+                        DataManager::getInstance().setUserToken(token);
+
+                        uPopupRef->showSuccessMessage("Success! Argon token saved.");
+                        return;
+                    }
+                }
+            );
+        })
+        .pos({ CELL_SIZE.width - 26, CELL_SIZE.height / 2 })
+        .parent(argonCell)
+        .collect();
+
+    list->addCell(argonCell);
 
     list->addCell(makeHeaderCell("Pet Settings"));
 

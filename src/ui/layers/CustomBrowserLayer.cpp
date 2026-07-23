@@ -18,6 +18,8 @@
 #include <Geode/utils/web.hpp>
 #include <algorithm>
 
+#include "../popups/GuidePopup.hpp"
+
 #include <UIBuilder.hpp>
 #include <cue/ListNode.hpp>
 #include <fmt/format.h>
@@ -61,13 +63,7 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
 
     auto infoButton = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
         .intoMenuItem([] {
-            FLAlertLayer::create(
-                "Levels for grinding",
-                "Here you can find <cp>levels</c> for <cy>grinding</c>!\n"
-                "You can also <cr>configure</c> what levels to search for in the main <cj>Level Grind</c> layer.\n"
-                "Thanks for using <cj>Level Grind</c> mod!",
-                "OK"
-            )->show();
+            GuidePopup::create(GuidePage::MainGuide, GuidePopupState::FromOutside)->show();
         })
         .pos({ 25, 25 })
         .parent(uiMenu)
