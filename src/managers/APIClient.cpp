@@ -1,4 +1,5 @@
 #include "APIClient.hpp"
+#include "Geode/loader/Loader.hpp"
 #include "Geode/loader/Log.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/utils/async.hpp"
@@ -1337,7 +1338,9 @@ void APIClient::performGetToken() {
             auto res = co_await argon::startAuth(data);
 
             if (!res.ok()) {
-                Notification::create("[Level Grind] Failed to get Argon token!", NotificationIcon::Error)->show();
+                geode::queueInMainThread([] {
+                    Notification::create("[Level Grind] Failed to get Argon token!")->show();
+                });
                 co_return;
             }
 

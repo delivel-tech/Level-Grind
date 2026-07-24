@@ -742,6 +742,7 @@ void SettingsLayer::createOtherList() {
     auto reqArgonBtn = Build(ButtonSprite::create("Req", "bigFont.fnt", "GJ_button_04.png", 0.8f))
         .scale(0.55f)
         .intoMenuItem([this] {
+            argon::clearAllTokens();
             auto uPopup = UploadActionPopup::create(nullptr, "Requesting argon...");
             uPopup->show();
 
@@ -752,13 +753,18 @@ void SettingsLayer::createOtherList() {
                 [uPopupRef](Result<std::string> res) {
                     if (!uPopupRef) return;
 
+                    log::info("callback");
+                    log::info("ok = {}", res.ok());
+
                     if (!res.ok()) {
+                        log::error("{}", res.unwrapErr());
                         uPopupRef->showFailMessage("Failed! Try again later.");
                         return;
                     } else {
                         auto token = std::move(res).unwrap();
                         Mod::get()->setSavedValue("argon_token", token);
                         DataManager::getInstance().setUserToken(token);
+                        log::info("token = {}", token);
 
                         uPopupRef->showSuccessMessage("Success! Argon token saved.");
                         return;

@@ -56,7 +56,7 @@ bool WeeklyAchCandidateCell::init(std::pair<bool, AchievementCellInfo> candidate
                         userScore->m_playerCube,
                         userScore->m_color1,
                         userScore->m_color2,
-                        userScore->m_color3,
+                        userScore->m_glowEnabled ? userScore->m_color3 : 0,
                         "", 0, ""
                     }
                 );

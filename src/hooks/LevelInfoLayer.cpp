@@ -1,4 +1,5 @@
 #include <Geode/Geode.hpp>
+#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include "../ui/popups/ManageLevelPopup.hpp"
@@ -99,6 +100,10 @@ class $modify(LevelGrind, LevelInfoLayer) {
 				        );
                     }
                 }
+            })
+            .with([this](CCMenuItemSpriteExtra* btn) {
+                bool isRated = this->m_level->m_stars.value() > 0;
+                if (!isRated) btn->setColor({128, 128, 128});
             })
             .parent(leftSideMenu)
             .intoParent()

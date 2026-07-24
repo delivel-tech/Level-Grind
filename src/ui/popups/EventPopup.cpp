@@ -167,19 +167,17 @@ bool EventPopup::init(EventType type) {
         .zOrder(1)
         .collect();
 
-    m_classicCell = new LevelCell("EventLevelCell", 380, 116);
+    m_classicCell = LevelCell::create(380, 116);
     m_classicCell->setPosition({20, 65});
     m_classicCell->setScale(0.95f);
     m_classicCell->setContentSize({380, 116});
-    m_classicCell->autorelease();
     m_classicCell->setID("classic-cell");
     m_mainLayer->addChild(m_classicCell);
 
-    m_platCell = new LevelCell("EventLevelCell", 380, 116);
+    m_platCell = LevelCell::create(380, 116);
     m_platCell->setPosition({20, 65});
     m_platCell->setScale(0.95f);
     m_platCell->setContentSize({380, 116});
-    m_platCell->autorelease();
     m_platCell->setID("plat-cell");
     m_mainLayer->addChild(m_platCell);
 
@@ -216,7 +214,22 @@ bool EventPopup::init(EventType type) {
                 else if (type == EventType::Weekly) return "Weeklies Safe";
                 else return "Monthlies Safe";
             };
-            CustomBrowserLayer::create(body, getName(type), CustomBrowserType::EventsHistory, type)->open();
+
+            #ifdef GEODE_IS_WINDOWS
+                CustomBrowserLayer::create(body, getName(type), CustomBrowserType::EventsHistory, type)->open();
+            #else
+                geode::createQuickPopup(
+                    "Warning",
+                    "Events Safe is currently only tested on Windows.\n"
+                    "Opening it on mobile may cause crashes or other unexpected behavior.\n"
+                    "Continue anyway?",
+                    "Cancel", "Open",
+                    [type, getName](auto, bool yes) {
+                        GetLevelsBody body;
+                        if (yes) CustomBrowserLayer::create(body, getName(type), CustomBrowserType::EventsHistory, type)->open();
+                    }
+                );
+            #endif
         })
         .id("safe-btn")
         .pos(fromTopRight({30, 30}))

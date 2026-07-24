@@ -9,6 +9,7 @@
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include <Geode/Enums.hpp>
 #include <cue/PlayerIcon.hpp>
+#include "Geode/cocos/particle_nodes/CCParticleExamples.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/MDPopup.hpp"
@@ -264,6 +265,25 @@ void WeeklyAchievementCell::buildAfterPodium() {
     );
 
     if (m_cellInfo.glow == 0) cube->disableGlowOutline();
+
+    #ifndef GEODE_IS_IOS
+    if (m_cellType == AchievementCellType::First) {
+
+    auto particles = Build(CCParticleGalaxy::create())
+        .with([](CCParticleGalaxy* galaxy) {
+            galaxy->setLife(0.8f);
+        })
+        .id("cube-particles")
+        .parent(this)
+        .pos({
+            this->getContentWidth() / 2,
+            85 + m_podium->getContentHeight()
+        })
+        .scale(0.85f)
+        .collect();
+
+    }
+    #endif
 
     auto cubeSprite = Build(cube)
         .id("cube-sprite")

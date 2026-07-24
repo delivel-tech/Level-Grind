@@ -11,7 +11,9 @@ using namespace levelgrind;
 $execute {
     SettingsLayer::initSettings();
     APIClient::getInstance().performBootupGet();
-    APIClient::getInstance().performGetToken();
+    Loader::get()->queueInMainThread([] {
+        APIClient::getInstance().performGetToken();
+    });
     DataManager::getInstance().initPermsOnBootup();
     DataManager::getInstance().initTokenOnBootup();
 

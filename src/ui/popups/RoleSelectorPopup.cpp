@@ -172,7 +172,7 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
                         m_targetUser->m_playerCube,
                         m_targetUser->m_color1,
                         m_targetUser->m_color2,
-                        m_targetUser->m_color3,
+                        m_targetUser->m_glowEnabled ? m_targetUser->m_color3 : 0,
                         m_newRoles.isAdmin,
                         m_newRoles.isHelper,
                         m_newRoles.isArtist,
