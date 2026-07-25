@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/FLAlertLayer.hpp>
+#include <Geode/binding/LevelInfoLayer.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include "../ui/popups/ManageLevelPopup.hpp"
 #include "../managers/DataManager.hpp"
@@ -18,6 +19,35 @@ using namespace geode::prelude;
 namespace levelgrind {
 
 class $modify(LevelGrind, LevelInfoLayer) {
+    struct Fields {
+        bool shownAutoNote = false;
+    };
+    void onPlay(CCObject* sender) {
+        bool autoNote = Mod::get()->getSavedValue<bool>("auto-notes");
+
+        if (autoNote) {
+        if (!this->m_fields->shownAutoNote) {
+            auto range = DataManager::getInstance().getSharedData().notes.equal_range(this->m_level->m_levelID);
+
+            std::vector<NoteInfo> notes_vec;
+
+            for (auto it = range.first; it != range.second; ++it) {
+                notes_vec.push_back(it->second);
+            }
+
+            if (notes_vec.empty()) {
+                LevelInfoLayer::onPlay(sender);
+            } else {
+                this->m_fields->shownAutoNote = true;
+                NoteViewerPopup::create(notes_vec)->show();
+            }
+        } else {
+            LevelInfoLayer::onPlay(sender);
+        }
+        } else {
+            LevelInfoLayer::onPlay(sender);
+        }
+    }
     bool init(GJGameLevel* level, bool challenge) {
         if (!LevelInfoLayer::init(level, challenge)) return false;
 

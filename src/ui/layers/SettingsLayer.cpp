@@ -263,6 +263,7 @@ void SettingsLayer::applyDefaultSettings() {
     Mod::get()->setSavedValue("enable-completion-info", false);
     Mod::get()->setSavedValue("enable-progress-bar", false);
     Mod::get()->setSavedValue("hide-badges-for-mods", true);
+    Mod::get()->setSavedValue("auto-notes", false);
 }
 
 CCMenu* SettingsLayer::makeFloatCell(
@@ -499,6 +500,13 @@ void SettingsLayer::createGrindList() {
         "Enable Indicators",
         "Shows an info button next to level name that shows information about the level in Grind Database.",
         "enable-indicators",
+        this
+    ));
+
+    list->addCell(makeToggleCell(
+        "Enable Auto Notes",
+        "Shows a note when clicking a play button if exists",
+        "auto-notes",
         this
     ));
 

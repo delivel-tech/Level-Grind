@@ -1,6 +1,7 @@
 # 2.0.1
 - Using Badges API temporarily.
 - Changed application form url.
+- Auto note feature.
 - Bugfixes.
 
 # 2.0.0
