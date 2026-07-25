@@ -2,8 +2,6 @@
 #include "managers/DataManager.hpp"
 #include "ui/layers/SettingsLayer.hpp"
 
-#include <alphalaneous.badgify/include/Badgify.hpp>
-
 using namespace geode::prelude;
 using namespace levelgrind;
 
