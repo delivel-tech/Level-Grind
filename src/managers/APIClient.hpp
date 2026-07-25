@@ -128,6 +128,9 @@ public:
 
     web::WebFuture deleteGrindPack(int ID);
 
+    web::WebFuture cancelVote(int levelID);
+    CancelVoteResponse cancelVoteParse(web::WebResponse res);
+
     // argon
     void performGetToken();
 

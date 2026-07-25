@@ -815,14 +815,39 @@ web::WebFuture APIClient::changePoint(PointType type, int coinType, ManageLevelB
     reqBody["coinPoint"] = coinType;
     reqBody["length"] = levelBody.length;
     reqBody["difficulty"] = levelBody.difficulty;
-
-    if (levelBody.difficulty == 10) reqBody["demon_difficulty"] = levelBody.demonDifficulty;
-    if (levelBody.star) reqBody["star"] = levelBody.star;
-    if (levelBody.moon) reqBody["moon"] = levelBody.moon;
-    if (levelBody.demon) reqBody["demon"] = levelBody.demon;
+    reqBody["demonDifficulty"] = levelBody.demonDifficulty;
+    reqBody["star"] = levelBody.star;
+    reqBody["moon"] = levelBody.moon;
+    reqBody["demon"] = levelBody.demon;
 
     req.bodyJSON(reqBody);
     return req.post(fmt::format("{}{}", baseUrl, "/change_point"));
+}
+
+web::WebFuture APIClient::cancelVote(int levelID) {
+    auto req = web::WebRequest();
+    matjson::Value reqBody;
+
+    reqBody["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    reqBody["token"] = DataManager::getInstance().getUserToken();
+    reqBody["levelID"] = levelID;
+
+    req.bodyJSON(reqBody);
+    return req.post(fmt::format("{}{}", baseUrl, "/cancel_vote"));
+}
+
+CancelVoteResponse APIClient::cancelVoteParse(web::WebResponse res) {
+    CancelVoteResponse ret;
+
+    if (!res.ok()) {
+        ret.ok = false;
+        return ret;
+    }
+
+    auto json = res.json().unwrapOrDefault();
+
+    ret.ok = json["ok"].asBool().unwrapOr(false);
+    return ret;
 }
 
 web::WebFuture APIClient::deleteNotes(int levelId, std::string levelName) {

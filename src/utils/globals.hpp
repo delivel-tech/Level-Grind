@@ -106,15 +106,19 @@ namespace levelgrind {
     };
 
     struct ManageLevelBody {
-        int id;
-        std::string name;
-        int difficulty;
-        int length;
-        int demonDifficulty;
-        bool star;
-        bool moon;
-        int coin;
-        bool demon;
+        int id = 0;
+        std::string name = "";
+        int difficulty = 0;
+        int length = 0;
+        int demonDifficulty = 0;
+        bool star = false;
+        bool moon = false;
+        int coin = 0;
+        bool demon = false;
+    };
+
+    struct CancelVoteResponse {
+        bool ok;
     };
 
     enum GuidePage {

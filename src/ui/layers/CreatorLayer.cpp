@@ -340,6 +340,18 @@ bool CreatorLayer::initMd() {
         }
     );
 
+    if (Mod::get()->getSavedValue<bool>("discord-popup-opened")) return true;
+
+    this->runAction(
+        CCSequence::create(
+            CCDelayTime::create(1),
+            CallFuncExt::create([] {
+                DiscordPopup::create()->show();
+            }),
+            nullptr
+        )
+    );
+
     return true;
 }
 }

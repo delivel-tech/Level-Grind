@@ -70,6 +70,8 @@ bool DiscordPopup::init() {
 
     m_mainLayer->addChild(clip, -1);
 
+    Mod::get()->setSavedValue("discord-popup-opened", true);
+
     return true;
 }
 

@@ -9,6 +9,7 @@
 #include "Geode/ui/LoadingSpinner.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
+#include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
 
 #include <Geode/binding/ProfilePage.hpp>
@@ -160,12 +161,6 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 .zOrder(1)
                 .collect();
 
-            if (parsed.coin) {
-                self->m_body.coin = true;
-            } else {
-                self->m_body.coin = false;
-            }
-
             // making status menu
 
             auto levelInfoLayout = RowLayout::create()
@@ -293,7 +288,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     auto uPopupRef = Ref(uPopup);
 
                     self->m_listener.spawn(
-                        APIClient::getInstance().changePoint(PointType::RejectPoint, self->m_body.coin ? CoinPointType::AcceptCoinPoint : CoinPointType::RejectCoinPoint, self->m_body),
+                        APIClient::getInstance().changePoint(PointType::RejectPoint, self->m_body.coin, self->m_body),
                         [uPopupRef](web::WebResponse res) {
                             if (!uPopupRef) return;
                             auto parsed = APIClient::getInstance().changePointParse(res);
@@ -450,11 +445,11 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
             leftCoinMenu->updateLayout();
 
-            radio.select(CoinManage::NoVote);
-
             radio.setCallback([self](CoinManage which) {
                 self->m_body.coin = static_cast<int>(which);
             });
+
+            radio.select(CoinManage::NoVote);
 
             // admin menu
             if (parsed.isLocked) {
@@ -713,6 +708,44 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 for (auto const& val : parsed.pointsInfo) {
                     createListCell(val);
                 }
+            }
+
+            bool hasVoted = false;
+            for (auto const& val : parsed.pointsInfo) {
+                if (val.staffId == GJAccountManager::sharedState()->m_accountID) {
+                    hasVoted = true;
+                    break;
+                }
+            }
+
+            if (hasVoted) {
+                Build(ButtonSprite::create("Cancel Vote", "bigFont.fnt", "GJ_button_06.png"))
+                    .scale(0.65f)
+                    .intoMenuItem([self] {
+                        auto uPopup = UploadActionPopup::create(nullptr, "Cancelling vote...");
+                        uPopup->show();
+
+                        auto uPopupRef = Ref(uPopup);
+
+                        self->m_listener.spawn(
+                            APIClient::getInstance().cancelVote(self->m_level->m_levelID),
+                            [uPopupRef](web::WebResponse res) {
+                                if (!uPopupRef) return;
+                                auto parsed = APIClient::getInstance().cancelVoteParse(res);
+
+                                if (!parsed.ok) {
+                                    uPopupRef->showFailMessage("Failed to cancel vote.");
+                                    return;
+                                } else {
+                                    uPopupRef->showSuccessMessage("Success! Vote cancelled.");
+                                    return;
+                                }
+                            }
+                        );
+                    })
+                    .parent(self->m_buttonMenu)
+                    .pos(self->m_buttonMenu->getContentWidth() / 2.f, 0.f)
+                    .id("cancel-vote-button");
             }
 
             self->m_adminButtonsMenu->updateLayout();
