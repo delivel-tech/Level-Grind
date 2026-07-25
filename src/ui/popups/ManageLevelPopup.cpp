@@ -638,7 +638,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 }
 
                 if (pointInfo.coinPoint == 1) {
-                    auto acceptedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon_001.png"))
+                    auto acceptedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png"))
                         .intoMenuItem([self] {
                             Notification::create(fmt::format("This user accepted coin for {}.", self->m_body.name), NotificationIcon::Success)->show();
                         })
@@ -648,13 +648,6 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     auto rejectedBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon_gray_001.png"))
                         .intoMenuItem([self] {
                             Notification::create(fmt::format("This user rejected coin for {}.", self->m_body.name), NotificationIcon::Error)->show();
-                        })
-                        .parent(cellMenu)
-                        .collect();
-                } else {
-                    auto novoteBtn = Build(CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png"))
-                        .intoMenuItem([self] {
-                            Notification::create(fmt::format("This user stayed neutral about the coin for {}.", self->m_body.name), NotificationIcon::Info)->show();
                         })
                         .parent(cellMenu)
                         .collect();

@@ -326,7 +326,7 @@ web::WebFuture APIClient::newlevel(ManageLevelBody body) {
 
     if (body.star) reqBody["star"] = body.star;
     if (body.moon) reqBody["moon"] = body.moon;
-    if (body.coin) reqBody["coin"] = body.coin;
+    if (body.coin && body.coin >= 0) reqBody["coin"] = body.coin;
     if (body.demon) reqBody["demon"] = body.demon;
 
     reqBody["added_by"] = GJAccountManager::get()->m_username.c_str();
