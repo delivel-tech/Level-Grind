@@ -1,3 +1,15 @@
+# 2.0.0
+- Complete menu overhaul!
+- Event Levels Reworked (added Monthly levels, The Safe and improved UI).
+- Grind Packs (map packs with grindable levels).
+- Completely new pet system, new functions for higher rarities and levels.
+- Improved notes UI.
+- Reworked weekly achievements UI.
+- Brand new badges (Thanks to our artist dasshudev)!
+- Even more redesigns and UI for most of the tabs.
+- Minor bugfixes (for example saving search filters when exiting the menu page).
+- Complete overwrite of the mod :3
+
 # 1.5.5
 - Owner badge appearing twice after profile reloading fixed.
 - Better Touch Prio dependancy removed.
