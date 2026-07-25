@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCScrollLayerExt.hpp>
 #include <cue/ListNode.hpp>

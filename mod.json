@@ -8,12 +8,12 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v2.0.0",
+	"version": "v2.0.1",
 	"developer": "delivel",
 	"description": "A big storage of levels for grinding!",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
-		"alphalaneous.badgify": ">=1.0.2"
+		"jouca.badgesapi": ">=v1.5.0"
 	},
 	"resources": {
 		"sprites": [

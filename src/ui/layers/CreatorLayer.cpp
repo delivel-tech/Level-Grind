@@ -340,7 +340,7 @@ bool CreatorLayer::initMd() {
         }
     );
 
-    if (Mod::get()->getSavedValue<bool>("discord-popup-opened")) return true;
+    if (Mod::get()->getSavedValue<bool>(fmt::format("discord-popup-opened-{}", Mod::get()->getVersion()))) return true;
 
     this->runAction(
         CCSequence::create(

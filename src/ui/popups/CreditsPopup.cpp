@@ -292,7 +292,7 @@ bool CreditsPopup::init() {
                 "Cancel", "Apply",
                 [](auto, bool btn2) {
                     if (btn2) {
-                        web::openLinkInBrowser("https://docs.google.com/forms/d/e/1FAIpQLScOUeCa13hvgnaWoJzkK1DXdOOhoNWwDmepYV4Tg2zj1prmMQ/viewform?usp=publish-editor");
+                        web::openLinkInBrowser("https://forms.gle/RpLraEUuAZFuWw6E6");
                     }
                 }
             );

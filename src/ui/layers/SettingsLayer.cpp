@@ -262,6 +262,7 @@ void SettingsLayer::applyDefaultSettings() {
     Mod::get()->setSavedValue("enable-indicators", true);
     Mod::get()->setSavedValue("enable-completion-info", false);
     Mod::get()->setSavedValue("enable-progress-bar", false);
+    Mod::get()->setSavedValue("hide-badges-for-mods", true);
 }
 
 CCMenu* SettingsLayer::makeFloatCell(
@@ -553,6 +554,13 @@ void SettingsLayer::createAppearanceList() {
         "Disable Badges",
         "Hides all badges added by the mod",
         "disable-badges",
+        this
+    ));
+
+    list->addCell(makeToggleCell(
+        "Hide Grind badges for GD Mods",
+        "Hides badges added by Level Grind for any kind of GD Moderators",
+        "hide-badges-for-mods",
         this
     ));
 

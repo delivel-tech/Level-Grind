@@ -1,4 +1,3 @@
-#include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "managers/APIClient.hpp"
 #include "managers/DataManager.hpp"
 #include "ui/layers/SettingsLayer.hpp"
@@ -17,6 +16,9 @@ $execute {
     DataManager::getInstance().initPermsOnBootup();
     DataManager::getInstance().initTokenOnBootup();
 
+    // waiting for badgify to settle, using badges api temporarily
+
+    /*
     alpha::badgify::registerBadge(
         "grind-owner-badge"_spr,
         "Grind Owner",
@@ -202,4 +204,5 @@ $execute {
             }
         }
     );
+    */
 }

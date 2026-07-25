@@ -1,3 +1,8 @@
+# 2.0.1
+- Using Badges API temporarily.
+- Changed application form url.
+- Bugfixes.
+
 # 2.0.0
 - Complete menu overhaul!
 - Event Levels Reworked (added Monthly levels, The Safe and improved UI).
