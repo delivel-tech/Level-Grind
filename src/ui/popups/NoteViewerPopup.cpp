@@ -25,6 +25,9 @@ NoteViewerPopup* NoteViewerPopup::create(std::vector<NoteInfo> notes) {
 bool NoteViewerPopup::init(std::vector<NoteInfo> notes) {
     if (!BasePopup::init({380, 260})) return false;
 
+    // Respect fast menu setting
+    m_noElasticity = GameManager::get()->getGameVariable(GameVar::FastMenu);
+
     m_notes = notes;
 
     addTop();

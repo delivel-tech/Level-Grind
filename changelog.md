@@ -1,3 +1,7 @@
+# 2.0.3
+
+- Using global transition animation for auto notes popup (Fast Menu setting works with notes popup).
+
 # 2.0.2
 - Badges appearing multiple times bugfix.
 - Badges in comments.
