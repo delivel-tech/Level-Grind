@@ -1,5 +1,6 @@
 # 2.0.2
 - Badges appearing multiple times bugfix.
+- Badges in comments.
 
 # 2.0.1
 - Using Badges API temporarily.
