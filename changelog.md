@@ -1,3 +1,6 @@
+# 2.0.2
+- Badges appearing multiple times bugfix.
+
 # 2.0.1
 - Using Badges API temporarily.
 - Changed application form url.

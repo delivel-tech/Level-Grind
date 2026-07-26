@@ -18,8 +18,18 @@ using namespace geode::prelude;
 namespace levelgrind {
 
 class $modify(GrindProfilePage, ProfilePage) {
+    void fixBadges() {
+        if (auto badge = getChildByIDRecursive("owner-badge"_spr)) badge->removeFromParent();
+        if (auto badge = getChildByIDRecursive("admin-badge"_spr)) badge->removeFromParent();
+        if (auto badge = getChildByIDRecursive("helper-badge"_spr)) badge->removeFromParent();
+        if (auto badge = getChildByIDRecursive("artist-badge"_spr)) badge->removeFromParent();
+        if (auto badge = getChildByIDRecursive("contrib-badge"_spr)) badge->removeFromParent();
+        if (auto badge = getChildByIDRecursive("booster-badge"_spr)) badge->removeFromParent();
+    }
     void loadPageFromUserInfo(GJUserScore* score) {
         ProfilePage::loadPageFromUserInfo(score);
+
+        this->fixBadges();
 
         auto mod = Mod::get();
 
