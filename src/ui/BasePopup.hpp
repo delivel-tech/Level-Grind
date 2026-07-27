@@ -7,6 +7,9 @@ namespace levelgrind {
 
 class BasePopup : public geode::Popup {
 protected:
+    BasePopup() {
+        m_noElasticity = GameManager::get()->getGameVariable(GameVar::FastMenu);
+    }
     /*
         A bunch of different positioning helpers to simplify making UI.
         Thanks to dankmeme for this part of code, taken from Globed GitHub repo.

@@ -3,6 +3,7 @@
 - Grind Indicator button moved to the left side of level name in order to improve the compatibility with other mods.
 - Small badge fix.
 - Argon on bootup fix.
+- Fast Menu support.
 
 # 2.0.2
 - Badges appearing multiple times bugfix.

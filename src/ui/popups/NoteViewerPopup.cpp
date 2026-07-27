@@ -6,6 +6,8 @@
 #include "Geode/ui/MDTextArea.hpp"
 #include "GuidePopup.hpp"
 
+#include <Geode/Enums.hpp>
+#include <Geode/binding/GameManager.hpp>
 #include <Geode/binding/ProfilePage.hpp>
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
