@@ -381,7 +381,8 @@ bool GuidePopup::initNotesGuidePage() {
     addTextArea(
         "# <ca>Level Notes Guide</c>\n\n"
         "Our staff team can add <ca>notes</c> to levels, pointing out details like <cc>coin</c> locations, tricky timings, difficult sections, or anything else that players should know.\n\n"
-        "When a level has a <ca>note</c> attached, you can read it by clicking the button located on the left side of the level's page.\n"
+        "When a level has a <ca>note</c> attached, you can read it by clicking the button located on the left side of the level's page.\n\n"
+        "Want to suggest a <ca>note</c>? Consider joining our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server!\n"
     );
     addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
     
