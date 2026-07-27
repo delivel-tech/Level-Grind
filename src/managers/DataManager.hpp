@@ -35,7 +35,7 @@ private:
         },
         {
             "Suggest new ideas!",
-            "The <cp>Level Grind</c> server has suggestion channels for the <cp>Mod</c>, <cg>Server</c>, <ca>Level Notes</c>, and <cf>Grind Packs</c>! Share your ideas and bring us something new! :D"
+            "The <cp>Level Grind</c> server has suggestion channels for the <cp>Mod</c>, <cg>Server</c>, <cl>Levels</c>, <ca>Notes</c>, and <cf>Grind Packs</c>! Share your ideas and bring us something new! :D"
         },
         {
             "Talk to other mod players",
