@@ -1,3 +1,6 @@
+# 2.0.4
+- Tweaked some discord pop-up and guidebook descriptions. 
+
 # 2.0.3
 - Reworked Discord Popup.
 - Grind Indicator button moved to the left side of level name in order to improve the compatibility with other mods.
