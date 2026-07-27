@@ -19,27 +19,27 @@ private:
     std::vector<DiscordPopup::DiscordPageInfo> discordPages {
         {
             "Stay notified!",
-            "By joining the <cp>Level Grind</c> server, you will receive <cy>all informations</c> regarding any updates, annoucements etc about the mod!"
+            "By joining the <cp>Level Grind</c> server, you will get all the latest <cf>updates</c>, <cf>announcements</c>, and <cf>news</c> about the mod!"
         },
         {
             "Talk to Level Grind (AI)",
-            "Level Grind <cr>Bot</c> has an AI you can talk to! Ask it any questions about the mod, or just have a casual conversation :)"
+            "Chat with the <cp>Level Grind</c> <cr>Bot</c> AI! Ask questions about the mod, or just have a casual conversation :)"
         },
         {
             "Become a Booster!",
-            "By boosting <cp>Level Grind</c> Discord Server, you'll receive an <co>Exclusive Booster Badge</c>!"
+            "By boosting the <cp>Level Grind</c> <cb>Discord</c> Server, you'll receive an exclusive <ca>Booster Badge</c>!"
         },
         {
             "Share your progress!",
-            "Tell everyone how you progressed in GD! Share your <cy>milestones</c>, accomplishments etc!"
+            "Tell everyone how you've progressed in GD! Share your <cy>milestones</c>, <cy>accomplishments</c>, and more!"
         },
         {
             "Suggest new ideas!",
-            "<cp>Level Grind</c> server has <cy>mod, server, note, and grind pack</c> suggestion channels! Offer us something new :D"
+            "The <cp>Level Grind</c> server has suggestion channels for the <cp>Mod</c>, <cg>Server</c>, <ca>Level Notes</c>, and <cf>Grind Packs</c>! Share your ideas and bring us something new! :D"
         },
         {
             "Talk to other mod players",
-            "And finally, <cp>engage</c> with the greatest <cy>Level Grind</c> community!!"
+            "And finally, <cg>engage</c> with the awesome <cp>Level Grind</c> community!"
         }
     };
 
