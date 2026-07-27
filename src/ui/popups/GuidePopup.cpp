@@ -278,7 +278,7 @@ bool GuidePopup::initLevelIndicatorsGuide() {
     addGrindLogo();
     addTextArea(
         "# <cf>Level Grind Indicators</c>\n\n"
-        "<cp>Level Grind</c> adds a button next to the level's name that tells you if the level is added to the <cl>database</c>.\n\n"
+        "<cp>Level Grind</c> adds a button next to the level's name that tells you if the level is in the <cl>database</c>. This feature can be toggled in the mod's settings.\n\n"
         "### Indicators:\n\n"
         "- <cc>**Coin Indicator**</c>: The level has easy or free <cc>coins</c>.\n"
         "- <ca>**Event Indicator**</c>: The level was, at one point, a <cy>Daily</c>, <co>Weekly</c>, or <cr>Monthly</c> level.\n"
@@ -294,8 +294,8 @@ bool GuidePopup::initGrindPacksGuide() {
     addGrindLogo();
     addTextArea(
         "# <cf>Grind Packs Guide</c>\n\n"
-        "Similar to <ca>RobTop's</c> \"Map Packs\", but with actually fun and <cy>grindable</c> levels!\n\n"
-        "Featuring both <cy>Classic</c> and <cb>Platformer</c> packs, with <cg>new ones</c> being added regularly.\n\n"
+        "Grind Packs are collections of 3 <cy>grind-worthy</c> levels of similar difficulty set by <cc>Grind Admins</c>.\n\n"
+        "Featuring both <cy>Classic</c> and <cb>Platformer</c> packs, with new ones being added regularly.\n\n"
         "Want to suggest a <cf>Grind Pack</c>? Consider joining our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server!\n"
     );
     addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
@@ -321,11 +321,11 @@ bool GuidePopup::initPetGuidePage() {
     addGrindLogo();
     addTextArea(
         "# <cd>Grinding Pet Guide</c>\n\n"
-        "<cd>Grinding Pet</c> is your own <cj>companion</c> that evolves when you <cy>grind stats</c>!\n\n"
+        "<cd>Grinding Pet</c> is your own <cj>companion</c> that evolves when you grind stats!\n\n"
         "### How does it work?\n\n"
         "- <cy>**Currencies**</c>: Earn <cy>Pet Stars</c> and <cb>Pet Moons</c> by playing levels and grinding stats.\n"
-        "- <ca>**Evolution**</c>: There are <co>30 levels</c> to achieve. With every level up, your pet <cg>grows larger</c> and may change its <cj>style</c>!\n"
-        "- <cs>**Customization**</c>: At <co>Level 15</c>, you unlock the <cs>Customization Menu</c>! The higher your <cf>rarity level</c> is, the more <cg>options</c> you get.\n"
+        "- <ca>**Evolution**</c>: There are <co>30</c> levels to achieve. With every level up, your pet grows larger and may change its style!\n"
+        "- <cs>**Customization**</c>: At Level <co>15</c>, you unlock the customization menu! The higher your <cf>rarity</c> level is, the more options you get.\n"
     );
     addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
     
@@ -350,7 +350,8 @@ bool GuidePopup::initHelperSuggestionsGuide() {
     addGrindLogo();
     addTextArea(
         "# <cg>Helper Suggestions</c>\n\n"
-        "This is a tab with levels suggested by our <cg>Helpers</c>! These may eventually be added to the main <cl>database</c> if they are considered <cy>grindable</c>.\n\n"
+        "This is a tab with levels suggested by our <cg>Helpers</c>! These may eventually be added to the main <cl>database</c> if they are considered <cy>grind-worthy</c>.\n\n"
+        "At the top are the levels that have been suggested the most times by multiple <cg>Helpers</c>.\n\n"
         "Want to suggest a level? Consider joining our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server!\n"
     );
     addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
@@ -382,7 +383,7 @@ bool GuidePopup::initNotesGuidePage() {
         "# <ca>Level Notes Guide</c>\n\n"
         "Our staff team can add <ca>notes</c> to levels, pointing out details like <cc>coin</c> locations, tricky timings, difficult sections, or anything else that players should know.\n\n"
         "When a level has a <ca>note</c> attached, you can read it by clicking the button located on the left side of the level's page.\n\n"
-        "Want to suggest a <ca>note</c>? Consider joining our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server!\n"
+        "Want to suggest a <ca>Level Note</c>? Consider joining our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server!\n"
     );
     addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
     
@@ -395,7 +396,7 @@ bool GuidePopup::initOwnerRoleGuidePage() {
     addTextArea(
         "# <cp>Owner Role</c>\n\n"
         "<cp>Owners</c> are responsible for leading the <cp>Level Grind</c> project.\n"
-        "They manage <cr>development</c>, make <cj>final decisions</c>, and oversee all roles."
+        "They manage development, make final decisions, and oversee all roles."
     );
     addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
     
@@ -435,8 +436,8 @@ bool GuidePopup::initArtistRoleGuidePage() {
     addGrindLogo();
     addTextArea(
         "# <cp>Artist Role</c>\n\n"
-        "<cp>Artists</c> are responsible for <cy>visual part of the mod</c>, including sprites, textures, and more.\n"
-        "Their support is <cg>greatly appreciated <3</c>"
+        "<cp>Artists</c> are responsible for visual part of the mod, including sprites, textures, and more.\n"
+        "Their support is greatly appreciated <cr><3</c>"
     );
     addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
     
