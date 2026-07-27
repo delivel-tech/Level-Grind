@@ -48,6 +48,7 @@ class $modify(LevelGrind, LevelInfoLayer) {
             LevelInfoLayer::onPlay(sender);
         }
     }
+
     bool init(GJGameLevel* level, bool challenge) {
         if (!LevelInfoLayer::init(level, challenge)) return false;
 
@@ -82,7 +83,7 @@ class $modify(LevelGrind, LevelInfoLayer) {
                 .parent(this)
                 .id("indicators-btn-menu"_spr)
                 .pos({
-                    this->getContentWidth() / 2 + 13 + eventGap + titleLabel->getScaledContentWidth() / 2,
+                    this->getContentWidth() / 2 - 13 - eventGap - titleLabel->getScaledContentWidth() / 2,
                     titleLabel->getPositionY()
                 })
                 .collect();

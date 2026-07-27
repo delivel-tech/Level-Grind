@@ -283,7 +283,7 @@ bool CreatorLayer::initFarMenus() {
         .collect();
 
     auto discordBtn = Build<CCSprite>::create("discord_btn.png"_spr)
-        .intoMenuItem([] { DiscordPopup::create()->show(); })
+        .intoMenuItem([] { DiscordPopup::create(DataManager::getInstance().getDiscordPages())->show(); })
         .scaleMult(1.1f)
         .id("discord-btn")
         .parent(rightSideMenu)
@@ -346,7 +346,7 @@ bool CreatorLayer::initMd() {
         CCSequence::create(
             CCDelayTime::create(1),
             CallFuncExt::create([] {
-                DiscordPopup::create()->show();
+                DiscordPopup::create(DataManager::getInstance().getDiscordPages())->show();
             }),
             nullptr
         )

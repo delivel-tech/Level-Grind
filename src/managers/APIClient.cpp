@@ -1357,25 +1357,27 @@ ReqAccessResponse APIClient::requestStaffAccessParse(web::WebResponse res) {
 }
 
 void APIClient::performGetToken() {
-    auto accountData = argon::getGameAccountData();
+    geode::queueInMainThread([] {
+        auto accountData = argon::getGameAccountData();
 
-    async::spawn([data = std::move(accountData)] -> arc::Future<> {
-            auto res = co_await argon::startAuth(data);
+        async::spawn([data = std::move(accountData)] -> arc::Future<> {
+                auto res = co_await argon::startAuth(data);
 
-            if (!res.ok()) {
-                geode::queueInMainThread([] {
-                    Notification::create("[Level Grind] Failed to get Argon token!")->show();
-                });
+                if (!res.ok()) {
+                    geode::queueInMainThread([] {
+                        Notification::create("[Level Grind] Failed to get Argon token!")->show();
+                    });
+                    co_return;
+                }
+
+                auto token = std::move(res).unwrap();
+                Mod::get()->setSavedValue("argon_token", token);
+                DataManager::getInstance().setUserToken(token);
+
                 co_return;
             }
-
-            auto token = std::move(res).unwrap();
-            Mod::get()->setSavedValue("argon_token", token);
-            DataManager::getInstance().setUserToken(token);
-
-            co_return;
-        }
-    );
+        );
+    });
 }
 
 }

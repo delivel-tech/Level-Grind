@@ -42,7 +42,7 @@ class $modify(CommentCell) {
 
         auto buildBadge = [usernameMenu](badgeInfo Info) {
             Build(CCMenuItemExt::createSpriteExtra(
-                Build(CCSprite::create(Info.spriteName.c_str())).scale(0.7f).collect(),
+                Build(CCSprite::create(Info.spriteName.c_str())).scale(0.75f).collect(),
                 std::move(Info.callback)
             ))
                 .parent(usernameMenu)

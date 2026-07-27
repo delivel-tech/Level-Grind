@@ -31,6 +31,10 @@ GrindPosition DataManager::getUserPosFromSaved() {
     return static_cast<GrindPosition>(Mod::get()->getSavedValue<int>("user-position"));
 }
 
+std::vector<DiscordPopup::DiscordPageInfo> DataManager::getDiscordPages() {
+    return discordPages;
+}
+
 void DataManager::setUserToken(const std::string& token) {
     userToken = token;
     Mod::get()->setSavedValue("user-token", token);
