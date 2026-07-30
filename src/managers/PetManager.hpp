@@ -3,6 +3,8 @@
 #include <Geode/Geode.hpp>
 #include "../utils/singleton.hpp"
 
+#include "SecurityManager.hpp"
+
 using namespace geode::prelude;
 
 namespace levelgrind {
@@ -46,47 +48,57 @@ public:
     PetStyle getStyleByLevel(int petLevel);
 
     int addStarsToPetStarsDelta(int value) {
-        auto mod = Mod::get();
-        int currStars = mod->getSavedValue<int>("pet-stars-delta");
-        mod->setSavedValue("pet-stars-delta", currStars += value);
-
-        return mod->getSavedValue<int>("pet-stars-delta"); // returning new value
+        int accountId = GJAccountManager::get()->m_accountID;
+        int curr = SecurityManager::getInstance().getEncryptedInt("pet-stars-delta", accountId);
+        curr += value;
+        SecurityManager::getInstance().setEncryptedInt("pet-stars-delta", curr, accountId);
+        return curr;
     }
 
     int removeStarsFromPetStarsDelta(int value) {
-        auto mod = Mod::get();
-        int currStars = mod->getSavedValue<int>("pet-stars-delta");
-        mod->setSavedValue("pet-stars-delta", currStars -= value);
-
-        return mod->getSavedValue<int>("pet-stars-delta"); // returning new value
+        int accountId = GJAccountManager::get()->m_accountID;
+        int curr = SecurityManager::getInstance().getEncryptedInt("pet-stars-delta", accountId);
+        curr -= value;
+        SecurityManager::getInstance().setEncryptedInt("pet-stars-delta", curr, accountId);
+        return curr;
     }
 
     int addMoonsToPetStarsDelta(int value) {
-        auto mod = Mod::get();
-        int currMoons = mod->getSavedValue<int>("pet-moons-delta");
-        mod->setSavedValue("pet-moons-delta", currMoons += value);
-
-        return mod->getSavedValue<int>("pet-moons-delta"); // returning new value
+        int accountId = GJAccountManager::get()->m_accountID;
+        int curr = SecurityManager::getInstance().getEncryptedInt("pet-moons-delta", accountId);
+        curr += value;
+        SecurityManager::getInstance().setEncryptedInt("pet-moons-delta", curr, accountId);
+        return curr;
     }
 
     int removeMoonsFromPetStarsDelta(int value) {
-        auto mod = Mod::get();
-        int currMoons = mod->getSavedValue<int>("pet-moons-delta");
-        mod->setSavedValue("pet-moons-delta", currMoons -= value);
-
-        return mod->getSavedValue<int>("pet-moons-delta"); // returning new value
+        int accountId = GJAccountManager::get()->m_accountID;
+        int curr = SecurityManager::getInstance().getEncryptedInt("pet-moons-delta", accountId);
+        curr -= value;
+        SecurityManager::getInstance().setEncryptedInt("pet-moons-delta", curr, accountId);
+        return curr;
     }
 
     int getPetStarsDelta() {
-        auto mod = Mod::get();
-
-        return mod->getSavedValue<int>("pet-stars-delta");
+        int accountId = GJAccountManager::get()->m_accountID;
+        return SecurityManager::getInstance().getEncryptedInt("pet-stars-delta", accountId);
     }
 
     int getPetMoonsDelta() {
-        auto mod = Mod::get();
+        int accountId = GJAccountManager::get()->m_accountID;
+        return SecurityManager::getInstance().getEncryptedInt("pet-moons-delta", accountId);
+    }
 
-        return mod->getSavedValue<int>("pet-moons-delta");
+    int resetPetStarsDelta() {
+        int accountId = GJAccountManager::get()->m_accountID;
+        SecurityManager::getInstance().setEncryptedInt("pet-stars-delta", 0, accountId);
+        return 0;
+    }
+
+    int resetPetMoonsDelta() {
+        int accountId = GJAccountManager::get()->m_accountID;
+        SecurityManager::getInstance().setEncryptedInt("pet-moons-delta", 0, accountId);
+        return 0;
     }
 
     void updatePetDeltasOnCompletion(int stars, int moons) {
@@ -103,20 +115,6 @@ public:
             return true;
         }
         return false;
-    }
-
-    int resetPetStarsDelta() {
-        auto mod = Mod::get();
-
-        mod->setSavedValue("pet-stars-delta", 0);
-        return getPetStarsDelta();
-    }
-
-    int resetPetMoonsDelta() {
-        auto mod = Mod::get();
-
-        mod->setSavedValue("pet-moons-delta", 0);
-        return getPetMoonsDelta();
     }
 
     void resetPetDeltas() {

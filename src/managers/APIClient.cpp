@@ -16,10 +16,80 @@
 
 #include "DataManager.hpp"
 #include "PetManager.hpp"
+#include "SecurityManager.hpp"
 
 using namespace geode::prelude;
 
 namespace levelgrind {
+
+namespace {
+
+web::WebRequest buildEncryptedClanRequest(matjson::Value const& body, int accountId) {
+    web::WebRequest req;
+
+    matjson::Value wrapper;
+    wrapper["accountId"] = accountId;
+    wrapper["payload"] = SecurityManager::getInstance().buildEncryptedPayload(body, accountId);
+
+    req.bodyJSON(wrapper);
+    return req;
+}
+
+LGClanData parseLGClanData(matjson::Value const& val) {
+    LGClanData c;
+    c.m_clanID = val["clanID"].asInt().unwrapOrDefault();
+    c.m_ownerAccountID = val["ownerAccountID"].asInt().unwrapOrDefault();
+    c.m_clanName = val["clanName"].asString().unwrapOrDefault();
+    c.m_clanDescription = val["clanDescription"].asString().unwrapOrDefault();
+    c.m_clanType = static_cast<LGClanType>(val["clanType"].asInt().unwrapOrDefault());
+    c.m_clanRating = static_cast<LGClanRating>(val["clanRating"].asInt().unwrapOrDefault());
+
+    auto visuals = val["clanVisuals"];
+    c.m_clanVisuals.m_colorID = visuals["colorID"].asInt().unwrapOrDefault();
+
+    auto progression = val["clanProgression"];
+    c.m_clanProgression.m_clanLevel = progression["clanLevel"].asInt().unwrapOrDefault();
+    c.m_clanProgression.m_clanStats = progression["clanStats"].asInt().unwrapOrDefault();
+
+    c.m_maxMembers = val["maxMembers"].asInt().unwrapOrDefault();
+    c.m_membersAmount = val["membersAmount"].asInt().unwrapOrDefault();
+    c.m_clanJoinType = static_cast<LGClanJoinType>(val["clanJoinType"].asInt().unwrapOrDefault());
+    c.m_statRequirementForRequest = val["statRequirementForRequest"].asInt().unwrapOrDefault();
+
+    auto parseGoal = [](matjson::Value const& g) {
+        LGClanStatGoal goal;
+        goal.m_statGoal = g["statGoal"].asInt().unwrapOrDefault();
+        goal.m_statGoalCompleted = g["statGoalCompleted"].asBool().unwrapOrDefault();
+        return goal;
+    };
+    c.m_dailyStatGoal = parseGoal(val["dailyStatGoal"]);
+    c.m_weeklyStatGoal = parseGoal(val["weeklyStatGoal"]);
+    c.m_monthlyStatGoal = parseGoal(val["monthlyStatGoal"]);
+
+    return c;
+}
+
+LGClanMember parseLGClanMember(matjson::Value const& val) {
+    LGClanMember m;
+    m.m_accountID = val["accountID"].asInt().unwrapOrDefault();
+    m.m_username = val["username"].asString().unwrapOrDefault();
+    m.m_role = static_cast<LGClanRole>(val["role"].asInt().unwrapOrDefault());
+    m.m_stats = val["stats"].asInt().unwrapOrDefault();
+    return m;
+}
+
+ClanDataResponse parseClanDataResponseJson(matjson::Value const& json) {
+    ClanDataResponse ret;
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    if (!ret.ok) {
+        ret.error = json["error"].asString().unwrapOrDefault();
+        return ret;
+    }
+    ret.clan = parseLGClanData(json["clan"]);
+    return ret;
+}
+
+}
 
 GetLevelsBody APIClient::makeGetLevelsBody(
     std::vector<int> difficulties,
@@ -45,24 +115,31 @@ GetLevelsBody APIClient::makeGetLevelsBody(
 
 web::WebFuture APIClient::syncPet() {
     auto req = web::WebRequest();
-    matjson::Value body;
 
-    body["accountId"] = GJAccountManager::get()->m_accountID;
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
     body["username"] = GJAccountManager::get()->m_username.c_str();
     body["token"] = DataManager::getInstance().getUserToken();
 
     if (PetManager::getInstance().shouldUpdatePetStars()) {
-        body["shouldUpdateStars"] = PetManager::getInstance().shouldUpdatePetStars();
-		body["starsDelta"] = PetManager::getInstance().getPetStarsDelta();
+        body["shouldUpdateStars"] = true;
+        body["starsDelta"] = PetManager::getInstance().getPetStarsDelta();
     }
 
     if (PetManager::getInstance().shouldUpdatePetMoons()) {
-		body["shouldUpdateMoons"] = PetManager::getInstance().shouldUpdatePetMoons();
-		body["moonsDelta"] = PetManager::getInstance().getPetMoonsDelta();
-	}
-	req.bodyJSON(body);
+        body["shouldUpdateMoons"] = true;
+        body["moonsDelta"] = PetManager::getInstance().getPetMoonsDelta();
+    }
 
-    return req.post(fmt::format("{}{}", baseUrl, "/get_create_pet"));
+    matjson::Value wrapper;
+    wrapper["accountId"] = accountId;
+    wrapper["payload"] = SecurityManager::getInstance().buildEncryptedPayload(body, accountId);
+
+    req.bodyJSON(wrapper);
+
+    return req.post(fmt::format("{}{}", baseUrl, "/sync_pet"));
 }
 
 web::WebFuture APIClient::health() {
@@ -1353,6 +1430,488 @@ ReqAccessResponse APIClient::requestStaffAccessParse(web::WebResponse res) {
     auto json = jsonRes.unwrap();
     ret.ok = true;
     ret.pos = json["pos"].asInt().unwrapOrDefault();
+    return ret;
+}
+
+// ---- Clans ----
+
+web::WebFuture APIClient::viewClans(bool shouldUpdateStars, int starsDelta, bool shouldUpdateMoons, int moonsDelta, int page, int limit) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["username"] = GJAccountManager::get()->m_username.c_str();
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["shouldUpdateStars"] = shouldUpdateStars;
+    body["starsDelta"] = starsDelta;
+    body["shouldUpdateMoons"] = shouldUpdateMoons;
+    body["moonsDelta"] = moonsDelta;
+    body["page"] = page;
+    body["limit"] = limit;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/view_clans"));
+}
+
+ViewClansResponse APIClient::viewClansParse(web::WebResponse res) {
+    ViewClansResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    if (!ret.ok) return ret;
+
+    ret.petStars = json["petStars"].asInt().unwrapOrDefault();
+    ret.petMoons = json["petMoons"].asInt().unwrapOrDefault();
+    ret.myClanID = json["myClanID"].asInt().unwrapOrDefault();
+
+    auto clansArr = json["clans"].asArray();
+    if (clansArr) {
+        for (auto const& val : clansArr.unwrap()) {
+            ret.clans.push_back(parseLGClanData(val));
+        }
+    }
+
+    return ret;
+}
+
+web::WebFuture APIClient::getClan(int clanID) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/get_clan"));
+}
+
+GetClanResponse APIClient::getClanParse(web::WebResponse res) {
+    GetClanResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    if (!ret.ok) return ret;
+
+    auto clanJson = json["clan"];
+    ret.clan.m_data = parseLGClanData(clanJson["data"]);
+
+    auto membersArr = clanJson["members"].asArray();
+    if (membersArr) {
+        for (auto const& val : membersArr.unwrap()) {
+            ret.clan.m_members.push_back(parseLGClanMember(val));
+        }
+    }
+
+    if (clanJson.contains("joinRequests")) {
+        ret.canManage = true;
+
+        auto reqArr = clanJson["joinRequests"].asArray();
+        if (reqArr) {
+            for (auto const& val : reqArr.unwrap()) {
+                ClanJoinRequestInfo info;
+                info.m_accountID = val["accountID"].asInt().unwrapOrDefault();
+                info.m_username = val["username"].asString().unwrapOrDefault();
+                ret.joinRequests.push_back(info);
+            }
+        }
+
+        auto invArr = clanJson["invites"].asArray();
+        if (invArr) {
+            for (auto const& val : invArr.unwrap()) {
+                ClanInviteInfo info;
+                info.m_accountID = val["accountID"].asInt().unwrapOrDefault();
+                info.m_username = val["username"].asString().unwrapOrDefault();
+                info.m_invitedBy = val["invitedBy"].asInt().unwrapOrDefault();
+                ret.invites.push_back(info);
+            }
+        }
+    }
+
+    return ret;
+}
+
+web::WebFuture APIClient::createClan(std::string name, std::string description, LGClanType type, int colorID, LGClanJoinType joinType, int statRequirement) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["username"] = GJAccountManager::get()->m_username.c_str();
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanName"] = name;
+    body["clanDescription"] = description;
+    body["clanType"] = static_cast<int>(type);
+    body["colorID"] = colorID;
+    body["clanJoinType"] = static_cast<int>(joinType);
+    body["statRequirementForRequest"] = statRequirement;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/create_clan"));
+}
+
+ClanDataResponse APIClient::createClanParse(web::WebResponse res) {
+    ClanDataResponse ret;
+
+    if (!res.ok()) {
+        ret.error = "Failed! Try again later.";
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        ret.error = "Failed! Try again later.";
+        return ret;
+    }
+
+    return parseClanDataResponseJson(jsonRes.unwrap());
+}
+
+web::WebFuture APIClient::editClan(int clanID, std::string name, std::string description, int colorID, LGClanJoinType joinType, int statRequirement) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["clanName"] = name;
+    body["clanDescription"] = description;
+    body["colorID"] = colorID;
+    body["clanJoinType"] = static_cast<int>(joinType);
+    body["statRequirementForRequest"] = statRequirement;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/edit_clan"));
+}
+
+ClanDataResponse APIClient::editClanParse(web::WebResponse res) {
+    ClanDataResponse ret;
+
+    if (!res.ok()) {
+        ret.error = "Failed! Try again later.";
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        ret.error = "Failed! Try again later.";
+        return ret;
+    }
+
+    return parseClanDataResponseJson(jsonRes.unwrap());
+}
+
+web::WebFuture APIClient::joinClan(int clanID) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["username"] = GJAccountManager::get()->m_username.c_str();
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/join_clan"));
+}
+
+web::WebFuture APIClient::requestJoinClan(int clanID) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["username"] = GJAccountManager::get()->m_username.c_str();
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/request_join_clan"));
+}
+
+ClanActionResponse APIClient::clanActionParse(web::WebResponse res) {
+    ClanActionResponse ret;
+
+    if (!res.ok()) {
+        ret.error = "Failed! Try again later.";
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        ret.error = "Failed! Try again later.";
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    if (!ret.ok) {
+        ret.error = json["error"].asString().unwrapOrDefault();
+    }
+    if (json.contains("clanDisbanded")) {
+        ret.disbanded = json["clanDisbanded"].asBool().unwrapOrDefault();
+    }
+
+    return ret;
+}
+
+web::WebFuture APIClient::respondJoinRequest(int clanID, int targetAccountID, bool accept) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["targetAccountId"] = targetAccountID;
+    body["accept"] = accept;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/respond_join_request"));
+}
+
+web::WebFuture APIClient::inviteToClan(int clanID, int targetAccountID, std::string targetUsername) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["targetAccountId"] = targetAccountID;
+    body["targetUsername"] = targetUsername;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/invite_to_clan"));
+}
+
+web::WebFuture APIClient::getMyClanInvites() {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/get_my_clan_invites"));
+}
+
+GetMyClanInvitesResponse APIClient::getMyClanInvitesParse(web::WebResponse res) {
+    GetMyClanInvitesResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    if (!ret.ok) return ret;
+
+    auto arr = json["invites"].asArray();
+    if (arr) {
+        for (auto const& val : arr.unwrap()) {
+            MyClanInviteInfo info;
+            info.m_clanID = val["clanID"].asInt().unwrapOrDefault();
+            info.m_clanName = val["clanName"].asString().unwrapOrDefault();
+            info.m_invitedBy = val["invitedBy"].asInt().unwrapOrDefault();
+            ret.invites.push_back(info);
+        }
+    }
+
+    return ret;
+}
+
+web::WebFuture APIClient::respondClanInvite(int clanID, bool accept) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["username"] = GJAccountManager::get()->m_username.c_str();
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["accept"] = accept;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/respond_clan_invite"));
+}
+
+web::WebFuture APIClient::setClanRating(int clanID, LGClanRating rating) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["rating"] = static_cast<int>(rating);
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/set_clan_rating"));
+}
+
+web::WebFuture APIClient::leaveClan() {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/leave_clan"));
+}
+
+web::WebFuture APIClient::transferLeadership(int clanID, int targetAccountID) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["targetAccountId"] = targetAccountID;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/transfer_leadership"));
+}
+
+web::WebFuture APIClient::kickClanMember(int clanID, int targetAccountID) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["targetAccountId"] = targetAccountID;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/kick_clan_member"));
+}
+
+web::WebFuture APIClient::setClanMemberRole(int clanID, int targetAccountID, LGClanRole role) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["targetAccountId"] = targetAccountID;
+    body["role"] = static_cast<int>(role);
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/set_clan_member_role"));
+}
+
+web::WebFuture APIClient::disbandClan(int clanID) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/disband_clan"));
+}
+
+web::WebFuture APIClient::sendClanMessage(int clanID, std::string message) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["username"] = GJAccountManager::get()->m_username.c_str();
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["message"] = message;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/send_clan_message"));
+}
+
+web::WebFuture APIClient::getClanMessages(int clanID) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/get_clan_messages"));
+}
+
+GetClanMessagesResponse APIClient::getClanMessagesParse(web::WebResponse res) {
+    GetClanMessagesResponse ret;
+
+    if (!res.ok()) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        log::error("bad web req, code: {}", res.code());
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    if (!ret.ok) return ret;
+
+    auto arr = json["messages"].asArray();
+    if (arr) {
+        for (auto const& val : arr.unwrap()) {
+            ClanMessageInfo m;
+            m.m_accountID = val["accountID"].asInt().unwrapOrDefault();
+            m.m_username = val["username"].asString().unwrapOrDefault();
+            m.m_message = val["message"].asString().unwrapOrDefault();
+            m.m_createdAt = val["createdAt"].asString().unwrapOrDefault();
+            ret.messages.push_back(m);
+        }
+    }
+
+    return ret;
+}
+
+web::WebFuture APIClient::claimClanGoal(int clanID, int goalType) {
+    int accountId = GJAccountManager::get()->m_accountID;
+
+    matjson::Value body;
+    body["accountId"] = accountId;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["clanId"] = clanID;
+    body["goalType"] = goalType;
+
+    return buildEncryptedClanRequest(body, accountId).post(fmt::format("{}{}", baseUrl, "/claim_clan_goal"));
+}
+
+ClaimClanGoalResponse APIClient::claimClanGoalParse(web::WebResponse res) {
+    ClaimClanGoalResponse ret;
+
+    if (!res.ok()) {
+        ret.error = "Failed! Try again later.";
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        ret.error = "Failed! Try again later.";
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOrDefault();
+    if (!ret.ok) {
+        ret.error = json["error"].asString().unwrapOrDefault();
+        return ret;
+    }
+
+    ret.rewardStars = json["rewardStars"].asInt().unwrapOrDefault();
+    ret.rewardMoons = json["rewardMoons"].asInt().unwrapOrDefault();
+
     return ret;
 }
 

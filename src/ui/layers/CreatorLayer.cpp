@@ -29,6 +29,7 @@
 #include "SettingsLayer.hpp"
 #include "PetLayer.hpp"
 #include "../../managers/PetManager.hpp"
+#include "ClanViewerLayer.hpp"
 
 namespace levelgrind {
 
@@ -65,57 +66,26 @@ bool CreatorLayer::init() {
         false
     );
 
-    // cat - category
-    // petCat lol
+    setupCategoryMenu();
 
-    auto catMenu = Build(CCMenu::create())
-        .pos(
-            centerX(), centerY() - 10
-        )
-        .scale(0.8f)
-        .contentSize({
-            400, 240
-        })
-        .layout(RowLayout::create()->setGap(10)->setGrowCrossAxis(true)->setCrossAxisOverflow(false))
-        .parent(this)
-        .collect();
+    return true;
+}
 
-    auto searchCat = Build(CCSprite::create("search_cat.png"_spr))
-        .intoMenuItem([] {
-            MainLayer::create()->open();
-        })
-        .parent(catMenu)
-        .id("search-cat")
-        .collect();
-
-    auto packsCat = Build(CCSprite::create("packs_cat.png"_spr))
-        .intoMenuItem([] {
-            GrindPacksLayer::create()->open();
-        })
-        .parent(catMenu)
-        .id("packs-cat")
-        .collect();
-
-    auto weeklyAchCat = Build(CCSprite::create("weekly_ach_cat.png"_spr))
-        .intoMenuItem([] {
-            WeeklyAchievementPopup::create()->show();
-        })
-        .parent(catMenu)
-        .id("weekly-ach-cat")
-        .collect();
-
+CCSprite* CreatorLayer::buildPetCategorySprite() {
     auto petCatSpr = CCSprite::create("pet_cat.png"_spr);
-    auto topPetSpr = []() {
-		if (Mod::get()->getSavedValue<int>("last-pet-lvl") < 1 || Mod::get()->getSavedValue<int>("last-pet-lvl") > 30) {
-			auto spr =  PetManager::getInstance().getPetSprByStyle(PetManager::PetStyle::StandardCube);
-			return spr;
-		} else {
-			auto spr = PetManager::getInstance().getPetSprByStyle(PetManager::getInstance().getStyleByLevel(Mod::get()->getSavedValue<int>("last-pet-lvl")));
-			return spr;
-		}
-	};
-	auto top = topPetSpr();
-    
+
+    auto topPetSpr = []() -> CCSprite* {
+        int lvl = Mod::get()->getSavedValue<int>("last-pet-lvl");
+        if (lvl < 1 || lvl > 30) {
+            return PetManager::getInstance().getPetSprByStyle(PetManager::PetStyle::StandardCube);
+        } else {
+            return PetManager::getInstance().getPetSprByStyle(
+                PetManager::getInstance().getStyleByLevel(lvl)
+            );
+        }
+    };
+
+    auto top = topPetSpr();
     top->setScale(0.5f);
 
     auto pulseSeq = CCSequence::create(
@@ -125,7 +95,6 @@ bool CreatorLayer::init() {
     top->runAction(CCRepeatForever::create(pulseSeq));
 
     #ifndef GEODE_IS_IOS
-
     auto particles = CCParticleGalaxy::create();
     particles->setLife(0.8f);
     petCatSpr->addChild(particles);
@@ -133,7 +102,6 @@ bool CreatorLayer::init() {
         petCatSpr->getContentWidth() / 2,
         petCatSpr->getContentHeight() / 2 + 8
     });
-
     #endif
 
     petCatSpr->addChild(top);
@@ -142,58 +110,180 @@ bool CreatorLayer::init() {
         petCatSpr->getContentHeight() / 2 + 8
     });
 
+    return petCatSpr;
+}
+
+void CreatorLayer::buildCategoryList() {
+    m_categories.clear();
+
+    m_categories.push_back({
+        [] { return CCSprite::create("search_cat.png"_spr); },
+        [] { MainLayer::create()->open(); },
+        "search-cat"
+    });
+
+    m_categories.push_back({
+        [] { return CCSprite::create("packs_cat.png"_spr); },
+        [] { GrindPacksLayer::create()->open(); },
+        "packs-cat"
+    });
+
+    m_categories.push_back({
+        .spriteBuilder = [] { return CCSprite::create("search_cat.png"_spr); },
+        .callback = [] { ClanViewerLayer::create()->open(); }, 
+        .id = "clans-cat"
+    });
+
+    m_categories.push_back({
+        [] { return CCSprite::create("weekly_ach_cat.png"_spr); },
+        [] { WeeklyAchievementPopup::create()->show(); },
+        "weekly-ach-cat"
+    });
+
     if (!Mod::get()->getSavedValue<bool>("disable-pet")) {
-        auto petCat = Build(petCatSpr)
-            .intoMenuItem([] {
-                PetLayer::create()->open();
-            })
-            .parent(catMenu)
-            .id("pet-cat")
+        m_categories.push_back({
+            [this] { return buildPetCategorySprite(); },
+            [] { PetLayer::create()->open(); },
+            "pet-cat"
+        });
+    }
+
+    m_categories.push_back({
+        [] { return CCSprite::create("daily_cat.png"_spr); },
+        [] { EventPopup::create(EventType::Daily)->show(); },
+        "daily-cat"
+    });
+
+    m_categories.push_back({
+        [] { return CCSprite::create("weekly_cat.png"_spr); },
+        [] { EventPopup::create(EventType::Weekly)->show(); },
+        "weekly-cat"
+    });
+
+    m_categories.push_back({
+        [] { return CCSprite::create("monthly_cat.png"_spr); },
+        [] { EventPopup::create(EventType::Monthly)->show(); },
+        "monthly-cat"
+    });
+
+    m_categories.push_back({
+        [] { return CCSprite::create("helper_suggestions_cat.png"_spr); },
+        [] { SuggestionsLayer::create()->open(); },
+        "helper-suggestions-cat"
+    });
+
+    // new cats here
+}
+
+int CreatorLayer::getCategoryPageCount() {
+    if (m_categories.empty()) return 1;
+    return (int)((m_categories.size() + CATS_PER_PAGE - 1) / CATS_PER_PAGE);
+}
+
+void CreatorLayer::setupCategoryMenu() {
+    buildCategoryList();
+
+    m_catMenu = Build(CCMenu::create())
+        .pos(centerX(), centerY() - 10)
+        .scale(0.8f)
+        .contentSize({400, 240})
+        .layout(RowLayout::create()->setGap(10)->setGrowCrossAxis(true)->setCrossAxisOverflow(false))
+        .id("cat-menu")
+        .parent(this)
+        .collect();
+
+    m_catArrowMenu = Build(CCMenu::create())
+        .pos(centerX(), centerY() - 10 - 115.f)
+        .id("cat-arrow-menu")
+        .parent(this)
+        .collect();
+
+    m_catArrowLeft = Build(CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png"))
+        .scale(0.6f)
+        .intoMenuItem([this] { turnCategoryPage(-1); })
+        .id("cat-arrow-left")
+        .pos({-35.f, 0.f})
+        .parent(m_catArrowMenu)
+        .collect();
+
+    m_catArrowRight = Build(CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png"))
+        .scale(0.6f)
+        .flipX(true)
+        .intoMenuItem([this] { turnCategoryPage(1); })
+        .id("cat-arrow-right")
+        .pos({35.f, 0.f})
+        .parent(m_catArrowMenu)
+        .collect();
+
+    m_catPageLabel = Build(CCLabelBMFont::create("", "chatFont.fnt"))
+        .scale(0.5f)
+        .opacity(150)
+        .pos({0.f, 0.f})
+        .parent(m_catArrowMenu)
+        .id("cat-page-label")
+        .collect();
+
+    updateCategoryPage();
+}
+
+void CreatorLayer::updateCategoryPage() {
+    if (!m_catMenu) return;
+
+    int totalPages = getCategoryPageCount();
+    if (m_catPage >= totalPages) m_catPage = std::max(0, totalPages - 1);
+    if (m_catPage < 0) m_catPage = 0;
+
+    m_catMenu->removeAllChildrenWithCleanup(true);
+
+    int startIdx = m_catPage * CATS_PER_PAGE;
+    int endIdx = std::min((int)m_categories.size(), startIdx + CATS_PER_PAGE);
+
+    for (int i = startIdx; i < endIdx; i++) {
+        auto& entry = m_categories[i];
+        auto spr = entry.spriteBuilder();
+
+        auto item = Build(spr)
+            .intoMenuItem(entry.callback)
+            .id(entry.id)
+            .parent(m_catMenu)
             .collect();
+
+        item->m_scaleMultiplier = 1.1f;
     }
 
-    auto dailyCat = Build(CCSprite::create("daily_cat.png"_spr))
-        .intoMenuItem([] {
-            EventPopup::create(EventType::Daily)->show();
-        })
-        .parent(catMenu)
-        .id("daily-cat")
-        .collect();
+    m_catMenu->updateLayout();
 
-    auto weeklyCat = Build(CCSprite::create("weekly_cat.png"_spr))
-        .intoMenuItem([] {
-            EventPopup::create(EventType::Weekly)->show();
-        })
-        .parent(catMenu)
-        .id("weekly-cat")
-        .collect();
+    bool multiplePages = totalPages > 1;
 
-    auto monthlyCat = Build(CCSprite::create("monthly_cat.png"_spr))
-        .intoMenuItem([] {
-            EventPopup::create(EventType::Monthly)->show();
-        })
-        .parent(catMenu)
-        .id("monthly-cat")
-        .collect();
-
-    auto helperSuggestionsCat = Build(CCSprite::create("helper_suggestions_cat.png"_spr))
-        .intoMenuItem([] {
-            SuggestionsLayer::create()->open();
-        })
-        .parent(catMenu)
-        .id("helper-suggestions-cat")
-        .collect();
-
-    // making scale mult for all category buttons smaller
-
-    for (const auto& obj : CCArrayExt(catMenu->m_pChildren)) {
-        CCMenuItemSpriteExtra* currentCat = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
-        currentCat->m_scaleMultiplier = 1.1f;
+    if (m_catPageLabel) {
+        m_catPageLabel->setString(
+            fmt::format("Page {} of {}", m_catPage + 1, totalPages).c_str()
+        );
+        m_catPageLabel->setVisible(multiplePages);
     }
 
-    catMenu->updateLayout();
+    if (m_catArrowLeft) {
+        bool canGoLeft = m_catPage > 0;
+        m_catArrowLeft->setEnabled(canGoLeft);
+        m_catArrowLeft->setColor(canGoLeft ? ccc3(255, 255, 255) : ccc3(100, 100, 100));
+        m_catArrowLeft->setVisible(multiplePages);
+    }
 
-    return true;
+    if (m_catArrowRight) {
+        bool canGoRight = m_catPage < totalPages - 1;
+        m_catArrowRight->setEnabled(canGoRight);
+        m_catArrowRight->setColor(canGoRight ? ccc3(255, 255, 255) : ccc3(100, 100, 100));
+        m_catArrowRight->setVisible(multiplePages);
+    }
+}
+
+void CreatorLayer::turnCategoryPage(int dir) {
+    int totalPages = getCategoryPageCount();
+    int newPage = m_catPage + dir;
+    if (newPage < 0 || newPage >= totalPages) return;
+
+    m_catPage = newPage;
+    updateCategoryPage();
 }
 
 bool CreatorLayer::initFarMenus() {

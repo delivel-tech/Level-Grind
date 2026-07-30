@@ -10,10 +10,6 @@
 
 #include <Geode/Enums.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
-#include <Geode/binding/GJGameLevel.hpp>
-#include <Geode/binding/GJSearchObject.hpp>
-#include <Geode/binding/GameLevelManager.hpp>
-#include <Geode/binding/LevelCell.hpp>
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
 #include "../../managers/APIClient.hpp"
@@ -47,41 +43,6 @@ static std::string formatTime(float seconds) {
     char buf[32];
     sprintf(buf, "%02ld:%02ld:%02ld:%02ld", d, h, m, s);
     return buf;
-}
-
-static void fixCell(LevelCell* cell) {
-    if (!cell || !cell->m_mainMenu) return;
-    cell->m_mainMenu->setPosition({0, 0});
-    auto viewButton    = cell->m_mainMenu->getChildByID("view-button");
-    auto creatorButton = cell->m_mainMenu->getChildByID("creator-name");
-    if (creatorButton) {
-        creatorButton->setPosition({50, 65});
-        creatorButton->setAnchorPoint({0.f, 0.5f});
-    }
-    if (viewButton) {
-        if (auto castedViewBtn = typeinfo_cast<CCMenuItemSpriteExtra*>(viewButton)) {
-            auto spr = CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png");
-            spr->setScale(0.7f);
-            castedViewBtn->setSprite(spr);
-        }
-        viewButton->setPosition({
-            cell->getContentSize().width - 40,
-            cell->getContentSize().height / 2.f
-        });
-    }
-
-    std::vector<std::string> ids {
-        "length-icon", "downloads-icon", "likes-icon", "length-label", "downloads-label", "likes-label",
-        "orbs-icon", "orbs-label"
-    };
-
-    for (const auto& id : ids) {
-        if (auto element = cell->m_mainLayer->getChildByID(id)) {
-            element->setPositionY(
-                element->getPositionY() + 12.f
-            );
-        }
-    }
 }
 
 bool EventPopup::init(EventType type) {
@@ -167,17 +128,15 @@ bool EventPopup::init(EventType type) {
         .zOrder(1)
         .collect();
 
-    m_classicCell = LevelCell::create(380, 116);
-    m_classicCell->setPosition({20, 65});
+    m_classicCell = EventLevelCell::create();
+    m_classicCell->setPosition({30, 68});
     m_classicCell->setScale(0.95f);
-    m_classicCell->setContentSize({380, 116});
     m_classicCell->setID("classic-cell");
     m_mainLayer->addChild(m_classicCell);
 
-    m_platCell = LevelCell::create(380, 116);
-    m_platCell->setPosition({20, 65});
+    m_platCell = EventLevelCell::create();
+    m_platCell->setPosition({30, 68});
     m_platCell->setScale(0.95f);
-    m_platCell->setContentSize({380, 116});
     m_platCell->setID("plat-cell");
     m_mainLayer->addChild(m_platCell);
 
@@ -303,40 +262,13 @@ bool EventPopup::init(EventType type) {
 
             self->m_secondsLeft = parsed.classicEvent.secondsLeft;
 
-            auto glm = GameLevelManager::sharedState();
-            if (!glm) return;
-
-            if (parsed.classicEvent.levelId > 0 && parsed.platEvent.levelId > 0) {
-                auto searchObj = GJSearchObject::create(
-                    SearchType::Type19,
-                    fmt::format("{},{}", parsed.classicEvent.levelId, parsed.platEvent.levelId)
-                );
-                auto key = std::string(searchObj->getKey());
-                auto stored = glm->getStoredOnlineLevels(key.c_str());
-
-                if (stored && stored->count() > 1) {
-                    for (unsigned int i = 0; i < stored->count(); i++) {
-                        auto lvl = static_cast<GJGameLevel*>(stored->objectAtIndex(i));
-                        if (!lvl) continue;
-                        
-                        if (lvl->m_levelID == parsed.classicEvent.levelId && self->m_classicCell) {
-                            self->m_classicCell->loadFromLevel(lvl);
-                            fixCell(self->m_classicCell);
-                            if (self->m_spinner) self->m_spinner->setVisible(false);
-                        }
-                        if (lvl->m_levelID == parsed.platEvent.levelId && self->m_platCell) {
-                            self->m_platCell->loadFromLevel(lvl);
-                            fixCell(self->m_platCell);
-                            if (self->m_spinner) self->m_spinner->setVisible(false);
-                        }
-                    }
-                } else {
-                    self->m_pendingKey = key;
-                    self->m_pendingClassicId = parsed.classicEvent.levelId;
-                    self->m_pendingPlatId = parsed.platEvent.levelId;
-                    glm->getOnlineLevels(searchObj);
-                }
+            if (parsed.classicEvent.levelId > 0 && self->m_classicCell) {
+                self->m_classicCell->loadLevel(parsed.classicEvent.levelId);
             }
+            if (parsed.platEvent.levelId > 0 && self->m_platCell) {
+                self->m_platCell->loadLevel(parsed.platEvent.levelId);
+            }
+            if (self->m_spinner) self->m_spinner->setVisible(false);
         }
     );
 
@@ -344,43 +276,10 @@ bool EventPopup::init(EventType type) {
 }
 
 void EventPopup::update(float dt) {
-    if (auto id = getChildByIDRecursive("cvolton.betterinfo/level-id-label")) id->removeFromParent();
-    if (auto id = getChildByIDRecursive("cdc.level_thumbnails/separator")) id->removeFromParent();
-    if (auto id = getChildByIDRecursive("cdc.level_thumbnails/clipping-node")) id->removeFromParent();
     if (m_secondsLeft > 0) m_secondsLeft -= dt;
 
     std::string prefix = "Resets in: ";
     if (m_timer) m_timer->setString((prefix + formatTime(m_secondsLeft)).c_str());
-
-    if (m_pendingKey.empty()) return;
-
-    auto glm = GameLevelManager::sharedState();
-    if (!glm) return;
-
-    auto stored = glm->getStoredOnlineLevels(m_pendingKey.c_str());
-    if (!stored || stored->count() == 0) return;
-
-    for (unsigned int i = 0; i < stored->count(); i++) {
-        auto lvl = static_cast<GJGameLevel*>(stored->objectAtIndex(i));
-        if (!lvl) continue;
-
-        if (m_pendingClassicId != -1 && lvl->m_levelID == m_pendingClassicId && m_classicCell) {
-            m_classicCell->loadFromLevel(lvl);
-            fixCell(m_classicCell);
-            if (m_spinner) m_spinner->setVisible(false);
-            m_pendingClassicId = -1;
-        }
-
-        if (m_pendingPlatId != -1 && lvl->m_levelID == m_pendingPlatId && m_platCell) {
-            m_platCell->loadFromLevel(lvl);
-            fixCell(m_platCell);
-            if (m_spinner) m_spinner->setVisible(false);
-            m_pendingPlatId = -1;
-        }
-    }
-
-    if (m_pendingClassicId == -1 && m_pendingPlatId == -1)
-        m_pendingKey.clear();
 }
 
 }

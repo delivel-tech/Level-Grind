@@ -1,12 +1,13 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include <cue/ListNode.hpp>
+#include "../BasePopup.hpp"
 
 using namespace geode::prelude;
 
 namespace levelgrind {
 
-class CreditsPopup : public Popup {
+class CreditsPopup : public BasePopup {
 public:
     static CreditsPopup* create();
 

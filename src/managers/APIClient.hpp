@@ -105,6 +105,49 @@ public:
 
     web::WebFuture syncPet();
 
+    // ---- Clans ----
+
+    web::WebFuture viewClans(bool shouldUpdateStars, int starsDelta, bool shouldUpdateMoons, int moonsDelta, int page = 1, int limit = 50);
+    ViewClansResponse viewClansParse(web::WebResponse res);
+
+    web::WebFuture getClan(int clanID);
+    GetClanResponse getClanParse(web::WebResponse res);
+
+    web::WebFuture createClan(std::string name, std::string description, LGClanType type, int colorID, LGClanJoinType joinType, int statRequirement);
+    ClanDataResponse createClanParse(web::WebResponse res);
+
+    web::WebFuture editClan(int clanID, std::string name, std::string description, int colorID, LGClanJoinType joinType, int statRequirement);
+    ClanDataResponse editClanParse(web::WebResponse res);
+
+    web::WebFuture joinClan(int clanID);
+    web::WebFuture requestJoinClan(int clanID);
+    ClanActionResponse clanActionParse(web::WebResponse res);
+
+    web::WebFuture respondJoinRequest(int clanID, int targetAccountID, bool accept);
+
+    web::WebFuture inviteToClan(int clanID, int targetAccountID, std::string targetUsername);
+
+    web::WebFuture getMyClanInvites();
+    GetMyClanInvitesResponse getMyClanInvitesParse(web::WebResponse res);
+
+    web::WebFuture respondClanInvite(int clanID, bool accept);
+
+    web::WebFuture setClanRating(int clanID, LGClanRating rating);
+
+    web::WebFuture leaveClan();
+    web::WebFuture transferLeadership(int clanID, int targetAccountID);
+    web::WebFuture kickClanMember(int clanID, int targetAccountID);
+    web::WebFuture setClanMemberRole(int clanID, int targetAccountID, LGClanRole role);
+    web::WebFuture disbandClan(int clanID);
+
+    web::WebFuture sendClanMessage(int clanID, std::string message);
+
+    web::WebFuture getClanMessages(int clanID);
+    GetClanMessagesResponse getClanMessagesParse(web::WebResponse res);
+
+    web::WebFuture claimClanGoal(int clanID, int goalType);
+    ClaimClanGoalResponse claimClanGoalParse(web::WebResponse res);
+
     web::WebFuture health();
     bool healthParse(web::WebResponse res);
 

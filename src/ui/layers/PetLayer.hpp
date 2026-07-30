@@ -29,6 +29,8 @@ private:
     CCLabelBMFont* m_petLabel = nullptr;
 
     TaskHolder<web::WebResponse> m_listener;
+
+    ~PetLayer() {m_listener.cancel();}
 };
 
 }

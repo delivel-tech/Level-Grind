@@ -273,7 +273,7 @@ CreditsPopup* CreditsPopup::create() {
 }
 
 bool CreditsPopup::init() {
-    if (!Popup::init(380.f, 260.f)) return false;
+    if (!BasePopup::init(380.f, 260.f)) return false;
 
     this->setTitle("Level Grind Credits");
 
