@@ -1017,7 +1017,7 @@ ChangePointResponse APIClient::changePointParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold) {
+web::WebFuture APIClient::syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold) {
     auto req = web::WebRequest();
     req.timeout(std::chrono::seconds{30});
     matjson::Value reqBody;
@@ -1027,6 +1027,7 @@ web::WebFuture APIClient::syncLevels(int addThreshold, int deleteThreshold, int 
     reqBody["addThreshold"] = addThreshold;
     reqBody["deleteThreshold"] = deleteThreshold;
     reqBody["coinAddThreshold"] = coinAddThreshold;
+    reqBody["coinDeleteThreshold"] = coinDeleteThreshold;
 
     req.bodyJSON(reqBody);
     return req.post(fmt::format("{}{}", baseUrl, "/sync_levels"));

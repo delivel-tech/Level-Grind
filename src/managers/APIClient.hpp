@@ -88,7 +88,7 @@ public:
     web::WebFuture changePoint(PointType type, int coinType, ManageLevelBody levelBody);
     ChangePointResponse changePointParse(web::WebResponse res);
 
-    web::WebFuture syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold);
+    web::WebFuture syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold);
     SyncLevelsResponse syncLevelsParse(web::WebResponse res);
 
     web::WebFuture newlevel(ManageLevelBody body);
@@ -104,8 +104,6 @@ public:
     Events getEventsParse(web::WebResponse res);
 
     web::WebFuture syncPet();
-
-    // ---- Clans ----
 
     web::WebFuture viewClans(bool shouldUpdateStars, int starsDelta, bool shouldUpdateMoons, int moonsDelta, int page = 1, int limit = 50);
     ViewClansResponse viewClansParse(web::WebResponse res);

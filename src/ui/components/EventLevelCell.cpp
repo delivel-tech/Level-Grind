@@ -3,7 +3,6 @@
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/GJSearchObject.hpp>
 #include <Geode/binding/GameLevelManager.hpp>
-#include "Geode/platform/windows.hpp"
 #include "Geode/ui/Notification.hpp"
 #include <UIBuilder.hpp>
 #include <fmt/format.h>

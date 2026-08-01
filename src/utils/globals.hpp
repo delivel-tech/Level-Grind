@@ -280,8 +280,6 @@ namespace levelgrind {
         MembersArray m_members{};
     };
 
-    // --- clan API request/response DTOs ---
-
     struct ViewClansResponse {
         bool ok = false;
         int petStars = 0;

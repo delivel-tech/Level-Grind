@@ -1,5 +1,6 @@
 #include "ClanManager.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
+#include <Geode/binding/GameStatsManager.hpp>
 
 namespace levelgrind {
 
@@ -25,6 +26,11 @@ void ClanManager::setMyClanID(int clanID) {
 
 int ClanManager::getMyClanID() const {
     return m_myClanID;
+}
+
+int ClanManager::getStat(LGClanData data) {
+    if (data.m_clanType == LGClanType::Star) return GameStatsManager::get()->getStat("6");
+    else return GameStatsManager::get()->getStat("28");
 }
 
 void ClanManager::setClanData(GetClanResponse const& data) {
@@ -83,8 +89,6 @@ void ClanManager::clear() {
     m_joinRequests.clear();
     m_invites.clear();
     m_messages.clear();
-    // m_myInvites intentionally not cleared - those are cross-clan invites
-    // addressed to the player, unrelated to which clan they're currently in.
 }
 
 }

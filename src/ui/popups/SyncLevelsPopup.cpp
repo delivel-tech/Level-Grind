@@ -26,7 +26,7 @@ SyncLevelsPopup* SyncLevelsPopup::create() {
 }
 
 bool SyncLevelsPopup::init() {
-    if (!BasePopup::init(240.f, 220.f)) return false;
+    if (!BasePopup::init(240.f, 240.f)) return false;
 
     setTitle("Sync Levels");
 
@@ -78,9 +78,22 @@ bool SyncLevelsPopup::init() {
         .parent(objMenu)
         .collect();
 
+    auto coinDeleteThresholdLabel = Build(CCLabelBMFont::create("Coin Delete Threshold", "bigFont.fnt"))
+        .parent(objMenu)
+        .scale(0.5f)
+        .collect();
+
+    auto coinDeleteThresholdInput = Build(TextInput::create(40.f, "2", "bigFont.fnt"))
+        .with([](TextInput* input) {
+            input->setMaxCharCount(2);
+            input->setCommonFilter(CommonFilter::Int);
+        })
+        .parent(objMenu)
+        .collect();
+
     auto syncBtn = Build(ButtonSprite::create("Sync", "bigFont.fnt", "GJ_button_01.png"))
         .scale(0.7f)
-        .intoMenuItem([this, addThresholdInput, deleteThresholdInput, coinAddThresholdInput] {
+        .intoMenuItem([this, addThresholdInput, deleteThresholdInput, coinAddThresholdInput, coinDeleteThresholdInput] {
             Notification::create("Syncing levels...", NotificationIcon::Loading)->show();
 
             auto self = Ref(this);
@@ -89,7 +102,8 @@ bool SyncLevelsPopup::init() {
                 APIClient::getInstance().syncLevels(
                     numFromString<int>(addThresholdInput->getString()).unwrap(),
                     numFromString<int>(deleteThresholdInput->getString()).unwrap(),
-                    numFromString<int>(coinAddThresholdInput->getString()).unwrap()
+                    numFromString<int>(coinAddThresholdInput->getString()).unwrap(),
+                    numFromString<int>(coinDeleteThresholdInput->getString()).unwrap()
                 ),
                 [self](web::WebResponse res) {
                     auto parsed = APIClient::getInstance().syncLevelsParse(res);

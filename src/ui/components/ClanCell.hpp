@@ -2,10 +2,22 @@
 #include "../../utils/globals.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
+#include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/NineSlice.hpp"
+#include "Geode/ui/Notification.hpp"
+#include "Geode/utils/async.hpp"
+#include "Geode/utils/web.hpp"
 #include "ccTypes.h"
 
+#include <Geode/binding/ButtonSprite.hpp>
+#include <Geode/binding/GJAccountManager.hpp>
+#include <Geode/binding/GameManager.hpp>
+#include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
+#include <fmt/format.h>
+
+#include "../../managers/ClanManager.hpp"
+#include "../../managers/APIClient.hpp"
 
 using namespace geode::prelude;
 
@@ -76,8 +88,70 @@ private:
                 .collect();
         }
 
+        auto getJoinBtnSpr = [](LGClanJoinType type) {
+            switch (type) {
+            case LGClanJoinType::Open: return ButtonSprite::create("Join", "bigFont.fnt", "GJ_button_01.png"); break;
+            case LGClanJoinType::ByRequest: return ButtonSprite::create("Request", "bigFont.fnt", "GJ_button_01.png"); break;
+            case LGClanJoinType::Closed: return ButtonSprite::create("Closed", "bigFont.fnt", "GJ_button_04.png"); break;
+            }
+        };
+
+        auto joinBtn = Build(getJoinBtnSpr(data.m_clanJoinType))
+            .scale(0.5f)
+            .anchorPoint({1, 0.5f})
+            .intoMenuItem([&] {
+                if (data.m_clanJoinType == LGClanJoinType::Open) {
+                    if (ClanManager::getInstance().getStat(data) >= data.m_statRequirementForRequest) {
+                        auto uPopup = UploadActionPopup::create(nullptr, "Joining clan...");
+                        uPopup->show();
+                    } else {Notification::create(fmt::format("Required to join: {}", data.m_statRequirementForRequest), NotificationIcon::Info)->show();}
+                } else if (data.m_clanJoinType == LGClanJoinType::ByRequest) {
+
+                } else {
+
+                }
+            })
+            .parent(this)
+            .id("join-btn")
+            .pos({305, 25})
+            .collect();
+
+        auto membersLabelText = fmt::format("{}/{}", data.m_membersAmount, data.m_maxMembers);
+
+        auto membersLabel = Build(CCLabelBMFont::create(membersLabelText.c_str(), "goldFont.fnt"))
+            .scale(0.4f)
+            .anchorPoint({1, 0.5f})
+            .parent(this)
+            .id("members-label")
+            .pos({300 - joinBtn->getScaledContentWidth() / 2, 25})
+            .collect();
+
+        auto typeSpr = Build(
+            data.m_clanType == LGClanType::Star ? CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png") : CCSprite::createWithSpriteFrameName("GJ_moonsIcon_001.png")
+        )
+            .scale(0.5f)
+            .parent(this)
+            .id("type-spr")
+            .pos({25 + clanNameLabel->getScaledContentWidth(), 32})
+            .collect();
+
+        auto clanIDLabel = Build(CCLabelBMFont::create(
+            fmt::format("{}", data.m_clanID).c_str(), "chatFont.fnt"
+        ))
+            .anchorPoint({0, 0.5f})
+            .scale(0.5f)
+            .opacity(100)
+            .id("clan-id-label")
+            .parent(this)
+            .pos({25 + clanNameLabel->getScaledContentWidth() + typeSpr->getScaledContentWidth(), 32})
+            .collect();
+
         return true;
     }
+
+    TaskHolder<web::WebResponse> m_listener;
+
+    ~ClanCell() {m_listener.cancel();}
 };
 
 }

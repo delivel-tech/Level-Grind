@@ -65,7 +65,6 @@ bool CreateClanPopup::init(std::function<void()> onCreated) {
         .parent(m_mainLayer)
         .collect();
 
-    // RadioLogic: first toggler created auto-selects, so Star ends up default.
     Build(m_typeRadio.createToggler(
         LGClanType::Star,
         CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png"),
@@ -103,7 +102,6 @@ bool CreateClanPopup::init(std::function<void()> onCreated) {
         .parent(m_mainLayer)
         .collect();
 
-    // Open created first -> defaults to Open, same as before.
     Build(m_joinRadio.createToggler(
         LGClanJoinType::Open,
         ButtonSprite::create("Open", "bigFont.fnt", "GJ_button_02.png"),
