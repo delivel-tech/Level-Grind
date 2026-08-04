@@ -1,7 +1,8 @@
 #include "SuggestionsLayer.hpp"
 #include "../popups/SuggestionsFilterPopup.hpp"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
-#include "Geode/utils/web.hpp"
+#include "Geode/utils/async.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../../managers/DataManager.hpp"
 #include "../../utils/utils.hpp"
 
@@ -589,75 +590,44 @@ void SuggestionsLayer::performFetchLevels() {
 
     this->startLoading();
 
-    auto req = web::WebRequest();
+    async::spawn(this->onFetchLevels());
+}
+
+arc::Future<> SuggestionsLayer::onFetchLevels() {
     WeakRef<SuggestionsLayer> weakSelf = this;
 
-    auto url = fmt::format("https://api.delivel.tech/get_suggestions?mode={}", m_suggestionsMode);
-    m_searchTask.spawn(
-        req.get(url),
-        [weakSelf](web::WebResponse const& res) {
-            auto self = weakSelf.lock();
-            if (!self) return;
-            if (!self->getParent() || !self->isRunning()) return;
+    auto parsed = co_await BackendManager::getInstance().getSuggestions(m_suggestionsMode);
 
-            if (!res.ok()) {
-                Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
-                self->stopLoading();
-                return;
-            }
+    auto self = weakSelf.lock();
+    if (!self) co_return;
+    if (!self->getParent() || !self->isRunning()) co_return;
 
-            auto jsonRes = res.json();
-            if (!jsonRes) {
-                Notification::create("Invalid response from server", NotificationIcon::Error)->show();
-                self->stopLoading();
-                return;
-            }
+    if (!parsed.ok) {
+        Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
+        self->stopLoading();
+        co_return;
+    }
 
-            auto json = jsonRes.unwrap();
+    self->m_allLevelSuggestions = parsed.suggestions;
 
-            if (json["ok"].asBool().unwrapOrDefault() == false) {
-                Notification::create("Invalid response from server", NotificationIcon::Error)->show();
-                self->stopLoading();
-                return;
-            }
+    if (self->m_allLevelSuggestions.empty()) {
+        Notification::create("No levels found", NotificationIcon::Info)->show();
+        self->stopLoading();
 
-            auto suggestions = json["suggestions"].asArray();
+        if (self->m_listNode) self->m_listNode->clear();
 
-            if (!suggestions) {
-                Notification::create("Invalid response from server", NotificationIcon::Error)->show();
-                self->stopLoading();
-                return;
-            }
-
-            auto suggestionsArr = suggestions.unwrap();
-
-            self->m_allLevelSuggestions.clear();
-
-            for (auto const& val : suggestionsArr) {
-                LevelSuggestion suggestion;
-                suggestion.id = val["levelID"].asInt().unwrapOrDefault();
-                suggestion.points = val["points"].asInt().unwrapOrDefault();
-                self->m_allLevelSuggestions.push_back(suggestion);
-            }
-
-            if (self->m_allLevelSuggestions.empty()) {
-                Notification::create("No levels found", NotificationIcon::Info)->show();
-                self->stopLoading();
-
-                if (self->m_listNode) self->m_listNode->clear();
-
-                if (self->m_levelsLabel) {
-                    self->m_levelsLabel->setString("0 to 0 of 0");
-                }
-                self->m_totalLevels = 0;
-                self->m_totalPages = 1;
-                self->updatePageButton();
-                return;
-            }
-
-            self->applyPointsFilter();
+        if (self->m_levelsLabel) {
+            self->m_levelsLabel->setString("0 to 0 of 0");
         }
-    );
+        self->m_totalLevels = 0;
+        self->m_totalPages = 1;
+        self->updatePageButton();
+        co_return;
+    }
+
+    self->applyPointsFilter();
+
+    co_return;
 }
 
 }

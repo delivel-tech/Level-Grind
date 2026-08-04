@@ -191,4 +191,9 @@ struct AddNoteResponse {
     bool ok;
 };
 
+struct GetSuggestionsResponse {
+    bool ok;
+    std::vector<LevelSuggestion> suggestions;
+};
+
 }

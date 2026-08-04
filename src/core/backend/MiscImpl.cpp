@@ -159,6 +159,56 @@ arc::Future<HealthResponse> BackendManager::health() {
     co_return co_await request<HealthResponse>("GET", "/health");
 }
 
+template <>
+struct matjson::Serialize<GetCreditsResponse> {
+    static geode::Result<GetCreditsResponse> fromJson(matjson::Value const& json) {
+        GetCreditsResponse ret;
+
+        ret.ok = json["success"].asBool().unwrapOrDefault();
+        if (!ret.ok) return geode::Ok(ret);
+
+        auto owners = json["owners"].asArray();
+        auto admins = json["admins"].asArray();
+        auto helpers = json["helpers"].asArray();
+        auto artists = json["artists"].asArray();
+        auto contributors = json["contributors"].asArray();
+        auto boosters = json["boosters"].asArray();
+
+        if (!owners || !admins || !helpers || !artists || !contributors || !boosters) {
+            ret.ok = false;
+            return geode::Ok(ret);
+        }
+
+        auto parseUsers = [](auto const& arr) {
+            std::vector<CreditUserInfo> users;
+            for (auto& userRes : arr) {
+                CreditUserInfo user;
+                user.username = userRes["username"].asString().unwrapOrDefault();
+                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
+                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
+                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
+                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
+                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
+                users.push_back(user);
+            }
+            return users;
+        };
+
+        ret.owners = parseUsers(owners.unwrap());
+        ret.admins = parseUsers(admins.unwrap());
+        ret.helpers = parseUsers(helpers.unwrap());
+        ret.artists = parseUsers(artists.unwrap());
+        ret.contributors = parseUsers(contributors.unwrap());
+        ret.boosters = parseUsers(boosters.unwrap());
+
+        return geode::Ok(ret);
+    }
+};
+
+arc::Future<GetCreditsResponse> BackendManager::getCredits() {
+    co_return co_await request<GetCreditsResponse>("GET", "/get_credits");
+}
+
 void BackendManager::performGetToken() {
     geode::queueInMainThread([] {
         auto accountData = argon::getGameAccountData();

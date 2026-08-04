@@ -1,5 +1,6 @@
 #pragma once
 #include "../features/levels/LevelTypes.hpp"
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -45,6 +46,25 @@ enum GuidePopupState {
 
 struct HealthResponse {
     bool ok;
+};
+
+struct CreditUserInfo {
+    std::string username;
+    int accountId = 0;
+    int color1 = 0;
+    int color2 = 0;
+    int glowColor = 0;
+    int cube = 0;
+};
+
+struct GetCreditsResponse {
+    bool ok = false;
+    std::vector<CreditUserInfo> owners;
+    std::vector<CreditUserInfo> admins;
+    std::vector<CreditUserInfo> helpers;
+    std::vector<CreditUserInfo> artists;
+    std::vector<CreditUserInfo> contributors;
+    std::vector<CreditUserInfo> boosters;
 };
 
 }

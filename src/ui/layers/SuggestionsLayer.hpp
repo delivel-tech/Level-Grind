@@ -4,6 +4,7 @@
 #include "../BaseLayer.hpp"
 #include "../../features/levels/LevelTypes.hpp"
 
+#include <arc/future/Future.hpp>
 #include <cue/ListNode.hpp>
 #include <matjson.hpp>
 
@@ -28,7 +29,6 @@ public:
     void applyPointsFilter();
 
     ~SuggestionsLayer() {
-        m_searchTask.cancel();
         auto glm = GameLevelManager::get();
         if (glm && glm->m_levelManagerDelegate == this) {
             glm->m_levelManagerDelegate = nullptr;
@@ -53,6 +53,7 @@ private:
     void showUIElements();
     void populateFromArray(CCArray* levels);
     void performFetchLevels();
+    arc::Future<> onFetchLevels();
     void loadPageFromStoredIDs();
 
     void loadLevelsFinished(CCArray* levels, char const* key, int p2) override;
@@ -93,8 +94,6 @@ private:
 
     PointsFilterOp m_pointsFilterOp = PointsFilterOp::More;
     int m_pointsFilterValue = 0;
-
-    TaskHolder<web::WebResponse> m_searchTask;
 };
 
 }

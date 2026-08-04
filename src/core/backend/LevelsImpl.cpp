@@ -192,6 +192,35 @@ arc::Future<AddNoteResponse> BackendManager::addNote(int levelId, std::string le
 }
 
 template <>
+struct matjson::Serialize<GetSuggestionsResponse> {
+    static geode::Result<GetSuggestionsResponse> fromJson(matjson::Value const& json) {
+        GetSuggestionsResponse ret;
+
+        ret.ok = json["ok"].asBool().unwrapOrDefault();
+        if (!ret.ok) return geode::Ok(ret);
+
+        auto suggestions = json["suggestions"].asArray();
+        if (!suggestions) {
+            ret.ok = false;
+            return geode::Ok(ret);
+        }
+
+        for (auto const& val : suggestions.unwrap()) {
+            LevelSuggestion suggestion;
+            suggestion.id = val["levelID"].asInt().unwrapOrDefault();
+            suggestion.points = val["points"].asInt().unwrapOrDefault();
+            ret.suggestions.push_back(suggestion);
+        }
+
+        return geode::Ok(ret);
+    }
+};
+
+arc::Future<GetSuggestionsResponse> BackendManager::getSuggestions(int mode) {
+    co_return co_await request<GetSuggestionsResponse>("GET", fmt::format("/get_suggestions?mode={}", mode));
+}
+
+template <>
 struct matjson::Serialize<GetGrindPacksResponse> {
     static geode::Result<GetGrindPacksResponse> fromJson(matjson::Value const& json) {
         GetGrindPacksResponse ret;

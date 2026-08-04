@@ -95,6 +95,7 @@ public:
     arc::Future<GetClanMessagesResponse> getClanMessages(int clanID);
     arc::Future<ClaimClanGoalResponse> claimClanGoal(int clanID, int goalType);
     arc::Future<HealthResponse> health();
+    arc::Future<GetCreditsResponse> getCredits();
     arc::Future<NewGrindPackResponse> newGrindPack(NewGrindPackBody body);
     arc::Future<NewWeeklyAchResponse> newWeeklyAch(AchievementCellInfo info1, AchievementCellInfo info2, AchievementCellInfo info3);
     arc::Future<WeeklyAchResponse> getWeeklyAch();
@@ -103,6 +104,7 @@ public:
     arc::Future<UnlockLevelResponse> unlockLevel(int levelId, std::string levelName);
     arc::Future<DeleteNotesResponse> deleteNotes(int levelId, std::string levelName);
     arc::Future<AddNoteResponse> addNote(int levelId, std::string levelName, std::string note);
+    arc::Future<GetSuggestionsResponse> getSuggestions(int mode);
     arc::Future<Indicators> getIndicators(int levelID);
     arc::Future<DeleteGrindPackResponse> deleteGrindPack(int ID);
     arc::Future<CancelVoteResponse> cancelVote(int levelID);

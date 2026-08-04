@@ -2,6 +2,8 @@
 #include <Geode/Geode.hpp>
 #include <cue/ListNode.hpp>
 #include "../BasePopup.hpp"
+#include "Geode/ui/LoadingSpinner.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -14,13 +16,9 @@ public:
 protected:
     bool init() override;
 
+    arc::Future<> onLoadCredits(Ref<LoadingSpinner> loadingRef);
+
     cue::ListNode* m_list = nullptr;
-
-    geode::async::TaskHolder<geode::utils::web::WebResponse> m_listener;
-
-    ~CreditsPopup() {
-        m_listener.cancel();
-    }
 };
 
 }

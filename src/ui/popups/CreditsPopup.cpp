@@ -18,7 +18,8 @@
 #include <fmt/format.h>
 #include <unordered_map>
 
-#include "../../core/CoreTypes.hpp"
+#include "../../core/BackendManager.hpp"
+#include "Geode/utils/async.hpp"
 #include "GuidePopup.hpp"
 
 using namespace geode::prelude;
@@ -325,150 +326,75 @@ bool CreditsPopup::init() {
         )
         .collect();
 
-    Ref<LoadingSpinner> loadingRef = loading;
-    Ref<CreditsPopup> self = this;
-
-    web::WebRequest req;
-
-    m_listener.spawn(
-        req.get("https://api.delivel.tech/get_credits"),
-        [loadingRef, self](web::WebResponse res) {
-            if (!loadingRef || !self) return;
-
-            if (!res.ok()) {
-                log::error("bad web req, err code: {}", res.code());
-                loadingRef->removeFromParent();
-                Notification::create("Failed to fetch credits", NotificationIcon::Error)->show();
-                return;
-            }
-
-            auto jsonRes = res.json();
-            if (!jsonRes) {
-                log::warn("Failed to parse get_credits JSON");
-                loadingRef->removeFromParent();
-                Notification::create("Invalid server response", NotificationIcon::Error)->show();
-                return;
-            }
-
-            auto json = jsonRes.unwrap();
-            if (!json["success"].asBool().unwrapOrDefault()) {
-                log::warn("Server returned success=false for get_credits");
-                loadingRef->removeFromParent();
-                return;
-            }
-
-            CategoryCell::CreditsCategory ownersCat;
-            ownersCat.categoryName = "Owners";
-            CategoryCell::CreditsCategory adminsCat;
-            adminsCat.categoryName = "Admins";
-            CategoryCell::CreditsCategory helpersCat;
-            helpersCat.categoryName = "Helpers";
-            CategoryCell::CreditsCategory artistsCat;
-            artistsCat.categoryName = "Artists";
-            CategoryCell::CreditsCategory contributorsCat;
-            contributorsCat.categoryName = "Contributors";
-            CategoryCell::CreditsCategory boostersCat;
-            boostersCat.categoryName = "Boosters";
-
-            auto owners = json["owners"].asArray();
-            auto admins = json["admins"].asArray();
-            auto helpers = json["helpers"].asArray();
-            auto artists = json["artists"].asArray();
-            auto contributors = json["contributors"].asArray();
-            auto boosters = json["boosters"].asArray();
-
-            if (!owners || !admins || !helpers || !artists || !contributors || !boosters) {
-                log::warn("failed to get credits");
-                loadingRef->removeFromParent();
-                Notification::create("Invalid server response", NotificationIcon::Error)->show();
-                return;
-            }
-
-            for (auto& userRes : owners.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                ownersCat.users.push_back(user);
-            }
-
-            for (auto& userRes : admins.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                adminsCat.users.push_back(user);
-            }
-
-            for (auto& userRes : helpers.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                helpersCat.users.push_back(user);
-            }
-
-            for (auto& userRes : artists.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                artistsCat.users.push_back(user);
-            }
-
-            for (auto& userRes : contributors.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                contributorsCat.users.push_back(user);
-            }
-
-            for (auto& userRes : boosters.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                boostersCat.users.push_back(user);
-            }
-
-            self->m_list->addCell(CategoryCell::create(ownersCat));
-            self->m_list->addCell(CategoryCell::create(adminsCat));
-            self->m_list->addCell(CategoryCell::create(helpersCat));
-            self->m_list->addCell(CategoryCell::create(artistsCat));
-            self->m_list->addCell(CategoryCell::create(contributorsCat));
-            self->m_list->addCell(CategoryCell::create(boostersCat));
-
-            self->m_list->updateLayout();
-            loadingRef->removeFromParent();
-        }
-    );
+    async::spawn(this->onLoadCredits(Ref(loading)));
 
     return true;
+}
+
+arc::Future<> CreditsPopup::onLoadCredits(Ref<LoadingSpinner> loadingRef) {
+    Ref<CreditsPopup> self = this;
+
+    auto parsed = co_await BackendManager::getInstance().getCredits();
+
+    if (!loadingRef || !self) co_return;
+
+    if (!parsed.ok) {
+        log::warn("failed to get credits");
+        loadingRef->removeFromParent();
+        Notification::create("Failed to fetch credits", NotificationIcon::Error)->show();
+        co_return;
+    }
+
+    auto toUsers = [](std::vector<CreditUserInfo> const& infos) {
+        std::vector<CreditsPlayerNode::CreditsUser> users;
+        for (auto const& info : infos) {
+            CreditsPlayerNode::CreditsUser user;
+            user.username = info.username;
+            user.accountId = info.accountId;
+            user.color1 = info.color1;
+            user.color2 = info.color2;
+            user.glowColor = info.glowColor;
+            user.cube = info.cube;
+            users.push_back(user);
+        }
+        return users;
+    };
+
+    CategoryCell::CreditsCategory ownersCat;
+    ownersCat.categoryName = "Owners";
+    ownersCat.users = toUsers(parsed.owners);
+
+    CategoryCell::CreditsCategory adminsCat;
+    adminsCat.categoryName = "Admins";
+    adminsCat.users = toUsers(parsed.admins);
+
+    CategoryCell::CreditsCategory helpersCat;
+    helpersCat.categoryName = "Helpers";
+    helpersCat.users = toUsers(parsed.helpers);
+
+    CategoryCell::CreditsCategory artistsCat;
+    artistsCat.categoryName = "Artists";
+    artistsCat.users = toUsers(parsed.artists);
+
+    CategoryCell::CreditsCategory contributorsCat;
+    contributorsCat.categoryName = "Contributors";
+    contributorsCat.users = toUsers(parsed.contributors);
+
+    CategoryCell::CreditsCategory boostersCat;
+    boostersCat.categoryName = "Boosters";
+    boostersCat.users = toUsers(parsed.boosters);
+
+    self->m_list->addCell(CategoryCell::create(ownersCat));
+    self->m_list->addCell(CategoryCell::create(adminsCat));
+    self->m_list->addCell(CategoryCell::create(helpersCat));
+    self->m_list->addCell(CategoryCell::create(artistsCat));
+    self->m_list->addCell(CategoryCell::create(contributorsCat));
+    self->m_list->addCell(CategoryCell::create(boostersCat));
+
+    self->m_list->updateLayout();
+    loadingRef->removeFromParent();
+
+    co_return;
 }
 
 }
