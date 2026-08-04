@@ -2,9 +2,9 @@
 #include <Geode/modify/CommentCell.hpp>
 #include <UIBuilder.hpp>
 
-#include "../managers/DataManager.hpp"
+#include "../core/DataManager.hpp"
 
-#include "../ui/popups/GuidePopup.hpp"
+#include "../core/GuidePopup.hpp"
 
 using namespace geode::prelude;
 

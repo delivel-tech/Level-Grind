@@ -3,16 +3,16 @@
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/binding/LevelInfoLayer.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
-#include "../ui/popups/ManageLevelPopup.hpp"
-#include "../managers/DataManager.hpp"
+#include "../features/levels/ManageLevelPopup.hpp"
+#include "../core/DataManager.hpp"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/BasedButtonSprite.hpp"
 #include "Geode/ui/Notification.hpp"
 
 #include <UIBuilder.hpp>
-#include "../ui/popups/NoteViewerPopup.hpp"
-#include "../ui/popups/IndicatorsPopup.hpp"
+#include "../features/levels/NoteViewerPopup.hpp"
+#include "../features/levels/IndicatorsPopup.hpp"
 
 using namespace geode::prelude;
 

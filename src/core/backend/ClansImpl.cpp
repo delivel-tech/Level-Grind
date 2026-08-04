@@ -1,6 +1,6 @@
 #include "../BackendManager.hpp"
-#include "../../managers/DataManager.hpp"
-#include "../../managers/SecurityManager.hpp"
+#include "../DataManager.hpp"
+#include "../../features/admin/SecurityManager.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
 #include <fmt/format.h>
 

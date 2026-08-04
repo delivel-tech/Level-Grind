@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
 
-#include "../ui/layers/CreatorLayer.hpp"
+#include "../core/CreatorLayer.hpp"
 
 using namespace geode::prelude;
 

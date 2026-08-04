@@ -1,6 +1,6 @@
 #include <Geode/Geode.hpp>
 
-#include "../managers/PetManager.hpp"
+#include "../features/pets/PetManager.hpp"
 
 #include <Geode/modify/EndLevelLayer.hpp>
 

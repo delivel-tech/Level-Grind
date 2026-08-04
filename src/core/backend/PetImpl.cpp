@@ -1,7 +1,7 @@
 #include "../BackendManager.hpp"
-#include "../../managers/DataManager.hpp"
-#include "../../managers/PetManager.hpp"
-#include "../../managers/SecurityManager.hpp"
+#include "../DataManager.hpp"
+#include "../../features/pets/PetManager.hpp"
+#include "../../features/admin/SecurityManager.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
 
 using namespace geode::prelude;

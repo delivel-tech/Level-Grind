@@ -1,8 +1,8 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/PlayLayer.hpp>
-#include "../managers/DataManager.hpp"
+#include "../core/DataManager.hpp"
 #include "Geode/ui/BasedButtonSprite.hpp"
-#include "../ui/popups/NoteViewerPopup.hpp"
+#include "../features/levels/NoteViewerPopup.hpp"
 
 #include <Geode/modify/PauseLayer.hpp>
 

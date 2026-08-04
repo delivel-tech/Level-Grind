@@ -1,5 +1,5 @@
 #include "../BackendManager.hpp"
-#include "../../managers/DataManager.hpp"
+#include "../DataManager.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
 
 using namespace geode::prelude;

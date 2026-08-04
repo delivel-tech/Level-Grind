@@ -1,0 +1,378 @@
+#include "UserManagePopup.hpp"
+#include "../../core/DataManager.hpp"
+#include "../../core/BackendManager.hpp"
+#include <Geode/binding/ButtonSprite.hpp>
+#include <Geode/binding/UploadActionPopup.hpp>
+#include <UIBuilder.hpp>
+#include "Geode/cocos/menu_nodes/CCMenu.h"
+#include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/ui/BasedButtonSprite.hpp"
+#include "Geode/ui/Layout.hpp"
+#include "Geode/ui/LoadingSpinner.hpp"
+#include "Geode/ui/NineSlice.hpp"
+#include "Geode/ui/Notification.hpp"
+#include "Geode/ui/Popup.hpp"
+#include "Geode/ui/TextInput.hpp"
+#include "Geode/utils/async.hpp"
+#include "RoleSelectorPopup.hpp"
+#include "../weekly-achievements/WeeklyAchievementConfigurePopup.hpp"
+
+using namespace geode::prelude;
+
+const int kButtonWidth = 250.f;
+
+namespace levelgrind {
+
+// Ban Pet Popup class is here because it's only used in this file and it's easier to manage it here
+
+class BanPetPopup : public BasePopup {
+public:
+    static BanPetPopup* create(int accountID) {
+        auto ret = new BanPetPopup;
+        if (ret && ret->init(accountID)) {
+            ret->autorelease();
+            return ret;
+        }
+        delete ret;
+        return nullptr;
+    }
+
+private:
+    bool init(int accountID) {
+        if (!BasePopup::init(300.f, 120.f, "GJ_square01.png")) return false;
+
+        DataManager::getInstance().getUserPosition();
+
+        if (DataManager::getInstance().getUserPosition() == GrindPosition::Admin) {
+            this->setTitle("Grind Admin: Ban Pet");
+        } else if (DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
+            this->setTitle("Grind Owner: Ban Pet");
+        } else {
+            this->setTitle("Unknown Role: Ban Pet");
+        }
+
+        auto textInput = Build(TextInput::create(270.f, "Write down the reason...", "chatFont.fnt"))
+            .with([](TextInput* input) {
+                input->setMaxCharCount(60);
+            })
+            .id("input")
+            .pos(fromCenter(0, 5))
+            .parent(m_mainLayer)
+            .collect();
+
+        auto banBtnMenu = Build(ButtonSprite::create("Ban Pet", "bigFont.fnt", "GJ_button_01.png"))
+            .id("ban-btn")
+            .scale(0.7f)
+            .intoMenuItem([accountID, textInput, this] {
+                std::string reason = textInput->getString();
+                if (reason.empty()) {
+                    Notification::create("Please provide a reason for banning the pet.", NotificationIcon::Error)->show();
+                    return;
+                }
+
+                async::spawn(this->onBanClicked(accountID, reason));
+            })
+            .parent(CCMenu::create())
+            .intoParent()
+            .id("ban-btn-menu")
+            .parent(m_mainLayer)
+            .pos(fromBottom({0, 25}))
+            .collect();
+
+        return true;
+    }
+
+    arc::Future<> onBanClicked(int accountID, std::string reason) {
+        auto uPopup = UploadActionPopup::create(nullptr, "Banning pet...");
+        uPopup->show();
+
+        auto uPopupRef = Ref(uPopup);
+
+        auto parsed = co_await BackendManager::getInstance().banPet(accountID, reason);
+
+        if (!uPopupRef) co_return;
+
+        if (!parsed.ok) {
+            uPopupRef->showFailMessage("Failed! Try again later");
+            co_return;
+        }
+
+        uPopupRef->showSuccessMessage("Success! Pet banned.");
+        co_return;
+    }
+};
+
+UserManagePopup* UserManagePopup::create(GJUserScore *targetUser) {
+    auto ret = new UserManagePopup;
+    if (ret && ret->init(targetUser)) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
+}
+
+bool UserManagePopup::init(GJUserScore* targetUser) {
+    if (!BasePopup::init(270.f, 160.f, "GJ_square01.png")) return false;
+
+    m_targetUser = targetUser;
+
+    GrindPosition pos = DataManager::getInstance().getUserPosition();
+
+    if (pos == GrindPosition::Admin) {
+        this->setTitle("Grind Admin: Manage User");
+    } else if (pos == GrindPosition::Owner) {
+        this->setTitle("Grind Owner: Manage User");
+    } else {
+        this->setTitle("Unknown Role: Manage User");
+    }
+
+    if (pos != GrindPosition::Admin && pos != GrindPosition::Owner) {
+        Notification::create("You cannot manage profiles.", NotificationIcon::Error)->show();
+    }
+
+    auto targetLabelMenu = Build<CCMenu>::create()
+        .parent(m_mainLayer)
+        .pos({m_title->getPositionX(), m_title->getPositionY() - 20 })
+        .id("target-label-menu")
+        .scale(0.9f)
+        .contentSize(m_mainLayer->getContentWidth() - 20.f, 30.f)
+        .layout(
+            RowLayout::create()
+                ->setGap(6)
+                ->setAutoScale(false)
+        )
+        .zOrder(1)
+        .collect();
+
+    auto targetLabel = Build<CCLabelBMFont>::create(
+        fmt::format(
+            "Target: {}", targetUser->m_userName
+        ).c_str(), "bigFont.fnt", m_mainLayer->getContentSize().width - 40, kCCTextAlignmentCenter
+    )
+        .id("target-label")
+        .scale(0.5f)
+        .parent(targetLabelMenu)
+        .collect();
+
+    m_targetLabel = targetLabel;
+    m_targetLabelMenu = targetLabelMenu;
+
+    m_targetLabelMenu->updateLayout();
+
+    auto optionsMenu = Build<CCMenu>::create()
+        .parent(m_mainLayer)
+        .pos(centerX(), centerY() - 20)
+        .id("options-menu")
+        .scale(0.9f)
+        .contentSize(m_mainLayer->getContentWidth() - 50.f, 80)
+        .layout(
+            RowLayout::create()
+                    ->setGap(7)
+                    ->setGrowCrossAxis(true)
+                    ->setCrossAxisReverse(true)
+        )
+        .zOrder(1)
+        .collect();
+
+    m_optionsMenu = optionsMenu;
+
+    auto menuBg = Build(NineSlice::create("square02_small.png"))
+        .contentSize({ optionsMenu->getContentWidth() + 5,
+        optionsMenu->getContentHeight() + 10 })
+        .pos(centerX(), centerY() - 20)
+        .id("menu-bg")
+        .scale(0.9f)
+        .opacity(80)
+        .parent(m_mainLayer)
+        .collect();
+
+    auto spinner = Build(LoadingSpinner::create(55))
+        .pos(centerX(), centerY() - 20)
+        .scale(0.9f)
+        .parent(m_mainLayer)
+        .collect();
+
+    m_spinner = spinner;
+
+    buildUI();
+
+    return true;
+}
+
+CCSprite* UserManagePopup::getBadgeByHighestRole(UserRoles roles) {
+    if (roles.isOwner) {
+        return CCSprite::create("badge_owner.png"_spr);
+    } else if (roles.isAdmin) {
+        return CCSprite::create("badge_admin.png"_spr);
+    } else if (roles.isHelper) {
+        return CCSprite::create("badge_helper.png"_spr);
+    } else if (roles.isArtist) {
+        return CCSprite::create("badge_artist.png"_spr);
+    } else if (roles.isBooster) {
+        return CCSprite::create("badge_booster.png"_spr);
+    } else if (roles.isContributor) {
+        return CCSprite::create("badge_contributor.png"_spr);
+    }
+    return CCSprite::createWithSpriteFrameName("GJ_plus2Btn_001.png");
+}
+
+void UserManagePopup::buildUI() {
+    async::spawn(this->onLoadUserRoles());
+}
+
+arc::Future<> UserManagePopup::onLoadUserRoles() {
+    Ref<UserManagePopup> self = this;
+
+    auto parsed = co_await BackendManager::getInstance().getUserRoles(m_targetUser->m_accountID);
+
+    if (!self) co_return;
+
+    if (!parsed.ok) {
+        Notification::create("Failed to get user roles!", NotificationIcon::Error)->show();
+        self->m_spinner->removeFromParent();
+        co_return;
+    }
+
+    auto badge = self->getBadgeByHighestRole(parsed.roles);
+            if (badge) {
+                auto badgeNode = Build(badge)
+                    .scale(0.7f)
+                    .intoMenuItem([roles = parsed.roles, targetUser = self->m_targetUser] {
+                        auto popup = RoleSelectorPopup::create(roles, targetUser);
+                        popup->show();
+                    })
+                    .parent(self->m_targetLabelMenu)
+                    .id("role-badge")
+                    .collect();
+            }
+
+            bool petExists = parsed.petExists;
+            bool isPetBanned = parsed.isPetBanned;
+
+            if (petExists) {
+                auto wipePetBtn = Build(CCSprite::createWithSpriteFrameName("GJ_deleteServerBtn_001.png"))
+                    .parent(self->m_optionsMenu)
+                    .id("wipe-pet-btn")
+                    .intoMenuItem([self] {
+                        
+                        createQuickPopup(
+                            "Are you sure?",
+                            fmt::format("Please confirm your decision to wipe the {}'s pet.", self->m_targetUser->m_userName),
+                            "Cancel", "Confirm",
+                            [self](auto, bool btn2) {
+                                if (btn2) {
+                                    async::spawn(self->onWipePetClicked());
+                                }
+                            }
+                        );
+                    })
+                    .collect();
+            } else {
+                auto wipePetBtn = Build(CCSprite::createWithSpriteFrameName("GJ_deleteServerBtn_001.png"))
+                    .parent(self->m_optionsMenu)
+                    .id("wipe-pet-btn")
+                    .color({ 100, 100, 100 })
+                    .intoMenuItem([] {
+                    })
+                    .enabled(false)
+                    .collect();
+            }
+
+            if (isPetBanned) {
+                if (petExists) {
+                    auto unbanBtn = Build<CCSprite>::createSpriteName("GJ_cancelDownloadBtn_001.png")
+                        .parent(self->m_optionsMenu)
+                        .id("unban-pet-btn")
+                        .scale(1.2f)
+                        .intoMenuItem([self] {
+                            async::spawn(self->onUnbanPetClicked());
+                        })
+                        .collect();
+                } else {
+                    auto unbanBtn = Build<CCSprite>::createSpriteName("GJ_cancelDownloadBtn_001.png")
+                        .parent(self->m_optionsMenu)
+                        .id("unban-pet-btn")
+                        .scale(1.2f)
+                        .color({ 100, 100, 100 })
+                        .intoMenuItem([] {
+                        })
+                        .enabled(false)
+                        .collect();
+                }
+            } else {
+                if (petExists) {
+                    auto banBtn = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
+                        .parent(self->m_optionsMenu)
+                        .id("ban-pet-btn")
+                        .intoMenuItem([self] {
+                            BanPetPopup::create(self->m_targetUser->m_accountID)->show();
+                        })
+                        .collect();
+                } else {
+                    auto banBtn = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
+                        .parent(self->m_optionsMenu)
+                        .id("ban-pet-btn")
+                        .color({ 100, 100, 100 })
+                        .intoMenuItem([] {
+                        })
+                        .enabled(false)
+                        .collect();
+                }
+            }
+
+            auto weeklyAchBtn = Build(CircleButtonSprite::createWithSpriteFrameName("rankIcon_1_001.png"))
+                .intoMenuItem([self] {
+                    WeeklyAchievementConfigurePopup::create(self->m_targetUser)->show();
+                })
+                .id("weekly-ach-btn")
+                .parent(self->m_optionsMenu)
+                .collect();
+
+            self->m_optionsMenu->updateLayout();
+    self->m_targetLabelMenu->updateLayout();
+
+    self->m_spinner->removeFromParent();
+
+    co_return;
+}
+
+arc::Future<> UserManagePopup::onWipePetClicked() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().wipePet(m_targetUser->m_accountID);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Pet wiped.");
+    co_return;
+}
+
+arc::Future<> UserManagePopup::onUnbanPetClicked() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Unbanning pet...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().unbanPet(m_targetUser->m_accountID);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Pet unbanned.");
+    co_return;
+}
+
+}

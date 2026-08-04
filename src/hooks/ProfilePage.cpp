@@ -2,16 +2,16 @@
 #include <UIBuilder.hpp>
 #include <Geode/Geode.hpp>
 #include <Geode/binding/ProfilePage.hpp>
-#include "../managers/DataManager.hpp"
-#include "../ui/popups/UserManagePopup.hpp"
-#include "../ui/popups/GuidePopup.hpp"
+#include "../core/DataManager.hpp"
+#include "../features/admin/UserManagePopup.hpp"
+#include "../core/GuidePopup.hpp"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/utils/cocos.hpp"
 #include "Geode/utils/function.hpp"
 
 #include <Geode/modify/ProfilePage.hpp>
 
-#include "../ui/popups/GuidePopup.hpp"
+#include "../core/GuidePopup.hpp"
 
 using namespace geode::prelude;
 

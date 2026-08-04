@@ -1,5 +1,5 @@
 #include "../BackendManager.hpp"
-#include "../../managers/DataManager.hpp"
+#include "../DataManager.hpp"
 #include <Geode/ui/Notification.hpp>
 #include <Geode/utils/async.hpp>
 #include <argon/argon.hpp>

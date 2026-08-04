@@ -1,6 +1,6 @@
 #include "core/BackendManager.hpp"
-#include "managers/DataManager.hpp"
-#include "ui/layers/SettingsLayer.hpp"
+#include "core/DataManager.hpp"
+#include "core/SettingsLayer.hpp"
 #include <Geode/utils/async.hpp>
 
 using namespace geode::prelude;
