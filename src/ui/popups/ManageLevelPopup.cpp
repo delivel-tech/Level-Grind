@@ -16,11 +16,11 @@
 #include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../../managers/DataManager.hpp"
 #include "Geode/ui/NineSlice.hpp"
 #include "Geode/ui/Notification.hpp"
-#include "Geode/utils/web.hpp"
+#include "Geode/utils/async.hpp"
 
 #include "../../utils/utils.hpp"
 #include "AddNotePopup.hpp"
@@ -108,22 +108,25 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
         .center()
         .collect();
 
-    auto self = Ref(this);
+    async::spawn(this->onLoadLevelInfo());
 
-    m_listener.spawn(
-        APIClient::getInstance().getLevelInfo(m_level->m_levelID),
-        [self](web::WebResponse res) {
-            if (!self) return;
+    return true;
+}
 
-            auto parsed = APIClient::getInstance().getLevelInfoParse(res);
+arc::Future<> ManageLevelPopup::onLoadLevelInfo() {
+    Ref<ManageLevelPopup> self = this;
 
-            if (!parsed.ok) {
-                Notification::create("Failed to get level info. Try again later.", NotificationIcon::Error)->show();
-                self->m_loadingSpinner->removeFromParent();
-                return;
-            }
+    auto parsed = co_await BackendManager::getInstance().getLevelInfo(m_level->m_levelID);
 
-            self->m_loadingSpinner->removeFromParent();
+    if (!self) co_return;
+
+    if (!parsed.ok) {
+        Notification::create("Failed to get level info. Try again later.", NotificationIcon::Error)->show();
+        self->m_loadingSpinner->removeFromParent();
+        co_return;
+    }
+
+    self->m_loadingSpinner->removeFromParent();
 
             self->setTitle("Manage Level");
 
@@ -256,52 +259,14 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
             Build(ButtonSprite::create("Accept", "bigFont.fnt", "GJ_button_01.png"))
                 .intoMenuItem([self] {
-                    auto uPopup = UploadActionPopup::create(nullptr, "Adding point...");
-                    uPopup->show();
-
-                    auto uPopupRef = Ref(uPopup);
-
-                    self->m_listener.spawn(
-                        APIClient::getInstance().changePoint(PointType::AcceptPoint, self->m_body.coin, self->m_body),
-                        [uPopupRef](web::WebResponse res) {
-                            if (!uPopupRef) return;
-                            auto parsed = APIClient::getInstance().changePointParse(res);
-
-                            if (!parsed.ok) {
-                                uPopupRef->showFailMessage("Failed to add point.");
-                                return;
-                            } else {
-                                uPopupRef->showSuccessMessage("Success! Added point.");
-                                return;
-                            }
-                        }
-                    );
+                    async::spawn(self->onAcceptClicked());
                 })
                 .parent(self->m_helperButtonsMenu)
                 .collect();
-            
+
             Build(ButtonSprite::create("Reject", "bigFont.fnt", "GJ_button_06.png"))
                 .intoMenuItem([self] {
-                    auto uPopup = UploadActionPopup::create(nullptr, "Removing point...");
-                    uPopup->show();
-
-                    auto uPopupRef = Ref(uPopup);
-
-                    self->m_listener.spawn(
-                        APIClient::getInstance().changePoint(PointType::RejectPoint, self->m_body.coin, self->m_body),
-                        [uPopupRef](web::WebResponse res) {
-                            if (!uPopupRef) return;
-                            auto parsed = APIClient::getInstance().changePointParse(res);
-
-                            if (!parsed.ok) {
-                                uPopupRef->showFailMessage("Failed to remove point.");
-                                return;
-                            } else {
-                                uPopupRef->showSuccessMessage("Success! Removed point.");
-                                return;
-                            }
-                        }
-                    );
+                    async::spawn(self->onRejectClicked());
                 })
                 .parent(self->m_helperButtonsMenu)
                 .collect();
@@ -362,27 +327,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
                 Build(deleteNotesSpr)
                     .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Deleting notes...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        self->m_listener.spawn(
-                            APIClient::getInstance().deleteNotes(
-                                self->m_level->m_levelID,
-                                self->m_level->m_levelName.empty() ? "blank name" : self->m_level->m_levelName.c_str()
-                            ),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                if (!res.ok()) {
-                                    log::error("bad web req");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
-                                    return;
-                                } else {
-                                    uPopupRef->showSuccessMessage("Success! Notes deleted.");
-                                }
-                            }
-                        );
+                        async::spawn(self->onDeleteNotesClicked());
                     })
                     .parent(rightButtonsMenu);
             }
@@ -455,49 +400,14 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
             if (parsed.isLocked) {
                 Build(ButtonSprite::create("Unlock", "bigFont.fnt", "GJ_button_06.png"))
                     .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Unlocking level...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        self->m_listener.spawn(
-                            APIClient::getInstance().unlockLevel(self->m_level->m_levelID, self->m_level->m_levelName),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                if (!res.ok()) {
-                                    log::error("bad web req");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
-                                } else {
-                                    uPopupRef->showSuccessMessage("Success! Level unlocked.");
-                                }
-                            }
-                        );
+                        async::spawn(self->onUnlockClicked());
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
             } else {
                 Build(ButtonSprite::create("Lock", "bigFont.fnt", "GJ_button_01.png"))
                     .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Locking level...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        self->m_listener.spawn(
-                            APIClient::getInstance().lockLevel(
-                                self->m_level->m_levelID, 
-                                self->m_level->m_levelName
-                            ),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                if (!res.ok()) {
-                                    log::error("bad web req");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
-                                } else {
-                                    uPopupRef->showSuccessMessage("Success! Level locked.");
-                                }
-                            }
-                        );
+                        async::spawn(self->onLockClicked());
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
@@ -506,75 +416,21 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
             if (parsed.isAdded) {
                 Build(ButtonSprite::create("Delete", "bigFont.fnt", "GJ_button_06.png"))
                     .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Deleting level...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        self->m_listener.spawn(
-                            APIClient::getInstance().deleteLevel(self->m_level->m_levelID),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                if (!res.ok()) {
-                                    log::error("bad web req");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
-                                } else {
-                                    uPopupRef->showSuccessMessage("Success! Level deleted.");
-                                }
-                            }
-                        );
+                        async::spawn(self->onDeleteClicked());
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
 
                 Build(ButtonSprite::create("Re-add", "bigFont.fnt", "GJ_button_02.png"))
                     .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Re-adding level...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        self->m_listener.spawn(
-                            APIClient::getInstance().newlevel(self->m_body),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                auto parsed = APIClient::getInstance().newLevelParse(res);
-
-                                if (parsed) {
-                                    uPopupRef->showSuccessMessage("Success! Level re-added.");
-                                    return;
-                                } else {
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
-                                    return;
-                                }
-                            }
-                        );
+                        async::spawn(self->onAddOrReaddClicked(true));
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
             } else {
                 Build(ButtonSprite::create("Add", "bigFont.fnt", "GJ_button_01.png"))
                     .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Adding level...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        self->m_listener.spawn(
-                            APIClient::getInstance().newlevel(self->m_body),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                auto parsed = APIClient::getInstance().newLevelParse(res);
-
-                                if (parsed) {
-                                    uPopupRef->showSuccessMessage("Success! Level added.");
-                                    return;
-                                } else {
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
-                                    return;
-                                }
-                            }
-                        );
+                        async::spawn(self->onAddOrReaddClicked(false));
                     })
                     .parent(self->m_adminButtonsMenu)
                     .collect();
@@ -715,26 +571,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 Build(ButtonSprite::create("Cancel Vote", "bigFont.fnt", "GJ_button_06.png"))
                     .scale(0.65f)
                     .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Cancelling vote...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        self->m_listener.spawn(
-                            APIClient::getInstance().cancelVote(self->m_level->m_levelID),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                auto parsed = APIClient::getInstance().cancelVoteParse(res);
-
-                                if (!parsed.ok) {
-                                    uPopupRef->showFailMessage("Failed to cancel vote.");
-                                    return;
-                                } else {
-                                    uPopupRef->showSuccessMessage("Success! Vote cancelled.");
-                                    return;
-                                }
-                            }
-                        );
+                        async::spawn(self->onCancelVoteClicked());
                     })
                     .parent(self->m_buttonMenu)
                     .pos(self->m_buttonMenu->getContentWidth() / 2.f, 0.f)
@@ -747,11 +584,182 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
             rightButtonsMenu->updateLayout();
 
-            return;
-        }
+    co_return;
+}
+
+arc::Future<> ManageLevelPopup::onAcceptClicked() {
+    Ref<ManageLevelPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Adding point...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().changePoint(PointType::AcceptPoint, m_body.coin, m_body);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed to add point.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Added point.");
+    co_return;
+}
+
+arc::Future<> ManageLevelPopup::onRejectClicked() {
+    Ref<ManageLevelPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Removing point...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().changePoint(PointType::RejectPoint, m_body.coin, m_body);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed to remove point.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Removed point.");
+    co_return;
+}
+
+arc::Future<> ManageLevelPopup::onDeleteNotesClicked() {
+    Ref<ManageLevelPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Deleting notes...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().deleteNotes(
+        m_level->m_levelID,
+        m_level->m_levelName.empty() ? "blank name" : m_level->m_levelName.c_str()
     );
 
-    return true;
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        log::error("bad web req");
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Notes deleted.");
+    co_return;
+}
+
+arc::Future<> ManageLevelPopup::onUnlockClicked() {
+    Ref<ManageLevelPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Unlocking level...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().unlockLevel(m_level->m_levelID, m_level->m_levelName);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        log::error("bad web req");
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Level unlocked.");
+    co_return;
+}
+
+arc::Future<> ManageLevelPopup::onLockClicked() {
+    Ref<ManageLevelPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Locking level...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().lockLevel(m_level->m_levelID, m_level->m_levelName);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        log::error("bad web req");
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Level locked.");
+    co_return;
+}
+
+arc::Future<> ManageLevelPopup::onDeleteClicked() {
+    Ref<ManageLevelPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Deleting level...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().deleteLevel(m_level->m_levelID);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        log::error("bad web req");
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Level deleted.");
+    co_return;
+}
+
+arc::Future<> ManageLevelPopup::onAddOrReaddClicked(bool isReadd) {
+    Ref<ManageLevelPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, isReadd ? "Re-adding level..." : "Adding level...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().newlevel(m_body);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage(isReadd ? "Success! Level re-added." : "Success! Level added.");
+    co_return;
+}
+
+arc::Future<> ManageLevelPopup::onCancelVoteClicked() {
+    Ref<ManageLevelPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Cancelling vote...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().cancelVote(m_level->m_levelID);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed to cancel vote.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Vote cancelled.");
+    co_return;
 }
 
 }
