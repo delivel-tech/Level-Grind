@@ -7,7 +7,7 @@
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -28,12 +28,9 @@ private:
     CCSprite* getBadgeByHighestRole(UserRoles roles);
 
     void buildUI();
-
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~UserManagePopup() {
-        m_listener.cancel();
-    }
+    arc::Future<> onLoadUserRoles();
+    arc::Future<> onWipePetClicked();
+    arc::Future<> onUnbanPetClicked();
 };
 
 }

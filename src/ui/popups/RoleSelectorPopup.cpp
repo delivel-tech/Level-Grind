@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include "RoleSelectorPopup.hpp"
 #include "../../managers/DataManager.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../../utils/utils.hpp"
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <Geode/binding/GJAccountManager.hpp>
@@ -9,7 +9,7 @@
 #include <UIBuilder.hpp>
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Notification.hpp"
-#include "Geode/utils/web.hpp"
+#include "Geode/utils/async.hpp"
 
 namespace levelgrind {
 
@@ -157,45 +157,48 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
         .parent(buttonsMenu)
         .id("apply-btn")
         .intoMenuItem([this]() {
-            auto uPopup = UploadActionPopup::create(nullptr, "Updating roles...");
-            uPopup->show();
-
-            auto uPopupRef = Ref(uPopup);
-
-            m_listener.spawn(
-                APIClient::getInstance().setRoles(
-                    APIClient::getInstance().makeSetRolesBody(
-                        GJAccountManager::sharedState()->m_accountID,
-                        DataManager::getInstance().getUserToken(),
-                        m_targetUser->m_accountID,
-                        std::string(m_targetUser->m_userName),
-                        m_targetUser->m_playerCube,
-                        m_targetUser->m_color1,
-                        m_targetUser->m_color2,
-                        m_targetUser->m_glowEnabled ? m_targetUser->m_color3 : 0,
-                        m_newRoles.isAdmin,
-                        m_newRoles.isHelper,
-                        m_newRoles.isArtist,
-                        m_newRoles.isContributor,
-                        m_newRoles.isBooster
-                    )
-                ),
-                [uPopupRef](web::WebResponse res) {
-                    if (!uPopupRef) return;
-                    auto parsed = APIClient::getInstance().setRolesParse(res);
-                    if (parsed.ok) {
-                        uPopupRef->showSuccessMessage("Success! Roles updated.");
-                    } else {
-                        uPopupRef->showFailMessage("Failed! Try again later.");
-                    }
-                }
-            );
+            async::spawn(this->onApplyClicked());
         })
         .collect();
 
     buttonsMenu->updateLayout();
 
     return true;
+}
+
+arc::Future<> RoleSelectorPopup::onApplyClicked() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Updating roles...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    SetRolesBody body {
+        GJAccountManager::sharedState()->m_accountID,
+        DataManager::getInstance().getUserToken(),
+        m_targetUser->m_accountID,
+        std::string(m_targetUser->m_userName),
+        m_targetUser->m_playerCube,
+        m_targetUser->m_color1,
+        m_targetUser->m_color2,
+        m_targetUser->m_glowEnabled ? m_targetUser->m_color3 : 0,
+        m_newRoles.isAdmin,
+        m_newRoles.isHelper,
+        m_newRoles.isArtist,
+        m_newRoles.isContributor,
+        m_newRoles.isBooster
+    };
+
+    auto parsed = co_await BackendManager::getInstance().setRoles(body);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Roles updated.");
+    co_return;
 }
 
 void RoleSelectorPopup::onAdminToggle(CCObject* sender) {

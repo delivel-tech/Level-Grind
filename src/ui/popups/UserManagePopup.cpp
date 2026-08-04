@@ -1,6 +1,6 @@
 #include "UserManagePopup.hpp"
 #include "../../managers/DataManager.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
@@ -14,7 +14,6 @@
 #include "Geode/ui/Popup.hpp"
 #include "Geode/ui/TextInput.hpp"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
 #include "RoleSelectorPopup.hpp"
 #include "WeeklyAchievementConfigurePopup.hpp"
 
@@ -71,23 +70,7 @@ private:
                     return;
                 }
 
-                auto uPopup = UploadActionPopup::create(nullptr, "Banning pet...");
-                uPopup->show();
-
-                auto uPopupRef = Ref(uPopup);
-
-                m_listener.spawn(
-                    APIClient::getInstance().banPet(accountID, reason),
-                    [uPopupRef](web::WebResponse res) {
-                        if (!uPopupRef) return;
-                        auto parsed = APIClient::getInstance().banPetParse(res);
-                        if (parsed.ok) {
-                            uPopupRef->showSuccessMessage("Success! Pet banned.");
-                        } else {
-                            uPopupRef->showFailMessage("Failed! Try again later");
-                        }
-                    }
-                );
+                async::spawn(this->onBanClicked(accountID, reason));
             })
             .parent(CCMenu::create())
             .intoParent()
@@ -99,7 +82,24 @@ private:
         return true;
     }
 
-    TaskHolder<web::WebResponse> m_listener;
+    arc::Future<> onBanClicked(int accountID, std::string reason) {
+        auto uPopup = UploadActionPopup::create(nullptr, "Banning pet...");
+        uPopup->show();
+
+        auto uPopupRef = Ref(uPopup);
+
+        auto parsed = co_await BackendManager::getInstance().banPet(accountID, reason);
+
+        if (!uPopupRef) co_return;
+
+        if (!parsed.ok) {
+            uPopupRef->showFailMessage("Failed! Try again later");
+            co_return;
+        }
+
+        uPopupRef->showSuccessMessage("Success! Pet banned.");
+        co_return;
+    }
 };
 
 UserManagePopup* UserManagePopup::create(GJUserScore *targetUser) {
@@ -218,19 +218,23 @@ CCSprite* UserManagePopup::getBadgeByHighestRole(UserRoles roles) {
 }
 
 void UserManagePopup::buildUI() {
-    auto self = Ref(this);
-    m_listener.spawn(
-        APIClient::getInstance().getUserRoles(m_targetUser->m_accountID),
-        [self](web::WebResponse res) {
-            if (!self) return;
-            auto parsed = APIClient::getInstance().getUserRolesParse(res);
-            if (!parsed.ok) {
-                Notification::create("Failed to get user roles!", NotificationIcon::Error)->show();
-                self->m_spinner->removeFromParent();
-                return;
-            }
+    async::spawn(this->onLoadUserRoles());
+}
 
-            auto badge = self->getBadgeByHighestRole(parsed.roles);
+arc::Future<> UserManagePopup::onLoadUserRoles() {
+    Ref<UserManagePopup> self = this;
+
+    auto parsed = co_await BackendManager::getInstance().getUserRoles(m_targetUser->m_accountID);
+
+    if (!self) co_return;
+
+    if (!parsed.ok) {
+        Notification::create("Failed to get user roles!", NotificationIcon::Error)->show();
+        self->m_spinner->removeFromParent();
+        co_return;
+    }
+
+    auto badge = self->getBadgeByHighestRole(parsed.roles);
             if (badge) {
                 auto badgeNode = Build(badge)
                     .scale(0.7f)
@@ -258,23 +262,7 @@ void UserManagePopup::buildUI() {
                             "Cancel", "Confirm",
                             [self](auto, bool btn2) {
                                 if (btn2) {
-                                    auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
-                                    uPopup->show();
-
-                                    auto uPopupRef = Ref(uPopup);
-
-                                    self->m_listener.spawn(
-                                        APIClient::getInstance().wipePet(self->m_targetUser->m_accountID),
-                                        [uPopupRef](web::WebResponse res) {
-                                            if (!uPopupRef) return;
-                                            auto parsed = APIClient::getInstance().wipePetParse(res);
-                                            if (parsed.ok) {
-                                                uPopupRef->showSuccessMessage("Success! Pet wiped.");
-                                            } else {
-                                                uPopupRef->showFailMessage("Failed! Try again later");
-                                            }
-                                        }
-                                    );
+                                    async::spawn(self->onWipePetClicked());
                                 }
                             }
                         );
@@ -298,23 +286,7 @@ void UserManagePopup::buildUI() {
                         .id("unban-pet-btn")
                         .scale(1.2f)
                         .intoMenuItem([self] {
-                            auto uPopup = UploadActionPopup::create(nullptr, "Unbanning pet...");
-                            uPopup->show();
-
-                            auto uPopupRef = Ref(uPopup);
-
-                            self->m_listener.spawn(
-                                APIClient::getInstance().unbanPet(self->m_targetUser->m_accountID),
-                                [uPopupRef](web::WebResponse res) {
-                                    if (!uPopupRef) return;
-                                    auto parsed = APIClient::getInstance().unbanPetParse(res);
-                                    if (parsed.ok) {
-                                        uPopupRef->showSuccessMessage("Success! Pet unbanned.");
-                                    } else {
-                                        uPopupRef->showFailMessage("Failed! Try again later");
-                                    }
-                                }
-                            );
+                            async::spawn(self->onUnbanPetClicked());
                         })
                         .collect();
                 } else {
@@ -358,12 +330,49 @@ void UserManagePopup::buildUI() {
                 .collect();
 
             self->m_optionsMenu->updateLayout();
-            self->m_targetLabelMenu->updateLayout();
+    self->m_targetLabelMenu->updateLayout();
 
-            self->m_spinner->removeFromParent();
-            return;
-        }
-    );
+    self->m_spinner->removeFromParent();
+
+    co_return;
+}
+
+arc::Future<> UserManagePopup::onWipePetClicked() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().wipePet(m_targetUser->m_accountID);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Pet wiped.");
+    co_return;
+}
+
+arc::Future<> UserManagePopup::onUnbanPetClicked() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Unbanning pet...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().unbanPet(m_targetUser->m_accountID);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Pet unbanned.");
+    co_return;
 }
 
 }

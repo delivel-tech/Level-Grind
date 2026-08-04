@@ -2,7 +2,7 @@
 #include <Geode/Geode.hpp>
 #include "../../features/admin/AdminTypes.hpp"
 #include "../BasePopup.hpp"
-#include "Geode/utils/web.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -23,11 +23,7 @@ private:
     void onBoosterToggle(CCObject* sender);
     void onContributorToggle(CCObject* sender);
 
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~RoleSelectorPopup() {
-        m_listener.cancel();
-    }
+    arc::Future<> onApplyClicked();
 };
 
 }
