@@ -60,6 +60,9 @@ public:
     arc::Future<WipePetResponse> wipePet(int accountID);
     arc::Future<BanPetResponse> banPet(int accountID, std::string reason);
     arc::Future<UnbanPetResponse> unbanPet(int accountID);
+    arc::Future<UpgradePetRarityResponse> upgradePetRarity(int newRarity, int upgradeCost);
+    arc::Future<UpgradePetLevelResponse> upgradePetLevel(int newLevel, int upgradeCost);
+    arc::Future<RenamePetResponse> renamePet(std::string petName);
     arc::Future<AnnouncementsResponse> getAnnouncements();
     arc::Future<AddAnnouncementResponse> addAnnouncement(std::string title, std::string content);
     arc::Future<DeleteAnnouncementResponse> deleteAnnouncement(int announcementId);

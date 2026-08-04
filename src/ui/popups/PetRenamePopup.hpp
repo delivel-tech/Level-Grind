@@ -3,6 +3,7 @@
 #include "Geode/ui/TextInput.hpp"
 #include <Geode/Geode.hpp>
 #include "../BasePopup.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -15,12 +16,9 @@ public:
 private:
     bool init(std::string currPetName);
     void onOKBtn(CCObject* sender);
+    arc::Future<> onRename(std::string petName);
 
     TextInput* m_input = nullptr;
-
-protected:
-    TaskHolder<web::WebResponse> m_listener;
-    ~PetRenamePopup() { m_listener.cancel(); }
 };
 
 }

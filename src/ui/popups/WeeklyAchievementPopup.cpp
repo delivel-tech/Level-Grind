@@ -8,11 +8,11 @@
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/NineSlice.hpp"
 #include "Geode/ui/Notification.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/cocos.hpp"
-#include "Geode/utils/web.hpp"
 #include "GuidePopup.hpp"
 
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 
 using namespace geode::prelude;
 
@@ -77,66 +77,71 @@ bool WeeklyAchievementPopup::init() {
         )
         .collect();
 
-    auto loadingRef = Ref(loading);
-    auto self = Ref(this);
-    auto mainMenuRef = Ref(mainMenu);
-
-    m_listener.spawn(
-        APIClient::getInstance().getWeeklyAch(),
-        [loadingRef, self, mainMenuRef](web::WebResponse res) {
-            if (!loadingRef || !self || !mainMenuRef) return;
-            auto parsed = APIClient::getInstance().getWeeklyAchParse(res);
-
-            if (!parsed.ok) {
-                loadingRef->removeFromParent();
-                Notification::create("Failed to load weekly achievements!", NotificationIcon::Error)->show();
-                return;
-            }
-
-            auto sequence = CCSequence::create(
-                CallFuncExt::create([mainMenuRef, parsed]{
-                    auto cell = WeeklyAchievementCell::create(AchievementCellType::Third, parsed.cell3);
-                    cell->setScale(0.8f);
-                    mainMenuRef->addChild(cell);
-                    cell->setPosition({
-                        20, -10
-                    });
-                }),
-                CCDelayTime::create(0.2f),
-                CallFuncExt::create([mainMenuRef, parsed] {
-                    auto cell = WeeklyAchievementCell::create(AchievementCellType::Second, parsed.cell2);
-                    cell->setScale(0.8f);
-                    mainMenuRef->addChild(cell);
-                    cell->setPosition({
-                        214, -10
-                    });
-                }),
-                CCDelayTime::create(0.2f),
-                CallFuncExt::create([mainMenuRef, parsed] {
-                    auto cell = WeeklyAchievementCell::create(AchievementCellType::First, parsed.cell1);
-                    cell->setScale(0.8f);
-                    mainMenuRef->addChild(cell);
-                    cell->setPosition({
-                        117, -10
-                    });
-                }),
-                nullptr
-            );
-
-            loadingRef->runAction(
-                CCSequence::create(
-                    CCScaleTo::create(0.2f, 0),
-                    CallFuncExt::create([loadingRef]{
-                        if (loadingRef) loadingRef->removeFromParent();
-                    }), nullptr
-                )
-            );
-
-            self->runAction(sequence);
-        }
-    );
+    async::spawn(this->onLoadWeeklyAch());
 
     return true;
+}
+
+arc::Future<> WeeklyAchievementPopup::onLoadWeeklyAch() {
+    LoadingSpinner* loading = typeinfo_cast<LoadingSpinner*>(m_buttonMenu->getChildByID("main-menu")->getChildByID("loading"));
+    CCMenu* mainMenu = typeinfo_cast<CCMenu*>(m_buttonMenu->getChildByID("main-menu"));
+
+    auto loadingRef = Ref(loading);
+    Ref<WeeklyAchievementPopup> self = this;
+    auto mainMenuRef = Ref(mainMenu);
+
+    auto parsed = co_await BackendManager::getInstance().getWeeklyAch();
+
+    if (!loadingRef || !self || !mainMenuRef) co_return;
+
+    if (!parsed.ok) {
+        loadingRef->removeFromParent();
+        Notification::create("Failed to load weekly achievements!", NotificationIcon::Error)->show();
+        co_return;
+    }
+
+    auto sequence = CCSequence::create(
+        CallFuncExt::create([mainMenuRef, parsed]{
+            auto cell = WeeklyAchievementCell::create(AchievementCellType::Third, parsed.cell3);
+            cell->setScale(0.8f);
+            mainMenuRef->addChild(cell);
+            cell->setPosition({
+                20, -10
+            });
+        }),
+        CCDelayTime::create(0.2f),
+        CallFuncExt::create([mainMenuRef, parsed] {
+            auto cell = WeeklyAchievementCell::create(AchievementCellType::Second, parsed.cell2);
+            cell->setScale(0.8f);
+            mainMenuRef->addChild(cell);
+            cell->setPosition({
+                214, -10
+            });
+        }),
+        CCDelayTime::create(0.2f),
+        CallFuncExt::create([mainMenuRef, parsed] {
+            auto cell = WeeklyAchievementCell::create(AchievementCellType::First, parsed.cell1);
+            cell->setScale(0.8f);
+            mainMenuRef->addChild(cell);
+            cell->setPosition({
+                117, -10
+            });
+        }),
+        nullptr
+    );
+
+    loadingRef->runAction(
+        CCSequence::create(
+            CCScaleTo::create(0.2f, 0),
+            CallFuncExt::create([loadingRef]{
+                if (loadingRef) loadingRef->removeFromParent();
+            }), nullptr
+        )
+    );
+
+    self->runAction(sequence);
+
+    co_return;
 }
 
 }

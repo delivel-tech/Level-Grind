@@ -2,6 +2,7 @@
 #include "../BasePopup.hpp"
 
 #include "../../managers/PetManager.hpp"
+#include "../../features/pets/PetTypes.hpp"
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/SimplePlayer.hpp>
 #include <Geode/binding/ColorChannelSprite.hpp>
@@ -16,10 +17,10 @@ namespace levelgrind {
 
 class PetCustomisePopup : public BasePopup {
 public:
-    static PetCustomisePopup* create(PetManager::PetData petData);
+    static PetCustomisePopup* create(SyncPetResponse petData);
 
 private:
-    bool init(PetManager::PetData petData);
+    bool init(SyncPetResponse petData);
     void onIconSelect(CCObject* sender);
     void onColorsToggle(CCObject* sender);
     void onGlowToggle(CCObject* sender);

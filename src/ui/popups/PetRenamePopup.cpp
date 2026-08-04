@@ -3,14 +3,13 @@
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/TextInput.hpp"
-#include "Geode/utils/web.hpp"
+#include "Geode/utils/async.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/UploadActionPopup.hpp>
-#include <matjson.hpp>
 
-#include "../../managers/DataManager.hpp"
+#include "../../core/BackendManager.hpp"
 
 using namespace geode::prelude;
 
@@ -57,54 +56,27 @@ bool PetRenamePopup::init(std::string currPetName) {
 }
 
 void PetRenamePopup::onOKBtn(CCObject* sender) {
-    web::WebRequest req;
+    async::spawn(this->onRename(m_input->getString()));
+}
 
-    matjson::Value body;
-
+arc::Future<> PetRenamePopup::onRename(std::string petName) {
     auto upopup = UploadActionPopup::create(nullptr, "Updating pet name...");
     upopup->show();
 
-    body["token"] = DataManager::getInstance().getUserToken();
-    body["accountId"] = GJAccountManager::get()->m_accountID;
-    body["petName"] = m_input->getString().c_str();
-
-    req.bodyJSON(body);
-
     auto uPopupRef = Ref(upopup);
-    auto self = Ref(this);
+    Ref<PetRenamePopup> self = this;
 
-    m_listener.spawn(
-        req.post("https://api.delivel.tech/update_pet_name"),
-        [uPopupRef, self](web::WebResponse res) {
-            if (!uPopupRef || !self) return;
-            if (!res.ok()) {
-                uPopupRef->showFailMessage("Updating failed! Try again later.");
-                log::error("req failed, code: {}", res.code());
-                return;
-            }
+    auto parsed = co_await BackendManager::getInstance().renamePet(petName);
 
-            auto jsonRes = res.json();
+    if (!uPopupRef || !self) co_return;
 
-            if (!jsonRes) {
-                uPopupRef->showFailMessage("Updating failed! Try again later.");
-                log::error("req failed, code: {}", res.code());
-                return;
-            }
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Updating failed! Try again later.");
+        co_return;
+    }
 
-            auto json = jsonRes.unwrap();
-
-            auto isOK = json["ok"].asBool().unwrapOrDefault();
-
-            if (!isOK) {
-                uPopupRef->showFailMessage("Updating failed! Try again later.");
-                log::error("req failed, code: {}", res.code());
-                return;
-            } else {
-                uPopupRef->showSuccessMessage("Success! Pet name updated.");
-            }
-            return;
-        }
-    );
+    uPopupRef->showSuccessMessage("Success! Pet name updated.");
+    co_return;
 }
 
 }

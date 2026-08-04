@@ -1,5 +1,6 @@
 #include "PetUpgradePopup.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
+#include "Geode/utils/async.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/GJAccountManager.hpp>
@@ -7,13 +8,13 @@
 #include <fmt/format.h>
 #include <matjson.hpp>
 
-#include "../../managers/DataManager.hpp"
+#include "../../core/BackendManager.hpp"
 
 using namespace geode::prelude;
 
 namespace levelgrind {
 
-PetUpgradePopup* PetUpgradePopup::create(PetManager::PetData petData) {
+PetUpgradePopup* PetUpgradePopup::create(SyncPetResponse petData) {
     auto ret = new PetUpgradePopup;
     if (ret && ret->init(petData)) {
         ret->autorelease();
@@ -23,7 +24,7 @@ PetUpgradePopup* PetUpgradePopup::create(PetManager::PetData petData) {
     return nullptr;
 }
 
-bool PetUpgradePopup::init(PetManager::PetData petData) {
+bool PetUpgradePopup::init(SyncPetResponse petData) {
     if (!Popup::init(260.f, 180.f)) return false;
 
     this->setTitle("Upgrade Pet");
@@ -85,54 +86,26 @@ void PetUpgradePopup::onUpgradeRarity(CCObject* sender) {
         return;
     }
 
-    web::WebRequest req;
+    async::spawn(this->onUpgradeRarityClicked(upgCost));
+}
 
-    matjson::Value body;
-    body["accountId"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
-
-    body["newRarity"] = m_petData.petRarity + 1;
-    body["upgradeCost"] = upgCost;
-
-    req.bodyJSON(body);
-
+arc::Future<> PetUpgradePopup::onUpgradeRarityClicked(int upgradeCost) {
     auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Upgrading pet rarity...");
     upopup->show();
 
     auto uPopupRef = Ref(upopup);
 
-    m_listener.spawn(
-        req.post("https://api.delivel.tech/upgrade_pet_rarity"),
-        [uPopupRef](web::WebResponse res) {
-            if (!uPopupRef) return;
-            if (!res.ok()) {
-                uPopupRef->showFailMessage("Upgrading failed! Try again later.");
-                log::error("req failed, error: {}", res.code());
-                return;
-            }
+    auto parsed = co_await BackendManager::getInstance().upgradePetRarity(m_petData.petRarity + 1, upgradeCost);
 
-            auto jsonRes = res.json();
-            if (!jsonRes) {
-                uPopupRef->showFailMessage("Upgrading failed! Try again later.");
-                log::error("req failed, error: {}", res.code());
-                return;
-            }
+    if (!uPopupRef) co_return;
 
-            auto json = jsonRes.unwrap();
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Upgrading failed! Try again later.");
+        co_return;
+    }
 
-            auto isOK = json["ok"].asBool().unwrapOrDefault();
-
-            if (!isOK) {
-                uPopupRef->showFailMessage("Upgrading failed! Try again later.");
-                log::error("req failed, error: {}", res.code());
-                return;
-            } else {
-                uPopupRef->showSuccessMessage("Success! Pet rarity upgraded.");
-                return;
-            }
-            return;
-        }
-    );
+    uPopupRef->showSuccessMessage("Success! Pet rarity upgraded.");
+    co_return;
 }
 
 void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
@@ -156,54 +129,26 @@ void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
         return;
     }
 
-    web::WebRequest req;
+    async::spawn(this->onUpgradeLevelClicked(upgCost));
+}
 
-    matjson::Value body;
-    body["accountId"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
-
-    body["newLevel"] = m_petData.petLevel + 1;
-    body["upgradeCost"] = upgCost;
-
-    req.bodyJSON(body);
-
+arc::Future<> PetUpgradePopup::onUpgradeLevelClicked(int upgradeCost) {
     auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Upgrading pet level...");
     upopup->show();
 
     auto uPopupRef = Ref(upopup);
 
-    m_listener.spawn(
-        req.post("https://api.delivel.tech/upgrade_pet_level"),
-        [uPopupRef](web::WebResponse res) {
-            if (!uPopupRef) return;
-            if (!res.ok()) {
-                uPopupRef->showFailMessage("Upgrading failed! Try again later.");
-                log::error("req failed, error: {}", res.code());
-                return;
-            }
+    auto parsed = co_await BackendManager::getInstance().upgradePetLevel(m_petData.petLevel + 1, upgradeCost);
 
-            auto jsonRes = res.json();
-            if (!jsonRes) {
-                uPopupRef->showFailMessage("Upgrading failed! Try again later.");
-                log::error("req failed, error: {}", res.code());
-                return;
-            }
+    if (!uPopupRef) co_return;
 
-            auto json = jsonRes.unwrap();
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Upgrading failed! Try again later.");
+        co_return;
+    }
 
-            auto isOK = json["ok"].asBool().unwrapOrDefault();
-
-            if (!isOK) {
-                uPopupRef->showFailMessage("Upgrading failed! Try again later.");
-                log::error("req failed, error: {}", res.code());
-                return;
-            } else {
-                uPopupRef->showSuccessMessage("Success! Pet level upgraded.");
-                return;
-            }
-            return;
-        }
-    );
+    uPopupRef->showSuccessMessage("Success! Pet level upgraded.");
+    co_return;
 }
 
 int PetUpgradePopup::getUpgradeRarityCostByCurrRarity(int rarity) {

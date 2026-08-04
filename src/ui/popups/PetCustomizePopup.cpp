@@ -18,7 +18,7 @@
 
 namespace levelgrind {
 
-PetCustomisePopup* PetCustomisePopup::create(PetManager::PetData petData) {
+PetCustomisePopup* PetCustomisePopup::create(SyncPetResponse petData) {
     auto ret = new PetCustomisePopup;
     if (ret && ret->init(petData)) {
         ret->autorelease();
@@ -28,7 +28,7 @@ PetCustomisePopup* PetCustomisePopup::create(PetManager::PetData petData) {
     return nullptr;
 }
 
-bool PetCustomisePopup::init(PetManager::PetData petData) {
+bool PetCustomisePopup::init(SyncPetResponse petData) {
     if (!BasePopup::init({400, 280})) return false;
 
     setTitle("Customize Pet");

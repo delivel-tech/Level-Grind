@@ -16,17 +16,6 @@ private:
     PetManager() = default;
 
 public:
-    struct PetData {
-        bool ok;
-        std::string petName;
-        int petStars;
-        int petMoons;
-        int petLevel;
-        int petRarity;
-        bool isBanned;
-        std::string banReason;
-    };
-
     enum PetStyle {
         StandardCube,
         OwnCube,
@@ -34,7 +23,6 @@ public:
     };
 
     int getUpgradeRarityCostByCurrRarity(int rarity);
-    PetData parsePetData(web::WebResponse res, LoadingSpinner* spinner);
     float getNextLevelPercentage(int petStars, int nextLvlCost);
     int getUpgradeLvlCostByLevel(int petLevel);
     std::string getPetAgeFromLevel(int petLevel);

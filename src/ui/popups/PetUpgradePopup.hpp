@@ -5,6 +5,8 @@
 #include <Geode/Geode.hpp>
 
 #include "../../managers/PetManager.hpp"
+#include "../../features/pets/PetTypes.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -12,27 +14,23 @@ namespace levelgrind {
 
 class PetUpgradePopup : public BasePopup, public ::UploadPopupDelegate {
 public:
-    static PetUpgradePopup* create(PetManager::PetData petData);
+    static PetUpgradePopup* create(SyncPetResponse petData);
 
     void onClosePopup(::UploadActionPopup* popup) override;
 
-    PetManager::PetData m_petData;
+    SyncPetResponse m_petData;
 
     int getUpgradeRarityCostByCurrRarity(int rarity);
     int getUpgradeLvlCostByLevel(int petLevel);
 
 private:
-    bool init(PetManager::PetData petData);
-
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~PetUpgradePopup() {
-        m_listener.cancel();
-    }
+    bool init(SyncPetResponse petData);
 
     void onUpgradeRarity(CCObject* sender);
     void onUpgradeLevel(CCObject* sender);
 
+    arc::Future<> onUpgradeRarityClicked(int upgradeCost);
+    arc::Future<> onUpgradeLevelClicked(int upgradeCost);
 };
 
 }

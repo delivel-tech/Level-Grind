@@ -12,12 +12,12 @@
 #include <Geode/binding/LoadingCircle.hpp>
 #include <UIBuilder.hpp>
 
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../popups/PetRenamePopup.hpp"
 #include "../popups/PetUpgradePopup.hpp"
 #include "../popups/PetCustomizePopup.hpp"
 #include "Geode/ui/ProgressBar.hpp"
-#include "Geode/utils/web.hpp"
+#include "Geode/utils/async.hpp"
 
 #include "../popups/GuidePopup.hpp"
 
@@ -107,26 +107,41 @@ bool PetLayer::init() {
         mainPanelCS.width / 2, mainPanelCS.height / 2
     );
 
-    auto loadingRef = Ref(loading);
-    auto self = Ref(this);
-    auto mainPanelRef = Ref(mainPanel);
-
-    m_listener.spawn(
-        APIClient::getInstance().syncPet(),
-        [self, loadingRef, mainPanelRef](web::WebResponse res) {
-            if (!self || !loadingRef || !mainPanelRef) return;
-            auto data = PetManager::getInstance().parsePetData(res, loadingRef);
-            PetManager::getInstance().resetPetDeltas();
-            if (!data.ok) return;
-            loadingRef->removeFromParent();
-            self->drawUIFromData(data, mainPanelRef);
-        }
-    );
+    async::spawn(this->onLoadPetData(Ref(loading), Ref(mainPanel)));
 
     return true;
 }
 
-void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
+arc::Future<> PetLayer::onLoadPetData(Ref<LoadingSpinner> loadingRef, Ref<geode::NineSlice> mainPanelRef) {
+    Ref<PetLayer> self = this;
+
+    auto data = co_await BackendManager::getInstance().syncPet();
+
+    if (!self || !loadingRef || !mainPanelRef) co_return;
+
+    if (!data.ok) {
+        log::error("invalid json in response");
+        Notification::create("Failed to load pet data. Try again later.", NotificationIcon::Error)->show();
+        loadingRef->removeFromParent();
+        PetManager::getInstance().resetPetDeltas();
+        co_return;
+    }
+
+    Mod::get()->setSavedValue("last-pet-lvl", data.petLevel);
+    if (data.isBanned) {
+        Notification::create(fmt::format("Banned: {}", data.banReason), NotificationIcon::Error)->show();
+        log::info("pet is banned: {}", data.banReason);
+    }
+
+    PetManager::getInstance().resetPetDeltas();
+
+    loadingRef->removeFromParent();
+    self->drawUIFromData(data, mainPanelRef);
+
+    co_return;
+}
+
+void PetLayer::drawUIFromData(SyncPetResponse data, NineSlice* mainPanel) {
     CCSize mainPanelCS = mainPanel->getContentSize();
 
     m_petLabel = Build(CCLabelBMFont::create(data.petName.c_str(), "goldFont.fnt"))

@@ -208,44 +208,4 @@ float PetManager::getNextLevelPercentage(int petStars, int nextLvlCost) {
     return percentage;
 }
 
-PetManager::PetData PetManager::parsePetData(web::WebResponse res, LoadingSpinner* spinner) {
-    PetData data;
-    data.ok = true;
-    if (!res.ok()) {
-        log::error("invalid json in response");
-        Notification::create("Failed to load pet data. Try again later.", NotificationIcon::Error)->show();
-        data.ok = false;
-        if (spinner) spinner->removeFromParent();
-        return data;
-    }
-
-    auto jsonRes = res.json();
-
-    if (!jsonRes) {
-        log::error("invalid json in response");
-        Notification::create("Failed to load pet data. Try again later.", NotificationIcon::Error)->show();
-        data.ok = false;
-        if (spinner) spinner->removeFromParent();
-        return data;
-    }
-
-    auto jsonUnwrapped = jsonRes.unwrap();
-    auto json = jsonUnwrapped["pet"];
-
-    data.petName = json["petName"].asString().unwrapOrDefault();
-    data.petStars = json["petStars"].asInt().unwrapOrDefault();
-    data.petMoons = json["petMoons"].asInt().unwrapOrDefault();
-    data.petLevel = json["petLevel"].asInt().unwrapOrDefault();
-    Mod::get()->setSavedValue("last-pet-lvl", data.petLevel);
-    data.petRarity = json["petRarity"].asInt().unwrapOrDefault();
-    data.isBanned = json["isBanned"].asBool().unwrapOrDefault();
-    if (data.isBanned) {
-        data.banReason = json["banReason"].asString().unwrapOrDefault();
-        Notification::create(fmt::format("Banned: {}", data.banReason), NotificationIcon::Error)->show();
-        log::info("pet is banned: {}", data.banReason);
-    }
-
-    return data;
-}
-    
 }

@@ -26,4 +26,16 @@ struct UnbanPetResponse {
     bool ok;
 };
 
+struct UpgradePetRarityResponse {
+    bool ok;
+};
+
+struct UpgradePetLevelResponse {
+    bool ok;
+};
+
+struct RenamePetResponse {
+    bool ok;
+};
+
 }

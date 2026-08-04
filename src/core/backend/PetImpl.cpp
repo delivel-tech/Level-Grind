@@ -110,5 +110,61 @@ arc::Future<UnbanPetResponse> BackendManager::unbanPet(int accountID) {
     co_return co_await request<UnbanPetResponse>("POST", "/unban_pet", reqBody);
 }
 
+template <>
+struct matjson::Serialize<UpgradePetRarityResponse> {
+    static geode::Result<UpgradePetRarityResponse> fromJson(matjson::Value const& json) {
+        UpgradePetRarityResponse ret;
+        ret.ok = json["ok"].asBool().unwrapOrDefault();
+        return geode::Ok(ret);
+    }
+};
+
+arc::Future<UpgradePetRarityResponse> BackendManager::upgradePetRarity(int newRarity, int upgradeCost) {
+    matjson::Value body;
+    body["accountId"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["newRarity"] = newRarity;
+    body["upgradeCost"] = upgradeCost;
+
+    co_return co_await request<UpgradePetRarityResponse>("POST", "/upgrade_pet_rarity", body);
+}
+
+template <>
+struct matjson::Serialize<UpgradePetLevelResponse> {
+    static geode::Result<UpgradePetLevelResponse> fromJson(matjson::Value const& json) {
+        UpgradePetLevelResponse ret;
+        ret.ok = json["ok"].asBool().unwrapOrDefault();
+        return geode::Ok(ret);
+    }
+};
+
+arc::Future<UpgradePetLevelResponse> BackendManager::upgradePetLevel(int newLevel, int upgradeCost) {
+    matjson::Value body;
+    body["accountId"] = GJAccountManager::sharedState()->m_accountID;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["newLevel"] = newLevel;
+    body["upgradeCost"] = upgradeCost;
+
+    co_return co_await request<UpgradePetLevelResponse>("POST", "/upgrade_pet_level", body);
+}
+
+template <>
+struct matjson::Serialize<RenamePetResponse> {
+    static geode::Result<RenamePetResponse> fromJson(matjson::Value const& json) {
+        RenamePetResponse ret;
+        ret.ok = json["ok"].asBool().unwrapOrDefault();
+        return geode::Ok(ret);
+    }
+};
+
+arc::Future<RenamePetResponse> BackendManager::renamePet(std::string petName) {
+    matjson::Value body;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["accountId"] = GJAccountManager::get()->m_accountID;
+    body["petName"] = petName;
+
+    co_return co_await request<RenamePetResponse>("POST", "/update_pet_name", body);
+}
+
 
 }
