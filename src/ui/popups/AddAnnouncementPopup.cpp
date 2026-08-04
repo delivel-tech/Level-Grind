@@ -5,13 +5,14 @@
 #include <fmt/format.h>
 
 #include "../../managers/DataManager.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/MDPopup.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/ui/Popup.hpp"
 #include "Geode/ui/TextInput.hpp"
+#include "Geode/utils/async.hpp"
 
 using namespace geode::prelude;
 
@@ -131,32 +132,7 @@ bool AddAnnouncementPopup::init() {
                 "Cancel", "Confirm",
                 [this](auto, bool btn2) {
                     if (btn2) {
-                        auto self = Ref(this);
-                        auto uPopup = UploadActionPopup::create(nullptr, "Adding announcement...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        m_listener.spawn(
-                            APIClient::getInstance().addAnnouncement(
-                                m_titleTextInput->getString(),
-                                m_contentTextInput->getString()
-                            ),
-                            [self, uPopupRef](web::WebResponse res) {
-                                if (!self || !uPopupRef) return;
-
-                                auto parsed = APIClient::getInstance().addAnnouncementParse(res);
-
-                                if (!parsed.ok) {
-                                    log::error("bad web req. add announcement endpoint");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
-                                    return;
-                                }
-
-                                uPopupRef->showSuccessMessage("Success! Announcement added.");
-                                return;
-                            }
-                        );
+                        async::spawn(this->onAddClicked());
                     }
                 }
             );
@@ -168,6 +144,31 @@ bool AddAnnouncementPopup::init() {
     m_buttonsMenu->updateLayout();
 
     return true;
+}
+
+arc::Future<> AddAnnouncementPopup::onAddClicked() {
+    Ref<AddAnnouncementPopup> self = this;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Adding announcement...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().addAnnouncement(
+        m_titleTextInput->getString(),
+        m_contentTextInput->getString()
+    );
+
+    if (!self || !uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        log::error("bad web req. add announcement endpoint");
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Announcement added.");
+    co_return;
 }
 
 }

@@ -5,8 +5,7 @@
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/MDTextArea.hpp"
 #include "Geode/ui/Scrollbar.hpp"
-#include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -19,7 +18,8 @@ public:
 private:
     bool init() override;
 
-    TaskHolder<web::WebResponse> m_listener;
+    arc::Future<> onLoadAnnouncements();
+    arc::Future<> onDeleteAnnouncementClicked(int announcementId);
 
     LoadingSpinner* m_spinner = nullptr;
 
@@ -31,10 +31,6 @@ private:
 
     int m_currentAnnouncementID;
     int m_newestAnnouncementID;
-
-    ~AnnouncementsPopup() {
-        m_listener.cancel();
-    }
 };
 
 }

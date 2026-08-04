@@ -4,7 +4,7 @@
 #include "../BasePopup.hpp"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/TextInput.hpp"
-#include "Geode/utils/web.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -17,18 +17,14 @@ public:
 private:
     bool init() override;
 
+    arc::Future<> onAddClicked();
+
     TextInput* m_titleTextInput = nullptr;
     TextInput* m_contentTextInput = nullptr;
     CCMenuItemSpriteExtra* m_previewBtn = nullptr;
     CCMenuItemSpriteExtra* m_addBtn = nullptr;
 
     CCMenu* m_buttonsMenu = nullptr;
-
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~AddAnnouncementPopup() {
-        m_listener.cancel();
-    }
 };
 
 }
