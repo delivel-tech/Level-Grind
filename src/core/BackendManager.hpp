@@ -24,9 +24,6 @@ class BackendManager : public Singleton<BackendManager> {
 
     static constexpr const char* baseUrl = "https://api.delivel.tech";
 
-    // Defined inline (rather than in a .cpp) so that each XxxImpl.cpp
-    // instantiates request<T>/requestWithReq<T> in its own translation unit,
-    // where its matjson::Serialize<T> specialization is actually visible.
     template <typename T>
     arc::Future<T> requestWithReq(geode::utils::web::WebRequest req, std::string method, std::string endpoint) {
         auto res = (method == "GET")
