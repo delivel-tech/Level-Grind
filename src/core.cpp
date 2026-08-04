@@ -1,15 +1,24 @@
-#include "managers/APIClient.hpp"
+#include "core/BackendManager.hpp"
 #include "managers/DataManager.hpp"
 #include "ui/layers/SettingsLayer.hpp"
+#include <Geode/utils/async.hpp>
 
 using namespace geode::prelude;
 using namespace levelgrind;
 
+namespace {
+arc::Future<> performBootupGet() {
+    auto data = co_await BackendManager::getInstance().bootupGet();
+    DataManager::getInstance().setSharedData(data);
+    co_return;
+}
+}
+
 $execute {
     SettingsLayer::initSettings();
-    APIClient::getInstance().performBootupGet();
+    async::spawn(performBootupGet());
     Loader::get()->queueInMainThread([] {
-        APIClient::getInstance().performGetToken();
+        BackendManager::getInstance().performGetToken();
     });
     DataManager::getInstance().initPermsOnBootup();
     DataManager::getInstance().initTokenOnBootup();
