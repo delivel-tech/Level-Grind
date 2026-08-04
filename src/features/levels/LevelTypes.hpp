@@ -159,4 +159,32 @@ struct NewGrindPackBody {
     int difficulty;
 };
 
+struct NewLevelResponse {
+    bool ok;
+};
+
+struct NewGrindPackResponse {
+    bool ok;
+};
+
+struct DeleteLevelResponse {
+    bool ok;
+};
+
+struct LockLevelResponse {
+    bool ok;
+};
+
+struct UnlockLevelResponse {
+    bool ok;
+};
+
+struct DeleteNotesResponse {
+    bool ok;
+};
+
+struct DeleteGrindPackResponse {
+    bool ok;
+};
+
 }

@@ -33,4 +33,8 @@ struct WeeklyAchResponse {
     AchievementCellInfo cell3;
 };
 
+struct NewWeeklyAchResponse {
+    bool ok;
+};
+
 }

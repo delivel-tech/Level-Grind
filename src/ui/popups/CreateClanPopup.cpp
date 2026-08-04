@@ -1,9 +1,10 @@
 #include "CreateClanPopup.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/ColorChannelSprite.hpp>
 #include <Geode/binding/UploadActionPopup.hpp>
 #include "Geode/ui/Notification.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/general.hpp"
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
@@ -187,27 +188,31 @@ void CreateClanPopup::onCreate() {
     LGClanType type = m_typeRadio.getSelected();
     LGClanJoinType joinType = m_joinRadio.getSelected();
 
+    async::spawn(this->onCreateClicked(name, desc, type, joinType, statReq));
+}
+
+arc::Future<> CreateClanPopup::onCreateClicked(std::string name, std::string desc, LGClanType type, LGClanJoinType joinType, int statReq) {
+    Ref<CreateClanPopup> self = this;
+
     auto uPopup = UploadActionPopup::create(nullptr, "Creating clan...");
     uPopup->show();
 
     auto uPopupRef = Ref(uPopup);
-    auto onCreated = m_onCreated;
 
-    m_listener.spawn(
-        APIClient::getInstance().createClan(name, desc, type, 0, joinType, statReq),
-        [uPopupRef, onCreated](web::WebResponse res) {
-            if (!uPopupRef) return;
-            auto parsed = APIClient::getInstance().createClanParse(res);
-
-            if (!parsed.ok) {
-                uPopupRef->showFailMessage(parsed.error.empty() ? "Failed! Try again later." : parsed.error);
-                return;
-            }
-
-            uPopupRef->showSuccessMessage("Clan created!");
-            if (onCreated) onCreated();
-        }
+    auto parsed = co_await BackendManager::getInstance().createClan(
+        name, desc, type, 0, joinType, statReq
     );
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage(parsed.error.empty() ? "Failed! Try again later." : parsed.error);
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Clan created!");
+    if (self && self->m_onCreated) self->m_onCreated();
+    co_return;
 }
 
 }

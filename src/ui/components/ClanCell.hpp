@@ -4,8 +4,6 @@
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/NineSlice.hpp"
-#include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
 #include "ccTypes.h"
 
 #include <Geode/binding/ButtonSprite.hpp>
@@ -135,10 +133,6 @@ private:
 
         return true;
     }
-
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~ClanCell() {m_listener.cancel();}
 };
 
 }

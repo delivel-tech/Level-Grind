@@ -1,9 +1,10 @@
 #pragma once
 #include "../BaseLayer.hpp"
+#include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/NineSlice.hpp"
-#include "Geode/utils/web.hpp"
 #include <Geode/Geode.hpp>
 #include "../../features/clans/ClanTypes.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -16,6 +17,8 @@ public:
 private:
     bool init() override;
 
+    arc::Future<> onLoadClans(Ref<LoadingSpinner> loadingRef, Ref<geode::NineSlice> mainPanelRef);
+
     void initUI(ViewClansResponse res, Ref<geode::NineSlice> mainPanel);
     void initClanUI(ViewClansResponse res, Ref<geode::NineSlice> mainPanel);
 
@@ -27,9 +30,6 @@ private:
     void onBack(CCObject* sender) override;
 
     float m_prevMusicVolume = 1.f;
-
-    TaskHolder<web::WebResponse> m_listener;
-    ~ClanViewerLayer() {m_listener.cancel();}
 };
 
 }

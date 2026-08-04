@@ -21,4 +21,8 @@ enum EventType {
     Monthly = 2
 };
 
+struct SetEventsResponse {
+    bool ok;
+};
+
 }

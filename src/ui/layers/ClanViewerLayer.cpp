@@ -6,7 +6,7 @@
 
 #include <UIBuilder.hpp>
 #include "../popups/GuidePopup.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../../managers/PetManager.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
@@ -15,7 +15,7 @@
 #include "Geode/ui/Notification.hpp"
 #include "Geode/ui/ScrollLayer.hpp"
 #include "Geode/ui/Scrollbar.hpp"
-#include "Geode/utils/web.hpp"
+#include "Geode/utils/async.hpp"
 
 #include "../popups/CreateClanPopup.hpp"
 #include "../components/ClanCell.hpp"
@@ -115,34 +115,34 @@ bool ClanViewerLayer::init() {
         mainPanelCS.width / 2, mainPanelCS.height / 2
     );
 
-    auto loadingRef = Ref(loading);
-    auto self = Ref(this);
-    auto mainPanelRef = Ref(mainPanel);
+    async::spawn(this->onLoadClans(Ref(loading), Ref(mainPanel)));
+
+    return true;
+}
+
+arc::Future<> ClanViewerLayer::onLoadClans(Ref<LoadingSpinner> loadingRef, Ref<geode::NineSlice> mainPanelRef) {
+    Ref<ClanViewerLayer> self = this;
 
     auto& pm = PetManager::getInstance();
 
-    m_listener.spawn(
-        APIClient::getInstance().viewClans(
-            pm.shouldUpdatePetStars(),
-            pm.getPetStarsDelta(),
-            pm.shouldUpdatePetMoons(),
-            pm.getPetMoonsDelta()
-        ),
-        [loadingRef, self, mainPanelRef](web::WebResponse res) {
-            if (!self || !loadingRef || !mainPanelRef) return;
-            auto data = APIClient::getInstance().viewClansParse(res);
-            if (!data.ok) {
-                Notification::create("Failed to load clans!", NotificationIcon::Error)->show();
-                if (!loadingRef) loadingRef->removeFromParent();
-                return;
-            }
-
-            loadingRef->removeFromParent();
-            self->initUI(data, mainPanelRef);
-        }
+    auto data = co_await BackendManager::getInstance().viewClans(
+        pm.shouldUpdatePetStars(),
+        pm.getPetStarsDelta(),
+        pm.shouldUpdatePetMoons(),
+        pm.getPetMoonsDelta()
     );
-    
-    return true;
+
+    if (!self || !loadingRef || !mainPanelRef) co_return;
+
+    if (!data.ok) {
+        Notification::create("Failed to load clans!", NotificationIcon::Error)->show();
+        loadingRef->removeFromParent();
+        co_return;
+    }
+
+    loadingRef->removeFromParent();
+    self->initUI(data, mainPanelRef);
+    co_return;
 }
 
 void ClanViewerLayer::initUI(ViewClansResponse data, Ref<geode::NineSlice> mainPanel) {
