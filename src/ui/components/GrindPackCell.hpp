@@ -17,8 +17,8 @@
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/ProgressBar.hpp"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
 #include "ccTypes.h"
+#include <arc/future/Future.hpp>
 
 #include <Geode/binding/LevelBrowserLayer.hpp>
 #include <Geode/binding/UploadActionPopup.hpp>
@@ -28,7 +28,7 @@
 
 #include "../layers/PackBrowserLayer.hpp"
 #include "../../managers/DataManager.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 
 using namespace geode::prelude;
 
@@ -172,24 +172,7 @@ private:
             auto deleteBtn = Build(CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))
                 .scale(0.5f)
                 .intoMenuItem([this, packInfo] {
-                    auto uPopup = UploadActionPopup::create(nullptr, "Deleting pack...");
-                    uPopup->show();
-
-                    auto uPopupRef = Ref(uPopup);
-
-                    this->m_listener.spawn(
-                        APIClient::getInstance().deleteGrindPack(packInfo.id),
-                        [uPopupRef](web::WebResponse res) {
-                            if (!uPopupRef) return;
-                            if (!res.ok()) {
-                                log::error("bad web req");
-                                uPopupRef->showFailMessage("Failed! Try again later.");
-                                return;
-                            } else {
-                                uPopupRef->showSuccessMessage("Success! Pack deleted.");
-                            }
-                        }
-                    );
+                    async::spawn(this->onDeleteClicked(packInfo.id));
                 })
                 .parent(viewBtnMenu)
                 .posX(-45)
@@ -203,9 +186,25 @@ private:
         return true;
     }
 
-    TaskHolder<web::WebResponse> m_listener;
+    arc::Future<> onDeleteClicked(int packId) {
+        auto uPopup = UploadActionPopup::create(nullptr, "Deleting pack...");
+        uPopup->show();
 
-    ~GrindPackCell() {m_listener.cancel();}
+        auto uPopupRef = Ref(uPopup);
+
+        auto parsed = co_await BackendManager::getInstance().deleteGrindPack(packId);
+
+        if (!uPopupRef) co_return;
+
+        if (!parsed.ok) {
+            log::error("bad web req");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            co_return;
+        }
+
+        uPopupRef->showSuccessMessage("Success! Pack deleted.");
+        co_return;
+    }
 };
 
 }

@@ -1,5 +1,7 @@
 #include <Geode/Geode.hpp>
 #include "../BasePopup.hpp"
+#include "../../features/levels/LevelTypes.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -12,14 +14,10 @@ public:
 private:
     bool init() override;
 
+    arc::Future<> onAddClicked(NewGrindPackBody body);
+
     bool m_star = true;
     cocos2d::ccColor3B m_color;
-
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~AddPackPopup() {
-        m_listener.cancel();
-    }
 };
 
 }

@@ -9,9 +9,9 @@
 #include <UIBuilder.hpp>
 #include <cue/Slider.hpp>
 
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/general.hpp"
-#include "Geode/utils/web.hpp"
 
 namespace levelgrind {
 
@@ -96,40 +96,12 @@ bool SyncLevelsPopup::init() {
         .intoMenuItem([this, addThresholdInput, deleteThresholdInput, coinAddThresholdInput, coinDeleteThresholdInput] {
             Notification::create("Syncing levels...", NotificationIcon::Loading)->show();
 
-            auto self = Ref(this);
-
-            m_listener.spawn(
-                APIClient::getInstance().syncLevels(
-                    numFromString<int>(addThresholdInput->getString()).unwrap(),
-                    numFromString<int>(deleteThresholdInput->getString()).unwrap(),
-                    numFromString<int>(coinAddThresholdInput->getString()).unwrap(),
-                    numFromString<int>(coinDeleteThresholdInput->getString()).unwrap()
-                ),
-                [self](web::WebResponse res) {
-                    auto parsed = APIClient::getInstance().syncLevelsParse(res);
-
-                    if (!parsed.ok) {
-                        Notification::create("Failed to sync levels.", NotificationIcon::Error)->show();
-                        return;
-                    }
-
-                    self->onClose(nullptr);
-
-                    MDPopup::create(
-                        "Results",
-                        fmt::format(
-                            "# <cp>Level Changes</c>\n\n"
-                            "<cr>Deleted:</c> {}\n\n"
-                            "<cg>Inserted:</c> {}\n\n"
-                            "<cj>Coins changed:</c> {}\n\n",
-                            parsed.deleted, parsed.inserted, parsed.coinUpdates
-                        ).c_str(),
-                        "OK"
-                    )->show();
-
-                    return;
-                }
-            );
+            async::spawn(this->onSyncClicked(
+                numFromString<int>(addThresholdInput->getString()).unwrap(),
+                numFromString<int>(deleteThresholdInput->getString()).unwrap(),
+                numFromString<int>(coinAddThresholdInput->getString()).unwrap(),
+                numFromString<int>(coinDeleteThresholdInput->getString()).unwrap()
+            ));
         })
         .parent(m_buttonMenu)
         .pos(
@@ -141,6 +113,35 @@ bool SyncLevelsPopup::init() {
     objMenu->updateLayout();
 
     return true;
+}
+
+arc::Future<> SyncLevelsPopup::onSyncClicked(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold) {
+    Ref<SyncLevelsPopup> self = this;
+
+    auto parsed = co_await BackendManager::getInstance().syncLevels(addThreshold, deleteThreshold, coinAddThreshold, coinDeleteThreshold);
+
+    if (!self) co_return;
+
+    if (!parsed.ok) {
+        Notification::create("Failed to sync levels.", NotificationIcon::Error)->show();
+        co_return;
+    }
+
+    self->onClose(nullptr);
+
+    MDPopup::create(
+        "Results",
+        fmt::format(
+            "# <cp>Level Changes</c>\n\n"
+            "<cr>Deleted:</c> {}\n\n"
+            "<cg>Inserted:</c> {}\n\n"
+            "<cj>Coins changed:</c> {}\n\n",
+            parsed.deleted, parsed.inserted, parsed.coinUpdates
+        ).c_str(),
+        "OK"
+    )->show();
+
+    co_return;
 }
 
 }

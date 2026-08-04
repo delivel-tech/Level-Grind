@@ -5,7 +5,7 @@
 #include "../../features/levels/LevelTypes.hpp"
 #include "Geode/ui/ScrollLayer.hpp"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
+#include <arc/future/Future.hpp>
 #include <cue/ListNode.hpp>
 #include <Geode/binding/SetIDPopup.hpp>
 
@@ -26,6 +26,7 @@ private:
     void onRefresh(CCObject* sender);
 
     void loadPage();
+    arc::Future<> onLoadPacks();
     void startLoading();
     void stopLoading();
     void hideUIElements();
@@ -46,16 +47,10 @@ private:
     CCLabelBMFont* m_packsLabel = nullptr;
     CCNode* m_circle = nullptr;
 
-    TaskHolder<web::WebResponse> m_listener;
-
     std::vector<GrindPack> m_allPacks;
     int m_page = 0;
     int m_totalPages = 1;
     bool m_loading = false;
-
-    ~GrindPacksLayer() {
-        m_listener.cancel();
-    }
 };
 
 }

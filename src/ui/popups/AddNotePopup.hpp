@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include "../BasePopup.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -19,10 +20,7 @@ private:
 
     void onAddBtn(CCObject* sender);
     void onPreview(CCObject* sender);
-
-protected:
-    TaskHolder<web::WebResponse> m_listener;
-    ~AddNotePopup() { m_listener.cancel(); }
+    arc::Future<> onAddNote(std::string note);
 };
 
 }

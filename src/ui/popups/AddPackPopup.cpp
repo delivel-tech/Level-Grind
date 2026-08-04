@@ -6,12 +6,12 @@
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/TextInput.hpp"
 
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 
 #include "../../utils/utils.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/cocos.hpp"
 #include "Geode/utils/general.hpp"
-#include "Geode/utils/web.hpp"
 
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
@@ -124,11 +124,6 @@ bool AddPackPopup::init() {
 
     auto addBtn = Build(ButtonSprite::create("Add", "bigFont.fnt", "GJ_button_01.png"))
         .intoMenuItem([this, titleTextInput, level1TextInput, level2TextInput, level3TextInput, difficultyTextInput] {
-            auto uPopup = UploadActionPopup::create(nullptr, "Adding pack...");
-            uPopup->show();
-
-            auto uPopupRef = Ref(uPopup);
-
             NewGrindPackBody body {
                 titleTextInput->getString(),
                 this->m_star,
@@ -139,21 +134,7 @@ bool AddPackPopup::init() {
                 numFromString<int>(difficultyTextInput->getString()).unwrap()
             };
 
-            m_listener.spawn(
-                APIClient::getInstance().newGrindPack(body),
-                [uPopupRef](web::WebResponse res) {
-                    if (!uPopupRef) return;
-                    bool ok = APIClient::getInstance().newGrindPackParse(res);
-
-                    if (ok) {
-                        uPopupRef->showSuccessMessage("Success! Pack added.");
-                        return;
-                    } else {
-                        uPopupRef->showFailMessage("Failed! Try again later.");
-                        return;
-                    }
-                }
-            );
+            async::spawn(this->onAddClicked(body));
         })
         .parent(m_buttonMenu)
         .pos(centerX(), 30)
@@ -163,6 +144,25 @@ bool AddPackPopup::init() {
     contentMenu->updateLayout();
 
     return true;
+}
+
+arc::Future<> AddPackPopup::onAddClicked(NewGrindPackBody body) {
+    auto uPopup = UploadActionPopup::create(nullptr, "Adding pack...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().newGrindPack(body);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Pack added.");
+    co_return;
 }
 
 }

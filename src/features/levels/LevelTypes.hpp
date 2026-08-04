@@ -187,4 +187,8 @@ struct DeleteGrindPackResponse {
     bool ok;
 };
 
+struct AddNoteResponse {
+    bool ok;
+};
+
 }

@@ -1,6 +1,6 @@
 #include "GrindPacksLayer.hpp"
 
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../popups/AddPackPopup.hpp"
 #include "../components/GrindPackCell.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
@@ -9,7 +9,6 @@
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/ui/Scrollbar.hpp"
-#include "Geode/utils/web.hpp"
 #include <Geode/binding/SetIDPopup.hpp>
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
@@ -162,29 +161,7 @@ bool GrindPacksLayer::init() {
 
     m_loading = true;
 
-    auto s = Ref(this);
-    m_listener.spawn(
-        APIClient::getInstance().getGrindPacks(),
-        [s](web::WebResponse r) {
-            if (!s || !s->getParent() || !s->isRunning()) return;
-
-            auto parsed = APIClient::getInstance().getGrindPacksParse(r);
-
-            if (!parsed.ok) {
-                Notification::create("Failed! Try again later.", NotificationIcon::Error)->show();
-                s->stopLoading();
-                return;
-            }
-
-            s->m_allPacks = parsed.packs;
-            s->m_totalPages = (static_cast<int>(s->m_allPacks.size()) + PER_PAGE - 1) / PER_PAGE;
-            if (s->m_totalPages < 1) s->m_totalPages = 1;
-            s->m_page = 0;
-
-            s->stopLoading();
-            s->populatePacks();
-        }
-    );
+    async::spawn(this->onLoadPacks());
 
     auto addPackMenu = Build(CCMenu::create())
             .pos({ 25, 25 })
@@ -215,6 +192,30 @@ bool GrindPacksLayer::init() {
     }
 
     return true;
+}
+
+arc::Future<> GrindPacksLayer::onLoadPacks() {
+    Ref<GrindPacksLayer> s = this;
+
+    auto parsed = co_await BackendManager::getInstance().getGrindPacks();
+
+    if (!s || !s->getParent() || !s->isRunning()) co_return;
+
+    if (!parsed.ok) {
+        Notification::create("Failed! Try again later.", NotificationIcon::Error)->show();
+        s->stopLoading();
+        co_return;
+    }
+
+    s->m_allPacks = parsed.packs;
+    s->m_totalPages = (static_cast<int>(s->m_allPacks.size()) + PER_PAGE - 1) / PER_PAGE;
+    if (s->m_totalPages < 1) s->m_totalPages = 1;
+    s->m_page = 0;
+
+    s->stopLoading();
+    s->populatePacks();
+
+    co_return;
 }
 
 void GrindPacksLayer::startLoading() {
@@ -352,27 +353,7 @@ void GrindPacksLayer::onRefresh(CCObject*) {
 
     startLoading();
 
-    auto s = Ref(this);
-    m_listener.spawn(
-        APIClient::getInstance().getGrindPacks(),
-        [s](web::WebResponse r) {
-            if (!s || !s->getParent() || !s->isRunning()) return;
-
-            auto parsed = APIClient::getInstance().getGrindPacksParse(r);
-            if (!parsed.ok) {
-                Notification::create("Failed! Try again later.", NotificationIcon::Error)->show();
-                s->stopLoading();
-                return;
-            }
-
-            s->m_allPacks = parsed.packs;
-            s->m_totalPages = (static_cast<int>(s->m_allPacks.size()) + PER_PAGE - 1) / PER_PAGE;
-            if (s->m_totalPages < 1) s->m_totalPages = 1;
-
-            s->stopLoading();
-            s->populatePacks();
-        }
-    );
+    async::spawn(this->onLoadPacks());
 }
 
 }

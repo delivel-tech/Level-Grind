@@ -170,6 +170,28 @@ arc::Future<DeleteNotesResponse> BackendManager::deleteNotes(int levelId, std::s
 }
 
 template <>
+struct matjson::Serialize<AddNoteResponse> {
+    static geode::Result<AddNoteResponse> fromJson(matjson::Value const& json) {
+        AddNoteResponse ret;
+        ret.ok = json["ok"].asBool().unwrapOrDefault();
+        return geode::Ok(ret);
+    }
+};
+
+arc::Future<AddNoteResponse> BackendManager::addNote(int levelId, std::string levelName, std::string note) {
+    matjson::Value reqBody;
+
+    reqBody["accountID"] = GJAccountManager::sharedState()->m_accountID;
+    reqBody["token"] = DataManager::getInstance().getUserToken();
+    reqBody["levelID"] = levelId;
+    reqBody["levelName"] = levelName;
+    reqBody["note"] = note;
+    reqBody["addedBy"] = GJAccountManager::sharedState()->m_username.c_str();
+
+    co_return co_await request<AddNoteResponse>("POST", "/new_note", reqBody);
+}
+
+template <>
 struct matjson::Serialize<GetGrindPacksResponse> {
     static geode::Result<GetGrindPacksResponse> fromJson(matjson::Value const& json) {
         GetGrindPacksResponse ret;

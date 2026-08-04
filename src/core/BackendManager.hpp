@@ -98,6 +98,7 @@ public:
     arc::Future<LockLevelResponse> lockLevel(int levelId, std::string levelName);
     arc::Future<UnlockLevelResponse> unlockLevel(int levelId, std::string levelName);
     arc::Future<DeleteNotesResponse> deleteNotes(int levelId, std::string levelName);
+    arc::Future<AddNoteResponse> addNote(int levelId, std::string levelName, std::string note);
     arc::Future<Indicators> getIndicators(int levelID);
     arc::Future<DeleteGrindPackResponse> deleteGrindPack(int ID);
     arc::Future<CancelVoteResponse> cancelVote(int levelID);

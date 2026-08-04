@@ -4,7 +4,7 @@
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/NineSlice.hpp"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -26,9 +26,7 @@ public:
 private:
     bool init(int levelID);
 
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~IndicatorsPopup() {m_listener.cancel();}
+    arc::Future<> onLoadIndicators(int levelID);
 };
 
 }

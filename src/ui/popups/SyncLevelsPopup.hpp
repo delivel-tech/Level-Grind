@@ -1,5 +1,6 @@
 #include <Geode/Geode.hpp>
 #include "../BasePopup.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -12,11 +13,7 @@ public:
 private:
     bool init() override;
 
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~SyncLevelsPopup() {
-        m_listener.cancel();
-    }
+    arc::Future<> onSyncClicked(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold);
 };
 
 }

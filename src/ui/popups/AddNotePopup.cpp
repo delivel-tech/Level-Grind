@@ -1,7 +1,8 @@
 #include "AddNotePopup.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "../../managers/DataManager.hpp"
+#include "../../core/BackendManager.hpp"
 #include "Geode/ui/Layout.hpp"
+#include "Geode/utils/async.hpp"
 #include "NoteViewerPopup.hpp"
 
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
@@ -79,38 +80,26 @@ void AddNotePopup::onPreview(CCObject* sender) {
 }
 
 void AddNotePopup::onAddBtn(CCObject* sender) {
-    web::WebRequest req;
+    async::spawn(this->onAddNote(m_input->getString()));
+}
 
-    matjson::Value body;
-
-    body["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
-    body["levelID"] = m_levelId;
-    body["levelName"] = m_levelName;
-    body["note"] = m_input->getString().c_str();
-    body["addedBy"] = GJAccountManager::sharedState()->m_username.c_str();
-
-    req.bodyJSON(body);
-
+arc::Future<> AddNotePopup::onAddNote(std::string note) {
     auto uPopup = UploadActionPopup::create(nullptr, "Adding note...");
     uPopup->show();
 
     auto uPopupRef = Ref(uPopup);
 
-    m_listener.spawn(
-        req.post("https://api.delivel.tech/new_note"),
-        [uPopupRef](web::WebResponse res) {
-            if (!uPopupRef) return;
-            if (!res.ok()) {
-                uPopupRef->showFailMessage("Failed! Try again later.");
-                log::error("req failed, code: {}", res.code());
-                return;
-            } else {
-                uPopupRef->showSuccessMessage("Success! Note added.");
-                return;
-            }
-        }
-    );
+    auto parsed = co_await BackendManager::getInstance().addNote(m_levelId, m_levelName, note);
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Note added.");
+    co_return;
 }
 
 }
