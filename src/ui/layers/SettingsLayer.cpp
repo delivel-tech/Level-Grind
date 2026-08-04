@@ -8,7 +8,7 @@
 #include "Geode/ui/Layout.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/ui/Popup.hpp"
-#include "Geode/utils/web.hpp"
+#include "Geode/utils/async.hpp"
 #include "ccTypes.h"
 #include "cue/ListNode.hpp"
 
@@ -27,7 +27,7 @@
 #include <string>
 
 #include "../../utils/utils.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../../managers/DataManager.hpp"
 
 #include <argon/argon.hpp>
@@ -618,42 +618,7 @@ void SettingsLayer::createOtherList() {
     auto reqBtn = Build(ButtonSprite::create("Req", "bigFont.fnt", "GJ_button_04.png", 0.8f))
         .scale(0.55f)
         .intoMenuItem([this] {
-            auto uPopup = UploadActionPopup::create(nullptr, "Loading...");
-            uPopup->show();
-
-            auto uPopupRef = Ref(uPopup);
-
-            m_listener.spawn(
-                APIClient::getInstance().requestStaffAccess(),
-                [uPopupRef](web::WebResponse res) {
-                    if (!uPopupRef) return;
-                    
-                    auto parsed = APIClient::getInstance().requestStaffAccessParse(res);
-
-                    if (!parsed.ok) {
-                        log::error("req failed");
-                        uPopupRef->showFailMessage("Failed! Try again later.");
-                        DataManager::getInstance().setUserPosition(GrindPosition::User);
-                        return;
-                    }
-
-                    int pos = parsed.pos;
-
-                    if (pos == 1) {
-                        uPopupRef->showSuccessMessage("Success! Helper granted.");
-                        DataManager::getInstance().setUserPosition(GrindPosition::Helper);
-                    } else if (pos == 2) {
-                        uPopupRef->showSuccessMessage("Success! Admin granted.");
-                        DataManager::getInstance().setUserPosition(GrindPosition::Admin);
-                    } else if (pos == 3) {
-                        uPopupRef->showSuccessMessage("Success! Owner granted.");
-                        DataManager::getInstance().setUserPosition(GrindPosition::Owner);
-                    } else {
-                        uPopupRef->showFailMessage("Failed! User is not staff.");
-                        DataManager::getInstance().setUserPosition(GrindPosition::User);
-                    }
-                }
-            );
+            async::spawn(this->onRequestStaffAccessClicked());
         })
         .pos({ CELL_SIZE.width - 26, CELL_SIZE.height / 2 })
         .parent(reqCell)
@@ -693,33 +658,8 @@ void SettingsLayer::createOtherList() {
     auto syncBtn = Build(ButtonSprite::create("Sync", "bigFont.fnt", "GJ_button_04.png", 0.8f))
         .scale(0.55f)
         .intoMenuItem([this] {
-            auto uPopup = UploadActionPopup::create(nullptr, "Syncing data...");
-            uPopup->show();
-
-            auto uPopupRef = Ref(uPopup);
-
-            auto& dm = DataManager::getInstance();
-
-            dm.clearSharedData();
-
-            m_listener.spawn(
-                APIClient::getInstance().bootupGet(),
-                [uPopupRef](web::WebResponse res) {
-                    if (!uPopupRef) return;
-
-                    auto parsed = APIClient::getInstance().bootupGetParse(res);
-
-                    if (!parsed.ok) {
-                        log::error("req failed");
-                        uPopupRef->showFailMessage("Failed! Try again later.");
-                        return;
-                    }
-
-                    DataManager::getInstance().setSharedData(parsed);
-                    uPopupRef->showSuccessMessage("Success! Data synced.");
-                    return;
-                }
-            );
+            DataManager::getInstance().clearSharedData();
+            async::spawn(this->onSyncClicked());
         })
         .pos({ CELL_SIZE.width - 29, CELL_SIZE.height / 2 })
         .parent(syncCell)
@@ -807,6 +747,63 @@ void SettingsLayer::createOtherList() {
     list->getScrollLayer()->m_contentLayer->updateLayout();
     list->scrollToTop();
     return;
+}
+
+arc::Future<> SettingsLayer::onRequestStaffAccessClicked() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Loading...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().requestStaffAccess();
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        log::error("req failed");
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        DataManager::getInstance().setUserPosition(GrindPosition::User);
+        co_return;
+    }
+
+    int pos = parsed.pos;
+
+    if (pos == 1) {
+        uPopupRef->showSuccessMessage("Success! Helper granted.");
+        DataManager::getInstance().setUserPosition(GrindPosition::Helper);
+    } else if (pos == 2) {
+        uPopupRef->showSuccessMessage("Success! Admin granted.");
+        DataManager::getInstance().setUserPosition(GrindPosition::Admin);
+    } else if (pos == 3) {
+        uPopupRef->showSuccessMessage("Success! Owner granted.");
+        DataManager::getInstance().setUserPosition(GrindPosition::Owner);
+    } else {
+        uPopupRef->showFailMessage("Failed! User is not staff.");
+        DataManager::getInstance().setUserPosition(GrindPosition::User);
+    }
+
+    co_return;
+}
+
+arc::Future<> SettingsLayer::onSyncClicked() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Syncing data...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().bootupGet();
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        log::error("req failed");
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    DataManager::getInstance().setSharedData(parsed);
+    uPopupRef->showSuccessMessage("Success! Data synced.");
+    co_return;
 }
 
 void SettingsLayer::onTab(CCObject* sender) {

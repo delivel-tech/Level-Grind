@@ -18,7 +18,7 @@
 #include "../../core/BrowserTypes.hpp"
 #include "../../utils/utils.hpp"
 #include "../../ui/popups/StaffPopup.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../../ui/popups/WeeklyAchievementPopup.hpp"
 #include "../popups/GuidePopup.hpp"
 #include "../popups/AnnouncementsPopup.hpp"
@@ -28,8 +28,8 @@
 #include "../popups/DifficultySelectorPopup.hpp"
 #include "../popups/DiscordPopup.hpp"
 #include "Geode/ui/Notification.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/cocos.hpp"
-#include "Geode/utils/web.hpp"
 #include "SettingsLayer.hpp"
 
 using namespace geode::prelude;
@@ -292,117 +292,7 @@ bool MainLayer::initMainPanel() {
     auto randomBtn = Build<CCSprite>::create("random_btn.png"_spr)
         .scale(0.55f)
         .intoMenuItem([this] {
-            GetLevelsBody body {
-                m_difficulties, m_lengths, m_demonDifficulties,
-                m_grindTypes, m_versions, true, false
-            };
-
-            auto ll = levelgrind::LoadingLayer::create("Loading random level...");
-            ll->show();
-
-            m_randomLoadingLayer = Ref(ll);
-
-            auto loadingRef = Ref(ll);
-            auto self = Ref(this);
-
-            auto resetState = [loadingRef, self]() {
-                self->m_randomPending = false;
-                self->m_randomTimer = 0.f;
-                self->m_randomLevelID = -1;
-                self->m_randomKey.clear();
-                if (loadingRef) loadingRef->hide();
-                self->m_randomLoadingLayer = nullptr;
-            };
-
-            m_listener.spawn(
-                APIClient::getInstance().getLevels(body),
-                [self, loadingRef, resetState](web::WebResponse res) {
-                    if (!self) {
-                        resetState();
-                        return;
-                    }
-
-                    auto parsed = APIClient::getInstance().getLevelsParse(res);
-
-                    if (!parsed.ok) {
-                        resetState();
-                        Notification::create("Failed to get random level", NotificationIcon::Error)->show();
-                        return;
-                    }
-
-                    if (parsed.ids.empty()) {
-                        Notification::create("No levels found", NotificationIcon::Info)->show();
-                        resetState();
-                        return;
-                    }
-
-                    std::shuffle(parsed.ids.begin(), parsed.ids.end(), std::mt19937{ std::random_device{}() });
-
-                    bool onlyUncompleted = false;
-                    bool onlyCompleted = false;
-                    if (auto mod = Mod::get()) {
-                        onlyUncompleted = mod->getSavedValue<bool>("only-uncompleted");
-                        onlyCompleted = mod->getSavedValue<bool>("only-completed");
-                    }
-
-                    auto gsm = GameStatsManager::sharedState();
-
-                    int chosenID = -1;
-                    for (auto id : parsed.ids) {
-                        if (gsm) {
-                            bool isCompleted = gsm->hasCompletedOnlineLevel(id);
-                            if (onlyUncompleted && isCompleted) continue;
-                            if (onlyCompleted && !isCompleted) continue;
-                        }
-                        chosenID = id;
-                        break;
-                    }
-
-                    if (chosenID <= 0) {
-                        if (onlyUncompleted)
-                            Notification::create("No uncompleted levels found", NotificationIcon::Info)->show();
-                        else if (onlyCompleted)
-                            Notification::create("No completed levels found", NotificationIcon::Info)->show();
-                        else
-                            Notification::create("No levels found", NotificationIcon::Info)->show();
-                        resetState();
-                        return;
-                    }
-
-                    auto searchObj = GJSearchObject::create(SearchType::Search, numToString(chosenID));
-                    auto key = searchObj->getKey();
-                    auto glm = GameLevelManager::sharedState();
-
-                    if (!glm) {
-                        Notification::create("Failed to access level manager.", NotificationIcon::Error)->show();
-                        resetState();
-                        return;
-                    }
-
-                    auto stored = glm->getStoredOnlineLevels(key);
-                    if (stored && stored->count() > 0) {
-                        auto level = static_cast<GJGameLevel*>(stored->objectAtIndex(0));
-                        if (level && level->m_levelID == chosenID) {
-                            auto scene = LevelInfoLayer::scene(level, false);
-                            auto trans = CCTransitionFade::create(0.5f, scene);
-                            resetState();
-                            CCDirector::sharedDirector()->pushScene(trans);
-                            return;
-                        }
-                    }
-
-                    self->m_randomTimer = 10.f;
-                    self->m_randomLevelID = chosenID;
-                    self->m_randomKey = key;
-                    self->m_randomPending = true;
-
-                    if (glm->m_levelManagerDelegate) {
-                        glm->m_levelManagerDelegate = nullptr;
-                    }
-                    glm->getOnlineLevels(searchObj);
-                    return;
-                }
-            );
+            async::spawn(this->onRandomClicked());
         })
         .scaleMult(1.1f)
         .id("random-btn")
@@ -597,6 +487,116 @@ bool MainLayer::initMainPanel() {
     updateDifficultySelectorVisibility();
 
     return true;
+}
+
+arc::Future<> MainLayer::onRandomClicked() {
+    GetLevelsBody body {
+        m_difficulties, m_lengths, m_demonDifficulties,
+        m_grindTypes, m_versions, true, false
+    };
+
+    auto ll = levelgrind::LoadingLayer::create("Loading random level...");
+    ll->show();
+
+    m_randomLoadingLayer = Ref(ll);
+
+    auto loadingRef = Ref(ll);
+    Ref<MainLayer> self = this;
+
+    auto resetState = [loadingRef, self]() {
+        self->m_randomPending = false;
+        self->m_randomTimer = 0.f;
+        self->m_randomLevelID = -1;
+        self->m_randomKey.clear();
+        if (loadingRef) loadingRef->hide();
+        self->m_randomLoadingLayer = nullptr;
+    };
+
+    auto parsed = co_await BackendManager::getInstance().getLevels(body);
+
+    if (!self) {
+        resetState();
+        co_return;
+    }
+
+    if (!parsed.ok) {
+        resetState();
+        Notification::create("Failed to get random level", NotificationIcon::Error)->show();
+        co_return;
+    }
+
+    if (parsed.ids.empty()) {
+        Notification::create("No levels found", NotificationIcon::Info)->show();
+        resetState();
+        co_return;
+    }
+
+    std::shuffle(parsed.ids.begin(), parsed.ids.end(), std::mt19937{ std::random_device{}() });
+
+    bool onlyUncompleted = false;
+    bool onlyCompleted = false;
+    if (auto mod = Mod::get()) {
+        onlyUncompleted = mod->getSavedValue<bool>("only-uncompleted");
+        onlyCompleted = mod->getSavedValue<bool>("only-completed");
+    }
+
+    auto gsm = GameStatsManager::sharedState();
+
+    int chosenID = -1;
+    for (auto id : parsed.ids) {
+        if (gsm) {
+            bool isCompleted = gsm->hasCompletedOnlineLevel(id);
+            if (onlyUncompleted && isCompleted) continue;
+            if (onlyCompleted && !isCompleted) continue;
+        }
+        chosenID = id;
+        break;
+    }
+
+    if (chosenID <= 0) {
+        if (onlyUncompleted)
+            Notification::create("No uncompleted levels found", NotificationIcon::Info)->show();
+        else if (onlyCompleted)
+            Notification::create("No completed levels found", NotificationIcon::Info)->show();
+        else
+            Notification::create("No levels found", NotificationIcon::Info)->show();
+        resetState();
+        co_return;
+    }
+
+    auto searchObj = GJSearchObject::create(SearchType::Search, numToString(chosenID));
+    auto key = searchObj->getKey();
+    auto glm = GameLevelManager::sharedState();
+
+    if (!glm) {
+        Notification::create("Failed to access level manager.", NotificationIcon::Error)->show();
+        resetState();
+        co_return;
+    }
+
+    auto stored = glm->getStoredOnlineLevels(key);
+    if (stored && stored->count() > 0) {
+        auto level = static_cast<GJGameLevel*>(stored->objectAtIndex(0));
+        if (level && level->m_levelID == chosenID) {
+            auto scene = LevelInfoLayer::scene(level, false);
+            auto trans = CCTransitionFade::create(0.5f, scene);
+            resetState();
+            CCDirector::sharedDirector()->pushScene(trans);
+            co_return;
+        }
+    }
+
+    self->m_randomTimer = 10.f;
+    self->m_randomLevelID = chosenID;
+    self->m_randomKey = key;
+    self->m_randomPending = true;
+
+    if (glm->m_levelManagerDelegate) {
+        glm->m_levelManagerDelegate = nullptr;
+    }
+    glm->getOnlineLevels(searchObj);
+
+    co_return;
 }
 
 void MainLayer::update(float dt) {

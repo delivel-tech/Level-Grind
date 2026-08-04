@@ -6,6 +6,7 @@
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/NineSlice.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -59,6 +60,8 @@ private:
     void onInsaneDemonToggler(CCObject* sender);
     void onExtremeDemonToggler(CCObject* sender);
 
+    arc::Future<> onRandomClicked();
+
     std::vector<int> m_lengths;
     std::vector<int> m_demonDifficulties;
     std::vector<std::string> m_grindTypes;
@@ -73,16 +76,12 @@ private:
 
     std::pair<NineSlice*, CCMenu*> m_demonsFilters;
 
-    TaskHolder<web::WebResponse> m_listener;
-
     bool m_splitHard4 = true;
     bool m_splitHard5 = true;
     bool m_splitHarder6 = true;
     bool m_splitHarder7 = true;
     bool m_splitInsane8 = true;
     bool m_splitInsane9 = true;
-
-    ~MainLayer() { m_listener.cancel(); }
 };
 
 }
