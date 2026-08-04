@@ -11,8 +11,8 @@
 #include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
 
-#include "../../managers/APIClient.hpp"
-#include "Geode/utils/web.hpp"
+#include "../../core/BackendManager.hpp"
+#include "Geode/utils/async.hpp"
 
 namespace levelgrind {
 
@@ -80,28 +80,7 @@ bool WeeklyAchievementConfigurePopup::init(GJUserScore* userScore) {
                 return;
             }
 
-            auto uPopup = UploadActionPopup::create(nullptr, "Setting...");
-            uPopup->show();
-
-            auto uPopupRef = Ref(uPopup);
-
-            m_listener.spawn(
-                APIClient::getInstance().newWeeklyAch(
-                    WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::First).second,
-                    WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Second).second,
-                    WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Third).second
-                ),
-                [uPopupRef](web::WebResponse res) {
-                    if (!uPopupRef) return;
-                    bool ok = APIClient::getInstance().newWeeklyAchParse(res);
-
-                    if (ok) {
-                        uPopupRef->showSuccessMessage("Success! Set.");
-                    } else {
-                        uPopupRef->showFailMessage("Failed! Try again later.");
-                    }
-                }
-            );
+            async::spawn(this->onSetClicked());
         })
         .id("set-btn")
         .parent(m_buttonMenu)
@@ -112,6 +91,29 @@ bool WeeklyAchievementConfigurePopup::init(GJUserScore* userScore) {
         .collect();
 
     return true;
+}
+
+arc::Future<> WeeklyAchievementConfigurePopup::onSetClicked() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Setting...");
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+
+    auto parsed = co_await BackendManager::getInstance().newWeeklyAch(
+        WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::First).second,
+        WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Second).second,
+        WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Third).second
+    );
+
+    if (!uPopupRef) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Set.");
+    co_return;
 }
 
 }
