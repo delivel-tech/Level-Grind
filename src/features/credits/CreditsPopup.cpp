@@ -332,17 +332,21 @@ bool CreditsPopup::init() {
 }
 
 arc::Future<> CreditsPopup::onLoadCredits(Ref<LoadingSpinner> loadingRef) {
-    Ref<CreditsPopup> self = this;
+    Ref<CreditsPopup> self;
+    co_await async::waitForMainThread([&] {
+        self = this;
+    });
 
     auto parsed = co_await BackendManager::getInstance().getCredits();
 
-    if (!loadingRef || !self) co_return;
+    co_await async::waitForMainThread([&] {
+    if (!loadingRef || !self) return;
 
     if (!parsed.ok) {
         log::warn("failed to get credits");
         loadingRef->removeFromParent();
         Notification::create("Failed to fetch credits", NotificationIcon::Error)->show();
-        co_return;
+        return;
     }
 
     auto toUsers = [](std::vector<CreditUserInfo> const& infos) {
@@ -393,6 +397,7 @@ arc::Future<> CreditsPopup::onLoadCredits(Ref<LoadingSpinner> loadingRef) {
 
     self->m_list->updateLayout();
     loadingRef->removeFromParent();
+    });
 
     co_return;
 }

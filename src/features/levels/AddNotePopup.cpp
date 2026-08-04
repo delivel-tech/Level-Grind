@@ -84,21 +84,26 @@ void AddNotePopup::onAddBtn(CCObject* sender) {
 }
 
 arc::Future<> AddNotePopup::onAddNote(std::string note) {
-    auto uPopup = UploadActionPopup::create(nullptr, "Adding note...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Adding note...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().addNote(m_levelId, m_levelName, note);
 
-    if (!uPopupRef) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
 
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
+        if (!parsed.ok) {
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
 
-    uPopupRef->showSuccessMessage("Success! Note added.");
+        uPopupRef->showSuccessMessage("Success! Note added.");
+    });
+
     co_return;
 }
 

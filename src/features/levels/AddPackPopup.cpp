@@ -147,21 +147,26 @@ bool AddPackPopup::init() {
 }
 
 arc::Future<> AddPackPopup::onAddClicked(NewGrindPackBody body) {
-    auto uPopup = UploadActionPopup::create(nullptr, "Adding pack...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Adding pack...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().newGrindPack(body);
 
-    if (!uPopupRef) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
 
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
+        if (!parsed.ok) {
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
 
-    uPopupRef->showSuccessMessage("Success! Pack added.");
+        uPopupRef->showSuccessMessage("Success! Pack added.");
+    });
+
     co_return;
 }
 

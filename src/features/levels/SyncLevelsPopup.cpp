@@ -116,30 +116,35 @@ bool SyncLevelsPopup::init() {
 }
 
 arc::Future<> SyncLevelsPopup::onSyncClicked(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold) {
-    Ref<SyncLevelsPopup> self = this;
+    Ref<SyncLevelsPopup> self;
+    co_await async::waitForMainThread([&] {
+        self = this;
+    });
 
     auto parsed = co_await BackendManager::getInstance().syncLevels(addThreshold, deleteThreshold, coinAddThreshold, coinDeleteThreshold);
 
-    if (!self) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!self) return;
 
-    if (!parsed.ok) {
-        Notification::create("Failed to sync levels.", NotificationIcon::Error)->show();
-        co_return;
-    }
+        if (!parsed.ok) {
+            Notification::create("Failed to sync levels.", NotificationIcon::Error)->show();
+            return;
+        }
 
-    self->onClose(nullptr);
+        self->onClose(nullptr);
 
-    MDPopup::create(
-        "Results",
-        fmt::format(
-            "# <cp>Level Changes</c>\n\n"
-            "<cr>Deleted:</c> {}\n\n"
-            "<cg>Inserted:</c> {}\n\n"
-            "<cj>Coins changed:</c> {}\n\n",
-            parsed.deleted, parsed.inserted, parsed.coinUpdates
-        ).c_str(),
-        "OK"
-    )->show();
+        MDPopup::create(
+            "Results",
+            fmt::format(
+                "# <cp>Level Changes</c>\n\n"
+                "<cr>Deleted:</c> {}\n\n"
+                "<cg>Inserted:</c> {}\n\n"
+                "<cj>Coins changed:</c> {}\n\n",
+                parsed.deleted, parsed.inserted, parsed.coinUpdates
+            ).c_str(),
+            "OK"
+        )->show();
+    });
 
     co_return;
 }

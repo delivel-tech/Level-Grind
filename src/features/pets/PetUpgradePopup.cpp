@@ -90,21 +90,22 @@ void PetUpgradePopup::onUpgradeRarity(CCObject* sender) {
 }
 
 arc::Future<> PetUpgradePopup::onUpgradeRarityClicked(int upgradeCost) {
-    auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Upgrading pet rarity...");
-    upopup->show();
+    Ref<UploadActionPopup> uPopupRef;
+    int petRarity;
+    co_await async::waitForMainThread([&] {
+        auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Upgrading pet rarity...");
+        upopup->show();
+        uPopupRef = upopup;
+        petRarity = m_petData.petRarity;
+    });
 
-    auto uPopupRef = Ref(upopup);
+    auto parsed = co_await BackendManager::getInstance().upgradePetRarity(petRarity + 1, upgradeCost);
 
-    auto parsed = co_await BackendManager::getInstance().upgradePetRarity(m_petData.petRarity + 1, upgradeCost);
-
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Upgrading failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Pet rarity upgraded.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Upgrading failed! Try again later."); return; }
+        uPopupRef->showSuccessMessage("Success! Pet rarity upgraded.");
+    });
     co_return;
 }
 
@@ -133,21 +134,22 @@ void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
 }
 
 arc::Future<> PetUpgradePopup::onUpgradeLevelClicked(int upgradeCost) {
-    auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Upgrading pet level...");
-    upopup->show();
+    Ref<UploadActionPopup> uPopupRef;
+    int petLevel;
+    co_await async::waitForMainThread([&] {
+        auto upopup = UploadActionPopup::create(typeinfo_cast<::UploadPopupDelegate*>(this), "Upgrading pet level...");
+        upopup->show();
+        uPopupRef = upopup;
+        petLevel = m_petData.petLevel;
+    });
 
-    auto uPopupRef = Ref(upopup);
+    auto parsed = co_await BackendManager::getInstance().upgradePetLevel(petLevel + 1, upgradeCost);
 
-    auto parsed = co_await BackendManager::getInstance().upgradePetLevel(m_petData.petLevel + 1, upgradeCost);
-
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Upgrading failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Pet level upgraded.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Upgrading failed! Try again later."); return; }
+        uPopupRef->showSuccessMessage("Success! Pet level upgraded.");
+    });
     co_return;
 }
 

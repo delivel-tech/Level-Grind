@@ -94,25 +94,24 @@ bool WeeklyAchievementConfigurePopup::init(GJUserScore* userScore) {
 }
 
 arc::Future<> WeeklyAchievementConfigurePopup::onSetClicked() {
-    auto uPopup = UploadActionPopup::create(nullptr, "Setting...");
-    uPopup->show();
+    Ref<UploadActionPopup> uPopupRef;
+    AchievementCellInfo first, second, third;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Setting...");
+        uPopup->show();
+        uPopupRef = uPopup;
+        first = WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::First).second;
+        second = WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Second).second;
+        third = WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Third).second;
+    });
 
-    auto uPopupRef = Ref(uPopup);
+    auto parsed = co_await BackendManager::getInstance().newWeeklyAch(first, second, third);
 
-    auto parsed = co_await BackendManager::getInstance().newWeeklyAch(
-        WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::First).second,
-        WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Second).second,
-        WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Third).second
-    );
-
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Set.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed! Try again later."); return; }
+        uPopupRef->showSuccessMessage("Success! Set.");
+    });
     co_return;
 }
 

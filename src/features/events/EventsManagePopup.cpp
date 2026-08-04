@@ -121,67 +121,71 @@ bool EventsManagePopup::init() {
 }
 
 arc::Future<> EventsManagePopup::onQueueClicked(EventSection section, int classicId, int platId) {
-    auto uPopup = UploadActionPopup::create(nullptr, fmt::format("Queueing {}...", section.name));
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
-    Ref<EventsManagePopup> self = this;
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, fmt::format("Queueing {}...", section.name));
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().setEvents(section.mode, classicId, platId);
 
-    if (!uPopupRef || !self) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Events queued.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed! Try again later."); return; }
+        uPopupRef->showSuccessMessage("Success! Events queued.");
+    });
     co_return;
 }
 
 arc::Future<> EventsManagePopup::onLoadEventDates() {
-    Ref<EventsManagePopup> self = this;
-    Ref<LoadingSpinner> loadingRef = typeinfo_cast<LoadingSpinner*>(m_mainLayer->getChildByID("loading-spinner"));
+    Ref<EventsManagePopup> self;
+    Ref<LoadingSpinner> loadingRef;
+    co_await async::waitForMainThread([&] {
+        self = this;
+        loadingRef = typeinfo_cast<LoadingSpinner*>(m_mainLayer->getChildByID("loading-spinner"));
+    });
 
     auto parsed = co_await BackendManager::getInstance().getEventDates();
 
-    if (!self || !loadingRef) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!self || !loadingRef) return;
 
-    if (!parsed.ok) {
-        log::error("bad req");
+        if (!parsed.ok) {
+            log::error("bad req");
+            loadingRef->removeFromParent();
+            return;
+        }
+
         loadingRef->removeFromParent();
-        co_return;
-    }
 
-    loadingRef->removeFromParent();
+        auto rowMenu = Build<CCMenu>::create()
+            .layout(RowLayout::create()->setGap(10))
+            .parent(self->m_mainLayer)
+            .scale(0.65f)
+            .pos(self->centerX(), self->centerY() - 55)
+            .collect();
 
-    auto rowMenu = Build<CCMenu>::create()
-        .layout(RowLayout::create()->setGap(10))
-        .parent(self->m_mainLayer)
-        .scale(0.65f)
-        .pos(self->centerX(), self->centerY() - 55)
-        .collect();
+        auto dailyLabel = Build(CCLabelBMFont::create(
+            fmt::format("{}: {}", "Daily", parsed.dailyDate.substr(0, parsed.dailyDate.find('T'))).c_str(), "chatFont.fnt"
+        ))
+            .parent(rowMenu)
+            .collect();
 
-    auto dailyLabel = Build(CCLabelBMFont::create(
-        fmt::format("{}: {}", "Daily", parsed.dailyDate.substr(0, parsed.dailyDate.find('T'))).c_str(), "chatFont.fnt"
-    ))
-        .parent(rowMenu)
-        .collect();
+        auto weeklyLabel = Build(CCLabelBMFont::create(
+            fmt::format("{}: {}", "Weekly", parsed.weeklyDate.substr(0, parsed.weeklyDate.find('T'))).c_str(), "chatFont.fnt"
+        ))
+            .parent(rowMenu)
+            .collect();
 
-    auto weeklyLabel = Build(CCLabelBMFont::create(
-        fmt::format("{}: {}", "Weekly", parsed.weeklyDate.substr(0, parsed.weeklyDate.find('T'))).c_str(), "chatFont.fnt"
-    ))
-        .parent(rowMenu)
-        .collect();
+        auto monthlyLabel = Build(CCLabelBMFont::create(
+            fmt::format("{}: {}", "Monthly", parsed.monthlyDate.substr(0, parsed.monthlyDate.find('T'))).c_str(), "chatFont.fnt"
+        ))
+            .parent(rowMenu)
+            .collect();
 
-    auto monthlyLabel = Build(CCLabelBMFont::create(
-        fmt::format("{}: {}", "Monthly", parsed.monthlyDate.substr(0, parsed.monthlyDate.find('T'))).c_str(), "chatFont.fnt"
-    ))
-        .parent(rowMenu)
-        .collect();
-
-    rowMenu->updateLayout();
+        rowMenu->updateLayout();
+    });
 
     co_return;
 }

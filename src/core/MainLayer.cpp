@@ -495,14 +495,20 @@ arc::Future<> MainLayer::onRandomClicked() {
         m_grindTypes, m_versions, true, false
     };
 
-    auto ll = levelgrind::LoadingLayer::create("Loading random level...");
-    ll->show();
+    Ref<MainLayer> self;
+    Ref<levelgrind::LoadingLayer> loadingRef;
+    co_await async::waitForMainThread([&] {
+        auto ll = levelgrind::LoadingLayer::create("Loading random level...");
+        ll->show();
 
-    m_randomLoadingLayer = Ref(ll);
+        m_randomLoadingLayer = Ref(ll);
+        loadingRef = Ref(ll);
+        self = this;
+    });
 
-    auto loadingRef = Ref(ll);
-    Ref<MainLayer> self = this;
+    auto parsed = co_await BackendManager::getInstance().getLevels(body);
 
+    co_await async::waitForMainThread([&] {
     auto resetState = [loadingRef, self]() {
         self->m_randomPending = false;
         self->m_randomTimer = 0.f;
@@ -512,23 +518,21 @@ arc::Future<> MainLayer::onRandomClicked() {
         self->m_randomLoadingLayer = nullptr;
     };
 
-    auto parsed = co_await BackendManager::getInstance().getLevels(body);
-
     if (!self) {
         resetState();
-        co_return;
+        return;
     }
 
     if (!parsed.ok) {
         resetState();
         Notification::create("Failed to get random level", NotificationIcon::Error)->show();
-        co_return;
+        return;
     }
 
     if (parsed.ids.empty()) {
         Notification::create("No levels found", NotificationIcon::Info)->show();
         resetState();
-        co_return;
+        return;
     }
 
     std::shuffle(parsed.ids.begin(), parsed.ids.end(), std::mt19937{ std::random_device{}() });
@@ -561,7 +565,7 @@ arc::Future<> MainLayer::onRandomClicked() {
         else
             Notification::create("No levels found", NotificationIcon::Info)->show();
         resetState();
-        co_return;
+        return;
     }
 
     auto searchObj = GJSearchObject::create(SearchType::Search, numToString(chosenID));
@@ -571,7 +575,7 @@ arc::Future<> MainLayer::onRandomClicked() {
     if (!glm) {
         Notification::create("Failed to access level manager.", NotificationIcon::Error)->show();
         resetState();
-        co_return;
+        return;
     }
 
     auto stored = glm->getStoredOnlineLevels(key);
@@ -582,7 +586,7 @@ arc::Future<> MainLayer::onRandomClicked() {
             auto trans = CCTransitionFade::create(0.5f, scene);
             resetState();
             CCDirector::sharedDirector()->pushScene(trans);
-            co_return;
+            return;
         }
     }
 
@@ -595,6 +599,7 @@ arc::Future<> MainLayer::onRandomClicked() {
         glm->m_levelManagerDelegate = nullptr;
     }
     glm->getOnlineLevels(searchObj);
+    });
 
     co_return;
 }

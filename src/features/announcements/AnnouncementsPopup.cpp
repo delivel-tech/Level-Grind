@@ -66,18 +66,23 @@ bool AnnouncementsPopup::init() {
 }
 
 arc::Future<> AnnouncementsPopup::onLoadAnnouncements() {
-    auto spinnerRef = Ref(m_spinner);
-    Ref<AnnouncementsPopup> self = this;
+    Ref<AnnouncementsPopup> self;
+    Ref<LoadingSpinner> spinnerRef;
+    co_await async::waitForMainThread([&] {
+        self = this;
+        spinnerRef = m_spinner;
+    });
 
     auto parsed = co_await BackendManager::getInstance().getAnnouncements();
 
-    if (!spinnerRef || !self) co_return;
+    co_await async::waitForMainThread([&] {
+    if (!spinnerRef || !self) return;
 
     if (!parsed.ok) {
         spinnerRef->removeFromParent();
         log::error("bad web req. get announcements endpoint");
         Notification::create("Failed to load announcements! Try again later.", NotificationIcon::Error)->show();
-        co_return;
+        return;
     }
 
     self->m_listNode = Build(cue::ListNode::create(
@@ -212,27 +217,30 @@ arc::Future<> AnnouncementsPopup::onLoadAnnouncements() {
     self->m_textAreas[0]->setVisible(true);
     self->m_listNode->scrollToTop();
     self->m_listNode->getScrollLayer()->m_contentLayer->updateLayout();
+    });
 
     co_return;
 }
 
 arc::Future<> AnnouncementsPopup::onDeleteAnnouncementClicked(int announcementId) {
-    auto uPopup = UploadActionPopup::create(nullptr, "Deleting announcement...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Deleting announcement...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().deleteAnnouncement(announcementId);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        log::error("bad web req, endpoint deleteAnnouncement");
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Announcement deleted.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) {
+            log::error("bad web req, endpoint deleteAnnouncement");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
+        uPopupRef->showSuccessMessage("Success! Announcement deleted.");
+    });
     co_return;
 }
 

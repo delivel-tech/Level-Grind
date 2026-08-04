@@ -246,31 +246,36 @@ bool EventPopup::init(EventType type) {
 }
 
 arc::Future<> EventPopup::onLoadEvents(EventType type) {
-    Ref<EventPopup> self = this;
+    Ref<EventPopup> self;
+    co_await async::waitForMainThread([&] {
+        self = this;
+    });
 
     auto parsed = co_await BackendManager::getInstance().getEvents(static_cast<int>(type));
 
-    if (!self) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!self) return;
 
-    if (!parsed.ok) {
-        Notification::create("Failed to load events.", NotificationIcon::Error)->show();
-        co_return;
-    }
+        if (!parsed.ok) {
+            Notification::create("Failed to load events.", NotificationIcon::Error)->show();
+            return;
+        }
 
-    if (!parsed.classicEvent.exists || !parsed.platEvent.exists) {
-        Notification::create("Failed to load events.", NotificationIcon::Error)->show();
-        co_return;
-    }
+        if (!parsed.classicEvent.exists || !parsed.platEvent.exists) {
+            Notification::create("Failed to load events.", NotificationIcon::Error)->show();
+            return;
+        }
 
-    self->m_secondsLeft = parsed.classicEvent.secondsLeft;
+        self->m_secondsLeft = parsed.classicEvent.secondsLeft;
 
-    if (parsed.classicEvent.levelId > 0 && self->m_classicCell) {
-        self->m_classicCell->loadLevel(parsed.classicEvent.levelId);
-    }
-    if (parsed.platEvent.levelId > 0 && self->m_platCell) {
-        self->m_platCell->loadLevel(parsed.platEvent.levelId);
-    }
-    if (self->m_spinner) self->m_spinner->setVisible(false);
+        if (parsed.classicEvent.levelId > 0 && self->m_classicCell) {
+            self->m_classicCell->loadLevel(parsed.classicEvent.levelId);
+        }
+        if (parsed.platEvent.levelId > 0 && self->m_platCell) {
+            self->m_platCell->loadLevel(parsed.platEvent.levelId);
+        }
+        if (self->m_spinner) self->m_spinner->setVisible(false);
+    });
 
     co_return;
 }

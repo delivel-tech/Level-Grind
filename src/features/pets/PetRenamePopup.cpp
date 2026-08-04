@@ -60,22 +60,20 @@ void PetRenamePopup::onOKBtn(CCObject* sender) {
 }
 
 arc::Future<> PetRenamePopup::onRename(std::string petName) {
-    auto upopup = UploadActionPopup::create(nullptr, "Updating pet name...");
-    upopup->show();
-
-    auto uPopupRef = Ref(upopup);
-    Ref<PetRenamePopup> self = this;
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto upopup = UploadActionPopup::create(nullptr, "Updating pet name...");
+        upopup->show();
+        uPopupRef = upopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().renamePet(petName);
 
-    if (!uPopupRef || !self) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Updating failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Pet name updated.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Updating failed! Try again later."); return; }
+        uPopupRef->showSuccessMessage("Success! Pet name updated.");
+    });
     co_return;
 }
 

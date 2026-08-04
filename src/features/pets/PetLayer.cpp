@@ -113,18 +113,22 @@ bool PetLayer::init() {
 }
 
 arc::Future<> PetLayer::onLoadPetData(Ref<LoadingSpinner> loadingRef, Ref<geode::NineSlice> mainPanelRef) {
-    Ref<PetLayer> self = this;
+    Ref<PetLayer> self;
+    co_await async::waitForMainThread([&] {
+        self = this;
+    });
 
     auto data = co_await BackendManager::getInstance().syncPet();
 
-    if (!self || !loadingRef || !mainPanelRef) co_return;
+    co_await async::waitForMainThread([&] {
+    if (!self || !loadingRef || !mainPanelRef) return;
 
     if (!data.ok) {
         log::error("invalid json in response");
         Notification::create("Failed to load pet data. Try again later.", NotificationIcon::Error)->show();
         loadingRef->removeFromParent();
         PetManager::getInstance().resetPetDeltas();
-        co_return;
+        return;
     }
 
     Mod::get()->setSavedValue("last-pet-lvl", data.petLevel);
@@ -137,6 +141,7 @@ arc::Future<> PetLayer::onLoadPetData(Ref<LoadingSpinner> loadingRef, Ref<geode:
 
     loadingRef->removeFromParent();
     self->drawUIFromData(data, mainPanelRef);
+    });
 
     co_return;
 }

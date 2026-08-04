@@ -167,37 +167,37 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
 }
 
 arc::Future<> RoleSelectorPopup::onApplyClicked() {
-    auto uPopup = UploadActionPopup::create(nullptr, "Updating roles...");
-    uPopup->show();
+    Ref<UploadActionPopup> uPopupRef;
+    SetRolesBody body;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Updating roles...");
+        uPopup->show();
+        uPopupRef = uPopup;
 
-    auto uPopupRef = Ref(uPopup);
-
-    SetRolesBody body {
-        GJAccountManager::sharedState()->m_accountID,
-        DataManager::getInstance().getUserToken(),
-        m_targetUser->m_accountID,
-        std::string(m_targetUser->m_userName),
-        m_targetUser->m_playerCube,
-        m_targetUser->m_color1,
-        m_targetUser->m_color2,
-        m_targetUser->m_glowEnabled ? m_targetUser->m_color3 : 0,
-        m_newRoles.isAdmin,
-        m_newRoles.isHelper,
-        m_newRoles.isArtist,
-        m_newRoles.isContributor,
-        m_newRoles.isBooster
-    };
+        body = SetRolesBody {
+            GJAccountManager::sharedState()->m_accountID,
+            DataManager::getInstance().getUserToken(),
+            m_targetUser->m_accountID,
+            std::string(m_targetUser->m_userName),
+            m_targetUser->m_playerCube,
+            m_targetUser->m_color1,
+            m_targetUser->m_color2,
+            m_targetUser->m_glowEnabled ? m_targetUser->m_color3 : 0,
+            m_newRoles.isAdmin,
+            m_newRoles.isHelper,
+            m_newRoles.isArtist,
+            m_newRoles.isContributor,
+            m_newRoles.isBooster
+        };
+    });
 
     auto parsed = co_await BackendManager::getInstance().setRoles(body);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Roles updated.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed! Try again later."); return; }
+        uPopupRef->showSuccessMessage("Success! Roles updated.");
+    });
     co_return;
 }
 

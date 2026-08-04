@@ -90,110 +90,115 @@ bool IndicatorsPopup::init(int levelID) {
 }
 
 arc::Future<> IndicatorsPopup::onLoadIndicators(int levelID) {
-    Ref<IndicatorsPopup> self = this;
+    Ref<IndicatorsPopup> self;
+    co_await async::waitForMainThread([&] {
+        self = this;
+    });
 
     auto parsed = co_await BackendManager::getInstance().getIndicators(levelID);
 
-    if (!self) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!self) return;
 
-    if (!parsed.ok) {
-        self->m_loadingSpinner->removeFromParent();
-        self->m_loadingSpinner = nullptr;
+        if (!parsed.ok) {
+            self->m_loadingSpinner->removeFromParent();
+            self->m_loadingSpinner = nullptr;
+
+            self->m_statusSpinner->removeFromParent();
+            self->m_statusSpinner = nullptr;
+
+            Notification::create("Failed to load indicators!", NotificationIcon::Error)->show();
+
+            return;
+        }
 
         self->m_statusSpinner->removeFromParent();
         self->m_statusSpinner = nullptr;
 
-        Notification::create("Failed to load indicators!", NotificationIcon::Error)->show();
+        if (parsed.added) {
+            Build(CCLabelBMFont::create("Added", "bigFont.fnt"))
+                .scale(0.5f)
+                .parent(self->m_statusMenu)
+                .id("added-label");
 
-        co_return;
-    }
+            Build(CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png"))
+                .parent(self->m_statusMenu)
+                .scale(0.5f)
+                .id("added-icon");
+        } else {
+            Build(CCLabelBMFont::create("Not Added", "bigFont.fnt"))
+                .parent(self->m_statusMenu)
+                .scale(0.5f)
+                .id("not-added-label");
 
-    self->m_statusSpinner->removeFromParent();
-    self->m_statusSpinner = nullptr;
+            Build(CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))
+                .parent(self->m_statusMenu)
+                .scale(0.5f)
+                .id("not-added-icon");
+        }
 
-    if (parsed.added) {
-        Build(CCLabelBMFont::create("Added", "bigFont.fnt"))
-            .scale(0.5f)
-            .parent(self->m_statusMenu)
-            .id("added-label");
+        self->m_statusMenu->updateLayout();
 
-        Build(CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png"))
-            .parent(self->m_statusMenu)
-            .scale(0.5f)
-            .id("added-icon");
-    } else {
-        Build(CCLabelBMFont::create("Not Added", "bigFont.fnt"))
-            .parent(self->m_statusMenu)
-            .scale(0.5f)
-            .id("not-added-label");
+        self->m_loadingSpinner->removeFromParent();
+        self->m_loadingSpinner = nullptr;
 
-        Build(CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))
-            .parent(self->m_statusMenu)
-            .scale(0.5f)
-            .id("not-added-icon");
-    }
+        self->m_indicatorsMenu = Build(CCMenu::create())
+            .layout(RowLayout::create()->setGap(15))
+            .parent(self->m_menuBG)
+            .id("indicators-menu")
+            .pos(self->m_menuBG->getContentSize() / 2)
+            .zOrder(1)
+            .scale(0.9f)
+            .collect();
 
-    self->m_statusMenu->updateLayout();
+        auto coinMenu = Build(CCMenu::create())
+            .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
+            .parent(self->m_indicatorsMenu)
+            .collect();
 
-    self->m_loadingSpinner->removeFromParent();
-    self->m_loadingSpinner = nullptr;
+        auto eventMenu = Build(CCMenu::create())
+            .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
+            .parent(self->m_indicatorsMenu)
+            .collect();
 
-    self->m_indicatorsMenu = Build(CCMenu::create())
-        .layout(RowLayout::create()->setGap(15))
-        .parent(self->m_menuBG)
-        .id("indicators-menu")
-        .pos(self->m_menuBG->getContentSize() / 2)
-        .zOrder(1)
-        .scale(0.9f)
-        .collect();
+        auto packMenu = Build(CCMenu::create())
+            .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
+            .parent(self->m_indicatorsMenu)
+            .collect();
 
-    auto coinMenu = Build(CCMenu::create())
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
-        .parent(self->m_indicatorsMenu)
-        .collect();
+        Build(CCSprite::create("coin_indicator.png"_spr))
+            .scale(0.35f)
+            .parent(coinMenu);
 
-    auto eventMenu = Build(CCMenu::create())
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
-        .parent(self->m_indicatorsMenu)
-        .collect();
+        Build(
+            parsed.coin ? CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png") : CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png")
+        )
+            .parent(coinMenu);
 
-    auto packMenu = Build(CCMenu::create())
-        .layout(ColumnLayout::create()->setAxisReverse(true)->setAutoScale(false))
-        .parent(self->m_indicatorsMenu)
-        .collect();
+        Build(CCSprite::create("event_indicator.png"_spr))
+            .scale(0.35f)
+            .parent(eventMenu);
 
-    Build(CCSprite::create("coin_indicator.png"_spr))
-        .scale(0.35f)
-        .parent(coinMenu);
+        Build(
+            parsed.event ? CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png") : CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png")
+        )
+            .parent(eventMenu);
 
-    Build(
-        parsed.coin ? CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png") : CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png")
-    )
-        .parent(coinMenu);
+        Build(CCSprite::create("pack_indicator.png"_spr))
+            .scale(0.35f)
+            .parent(packMenu);
 
-    Build(CCSprite::create("event_indicator.png"_spr))
-        .scale(0.35f)
-        .parent(eventMenu);
+        Build(
+            parsed.pack ? CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png") : CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png")
+        )
+            .parent(packMenu);
 
-    Build(
-        parsed.event ? CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png") : CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png")
-    )
-        .parent(eventMenu);
+        coinMenu->updateLayout();
+        eventMenu->updateLayout();
+        packMenu->updateLayout();
 
-    Build(CCSprite::create("pack_indicator.png"_spr))
-        .scale(0.35f)
-        .parent(packMenu);
-
-    Build(
-        parsed.pack ? CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png") : CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png")
-    )
-        .parent(packMenu);
-
-    coinMenu->updateLayout();
-    eventMenu->updateLayout();
-    packMenu->updateLayout();
-
-    self->m_indicatorsMenu->updateLayout();
+        self->m_indicatorsMenu->updateLayout();
+    });
 
     co_return;
 }

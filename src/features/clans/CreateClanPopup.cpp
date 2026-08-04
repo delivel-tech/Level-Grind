@@ -192,26 +192,30 @@ void CreateClanPopup::onCreate() {
 }
 
 arc::Future<> CreateClanPopup::onCreateClicked(std::string name, std::string desc, LGClanType type, LGClanJoinType joinType, int statReq) {
-    Ref<CreateClanPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, "Creating clan...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<CreateClanPopup> self;
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        self = this;
+        auto uPopup = UploadActionPopup::create(nullptr, "Creating clan...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().createClan(
         name, desc, type, 0, joinType, statReq
     );
 
-    if (!uPopupRef) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
 
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage(parsed.error.empty() ? "Failed! Try again later." : parsed.error);
-        co_return;
-    }
+        if (!parsed.ok) {
+            uPopupRef->showFailMessage(parsed.error.empty() ? "Failed! Try again later." : parsed.error);
+            return;
+        }
 
-    uPopupRef->showSuccessMessage("Clan created!");
-    if (self && self->m_onCreated) self->m_onCreated();
+        uPopupRef->showSuccessMessage("Clan created!");
+        if (self && self->m_onCreated) self->m_onCreated();
+    });
     co_return;
 }
 

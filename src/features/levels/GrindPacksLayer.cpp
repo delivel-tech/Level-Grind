@@ -195,25 +195,30 @@ bool GrindPacksLayer::init() {
 }
 
 arc::Future<> GrindPacksLayer::onLoadPacks() {
-    Ref<GrindPacksLayer> s = this;
+    Ref<GrindPacksLayer> s;
+    co_await async::waitForMainThread([&] {
+        s = this;
+    });
 
     auto parsed = co_await BackendManager::getInstance().getGrindPacks();
 
-    if (!s || !s->getParent() || !s->isRunning()) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!s || !s->getParent() || !s->isRunning()) return;
 
-    if (!parsed.ok) {
-        Notification::create("Failed! Try again later.", NotificationIcon::Error)->show();
+        if (!parsed.ok) {
+            Notification::create("Failed! Try again later.", NotificationIcon::Error)->show();
+            s->stopLoading();
+            return;
+        }
+
+        s->m_allPacks = parsed.packs;
+        s->m_totalPages = (static_cast<int>(s->m_allPacks.size()) + PER_PAGE - 1) / PER_PAGE;
+        if (s->m_totalPages < 1) s->m_totalPages = 1;
+        s->m_page = 0;
+
         s->stopLoading();
-        co_return;
-    }
-
-    s->m_allPacks = parsed.packs;
-    s->m_totalPages = (static_cast<int>(s->m_allPacks.size()) + PER_PAGE - 1) / PER_PAGE;
-    if (s->m_totalPages < 1) s->m_totalPages = 1;
-    s->m_page = 0;
-
-    s->stopLoading();
-    s->populatePacks();
+        s->populatePacks();
+    });
 
     co_return;
 }

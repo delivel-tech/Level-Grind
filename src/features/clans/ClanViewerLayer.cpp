@@ -121,7 +121,10 @@ bool ClanViewerLayer::init() {
 }
 
 arc::Future<> ClanViewerLayer::onLoadClans(Ref<LoadingSpinner> loadingRef, Ref<geode::NineSlice> mainPanelRef) {
-    Ref<ClanViewerLayer> self = this;
+    Ref<ClanViewerLayer> self;
+    co_await async::waitForMainThread([&] {
+        self = this;
+    });
 
     auto& pm = PetManager::getInstance();
 
@@ -132,16 +135,19 @@ arc::Future<> ClanViewerLayer::onLoadClans(Ref<LoadingSpinner> loadingRef, Ref<g
         pm.getPetMoonsDelta()
     );
 
-    if (!self || !loadingRef || !mainPanelRef) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!self || !loadingRef || !mainPanelRef) return;
 
-    if (!data.ok) {
-        Notification::create("Failed to load clans!", NotificationIcon::Error)->show();
+        if (!data.ok) {
+            Notification::create("Failed to load clans!", NotificationIcon::Error)->show();
+            loadingRef->removeFromParent();
+            return;
+        }
+
         loadingRef->removeFromParent();
-        co_return;
-    }
+        self->initUI(data, mainPanelRef);
+    });
 
-    loadingRef->removeFromParent();
-    self->initUI(data, mainPanelRef);
     co_return;
 }
 

@@ -594,38 +594,43 @@ void SuggestionsLayer::performFetchLevels() {
 }
 
 arc::Future<> SuggestionsLayer::onFetchLevels() {
-    WeakRef<SuggestionsLayer> weakSelf = this;
+    WeakRef<SuggestionsLayer> weakSelf;
+    co_await async::waitForMainThread([&] {
+        weakSelf = this;
+    });
 
     auto parsed = co_await BackendManager::getInstance().getSuggestions(m_suggestionsMode);
 
-    auto self = weakSelf.lock();
-    if (!self) co_return;
-    if (!self->getParent() || !self->isRunning()) co_return;
+    co_await async::waitForMainThread([&] {
+        auto self = weakSelf.lock();
+        if (!self) return;
+        if (!self->getParent() || !self->isRunning()) return;
 
-    if (!parsed.ok) {
-        Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
-        self->stopLoading();
-        co_return;
-    }
-
-    self->m_allLevelSuggestions = parsed.suggestions;
-
-    if (self->m_allLevelSuggestions.empty()) {
-        Notification::create("No levels found", NotificationIcon::Info)->show();
-        self->stopLoading();
-
-        if (self->m_listNode) self->m_listNode->clear();
-
-        if (self->m_levelsLabel) {
-            self->m_levelsLabel->setString("0 to 0 of 0");
+        if (!parsed.ok) {
+            Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
+            self->stopLoading();
+            return;
         }
-        self->m_totalLevels = 0;
-        self->m_totalPages = 1;
-        self->updatePageButton();
-        co_return;
-    }
 
-    self->applyPointsFilter();
+        self->m_allLevelSuggestions = parsed.suggestions;
+
+        if (self->m_allLevelSuggestions.empty()) {
+            Notification::create("No levels found", NotificationIcon::Info)->show();
+            self->stopLoading();
+
+            if (self->m_listNode) self->m_listNode->clear();
+
+            if (self->m_levelsLabel) {
+                self->m_levelsLabel->setString("0 to 0 of 0");
+            }
+            self->m_totalLevels = 0;
+            self->m_totalPages = 1;
+            self->updatePageButton();
+            return;
+        }
+
+        self->applyPointsFilter();
+    });
 
     co_return;
 }

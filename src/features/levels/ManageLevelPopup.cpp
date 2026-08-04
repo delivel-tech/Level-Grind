@@ -114,16 +114,20 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 }
 
 arc::Future<> ManageLevelPopup::onLoadLevelInfo() {
-    Ref<ManageLevelPopup> self = this;
+    Ref<ManageLevelPopup> self;
+    co_await async::waitForMainThread([&] {
+        self = this;
+    });
 
     auto parsed = co_await BackendManager::getInstance().getLevelInfo(m_level->m_levelID);
 
-    if (!self) co_return;
+    co_await async::waitForMainThread([&] {
+    if (!self) return;
 
     if (!parsed.ok) {
         Notification::create("Failed to get level info. Try again later.", NotificationIcon::Error)->show();
         self->m_loadingSpinner->removeFromParent();
-        co_return;
+        return;
     }
 
     self->m_loadingSpinner->removeFromParent();
@@ -583,182 +587,171 @@ arc::Future<> ManageLevelPopup::onLoadLevelInfo() {
             self->m_levelInfoMenu->updateLayout();
 
             rightButtonsMenu->updateLayout();
+    });
 
     co_return;
 }
 
 arc::Future<> ManageLevelPopup::onAcceptClicked() {
-    Ref<ManageLevelPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, "Adding point...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Adding point...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().changePoint(PointType::AcceptPoint, m_body.coin, m_body);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed to add point.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Added point.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed to add point."); return; }
+        uPopupRef->showSuccessMessage("Success! Added point.");
+    });
     co_return;
 }
 
 arc::Future<> ManageLevelPopup::onRejectClicked() {
-    Ref<ManageLevelPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, "Removing point...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Removing point...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().changePoint(PointType::RejectPoint, m_body.coin, m_body);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed to remove point.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Removed point.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed to remove point."); return; }
+        uPopupRef->showSuccessMessage("Success! Removed point.");
+    });
     co_return;
 }
 
 arc::Future<> ManageLevelPopup::onDeleteNotesClicked() {
-    Ref<ManageLevelPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, "Deleting notes...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Deleting notes...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().deleteNotes(
         m_level->m_levelID,
         m_level->m_levelName.empty() ? "blank name" : m_level->m_levelName.c_str()
     );
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        log::error("bad web req");
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Notes deleted.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) {
+            log::error("bad web req");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
+        uPopupRef->showSuccessMessage("Success! Notes deleted.");
+    });
     co_return;
 }
 
 arc::Future<> ManageLevelPopup::onUnlockClicked() {
-    Ref<ManageLevelPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, "Unlocking level...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Unlocking level...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().unlockLevel(m_level->m_levelID, m_level->m_levelName);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        log::error("bad web req");
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Level unlocked.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) {
+            log::error("bad web req");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
+        uPopupRef->showSuccessMessage("Success! Level unlocked.");
+    });
     co_return;
 }
 
 arc::Future<> ManageLevelPopup::onLockClicked() {
-    Ref<ManageLevelPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, "Locking level...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Locking level...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().lockLevel(m_level->m_levelID, m_level->m_levelName);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        log::error("bad web req");
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Level locked.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) {
+            log::error("bad web req");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
+        uPopupRef->showSuccessMessage("Success! Level locked.");
+    });
     co_return;
 }
 
 arc::Future<> ManageLevelPopup::onDeleteClicked() {
-    Ref<ManageLevelPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, "Deleting level...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Deleting level...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().deleteLevel(m_level->m_levelID);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        log::error("bad web req");
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Level deleted.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) {
+            log::error("bad web req");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
+        uPopupRef->showSuccessMessage("Success! Level deleted.");
+    });
     co_return;
 }
 
 arc::Future<> ManageLevelPopup::onAddOrReaddClicked(bool isReadd) {
-    Ref<ManageLevelPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, isReadd ? "Re-adding level..." : "Adding level...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, isReadd ? "Re-adding level..." : "Adding level...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().newlevel(m_body);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage(isReadd ? "Success! Level re-added." : "Success! Level added.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed! Try again later."); return; }
+        uPopupRef->showSuccessMessage(isReadd ? "Success! Level re-added." : "Success! Level added.");
+    });
     co_return;
 }
 
 arc::Future<> ManageLevelPopup::onCancelVoteClicked() {
-    Ref<ManageLevelPopup> self = this;
-
-    auto uPopup = UploadActionPopup::create(nullptr, "Cancelling vote...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Cancelling vote...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().cancelVote(m_level->m_levelID);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed to cancel vote.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Vote cancelled.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed to cancel vote."); return; }
+        uPopupRef->showSuccessMessage("Success! Vote cancelled.");
+    });
     co_return;
 }
 

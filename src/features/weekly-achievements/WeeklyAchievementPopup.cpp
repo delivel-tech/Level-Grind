@@ -83,63 +83,68 @@ bool WeeklyAchievementPopup::init() {
 }
 
 arc::Future<> WeeklyAchievementPopup::onLoadWeeklyAch() {
-    LoadingSpinner* loading = typeinfo_cast<LoadingSpinner*>(m_buttonMenu->getChildByID("main-menu")->getChildByID("loading"));
-    CCMenu* mainMenu = typeinfo_cast<CCMenu*>(m_buttonMenu->getChildByID("main-menu"));
+    Ref<LoadingSpinner> loadingRef;
+    Ref<WeeklyAchievementPopup> self;
+    Ref<CCMenu> mainMenuRef;
 
-    auto loadingRef = Ref(loading);
-    Ref<WeeklyAchievementPopup> self = this;
-    auto mainMenuRef = Ref(mainMenu);
+    co_await async::waitForMainThread([&] {
+        loadingRef = typeinfo_cast<LoadingSpinner*>(m_buttonMenu->getChildByID("main-menu")->getChildByID("loading"));
+        self = this;
+        mainMenuRef = typeinfo_cast<CCMenu*>(m_buttonMenu->getChildByID("main-menu"));
+    });
 
     auto parsed = co_await BackendManager::getInstance().getWeeklyAch();
 
-    if (!loadingRef || !self || !mainMenuRef) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!loadingRef || !self || !mainMenuRef) return;
 
-    if (!parsed.ok) {
-        loadingRef->removeFromParent();
-        Notification::create("Failed to load weekly achievements!", NotificationIcon::Error)->show();
-        co_return;
-    }
+        if (!parsed.ok) {
+            loadingRef->removeFromParent();
+            Notification::create("Failed to load weekly achievements!", NotificationIcon::Error)->show();
+            return;
+        }
 
-    auto sequence = CCSequence::create(
-        CallFuncExt::create([mainMenuRef, parsed]{
-            auto cell = WeeklyAchievementCell::create(AchievementCellType::Third, parsed.cell3);
-            cell->setScale(0.8f);
-            mainMenuRef->addChild(cell);
-            cell->setPosition({
-                20, -10
-            });
-        }),
-        CCDelayTime::create(0.2f),
-        CallFuncExt::create([mainMenuRef, parsed] {
-            auto cell = WeeklyAchievementCell::create(AchievementCellType::Second, parsed.cell2);
-            cell->setScale(0.8f);
-            mainMenuRef->addChild(cell);
-            cell->setPosition({
-                214, -10
-            });
-        }),
-        CCDelayTime::create(0.2f),
-        CallFuncExt::create([mainMenuRef, parsed] {
-            auto cell = WeeklyAchievementCell::create(AchievementCellType::First, parsed.cell1);
-            cell->setScale(0.8f);
-            mainMenuRef->addChild(cell);
-            cell->setPosition({
-                117, -10
-            });
-        }),
-        nullptr
-    );
+        auto sequence = CCSequence::create(
+            CallFuncExt::create([mainMenuRef, parsed]{
+                auto cell = WeeklyAchievementCell::create(AchievementCellType::Third, parsed.cell3);
+                cell->setScale(0.8f);
+                mainMenuRef->addChild(cell);
+                cell->setPosition({
+                    20, -10
+                });
+            }),
+            CCDelayTime::create(0.2f),
+            CallFuncExt::create([mainMenuRef, parsed] {
+                auto cell = WeeklyAchievementCell::create(AchievementCellType::Second, parsed.cell2);
+                cell->setScale(0.8f);
+                mainMenuRef->addChild(cell);
+                cell->setPosition({
+                    214, -10
+                });
+            }),
+            CCDelayTime::create(0.2f),
+            CallFuncExt::create([mainMenuRef, parsed] {
+                auto cell = WeeklyAchievementCell::create(AchievementCellType::First, parsed.cell1);
+                cell->setScale(0.8f);
+                mainMenuRef->addChild(cell);
+                cell->setPosition({
+                    117, -10
+                });
+            }),
+            nullptr
+        );
 
-    loadingRef->runAction(
-        CCSequence::create(
-            CCScaleTo::create(0.2f, 0),
-            CallFuncExt::create([loadingRef]{
-                if (loadingRef) loadingRef->removeFromParent();
-            }), nullptr
-        )
-    );
+        loadingRef->runAction(
+            CCSequence::create(
+                CCScaleTo::create(0.2f, 0),
+                CallFuncExt::create([loadingRef]{
+                    if (loadingRef) loadingRef->removeFromParent();
+                }), nullptr
+            )
+        );
 
-    self->runAction(sequence);
+        self->runAction(sequence);
+    });
 
     co_return;
 }

@@ -585,7 +585,10 @@ void CustomBrowserLayer::performFetchLevels() {
 }
 
 arc::Future<> CustomBrowserLayer::onFetchLevels() {
-    WeakRef<CustomBrowserLayer> weakSelf = this;
+    WeakRef<CustomBrowserLayer> weakSelf;
+    co_await async::waitForMainThread([&] {
+        weakSelf = this;
+    });
 
     bool ok;
     int totalCount = 0;
@@ -603,14 +606,15 @@ arc::Future<> CustomBrowserLayer::onFetchLevels() {
         allIDs = parsed.ids;
     }
 
+    co_await async::waitForMainThread([&] {
     auto self = weakSelf.lock();
-    if (!self) co_return;
-    if (!self->getParent() || !self->isRunning()) co_return;
+    if (!self) return;
+    if (!self->getParent() || !self->isRunning()) return;
 
     if (!ok) {
         Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
         self->stopLoading();
-        co_return;
+        return;
     }
 
     if (totalCount == 0) {
@@ -625,7 +629,7 @@ arc::Future<> CustomBrowserLayer::onFetchLevels() {
         self->m_totalLevels = 0;
         self->m_totalPages = 1;
         self->updatePageButton();
-        co_return;
+        return;
     }
 
     if (allIDs.empty()) {
@@ -640,7 +644,7 @@ arc::Future<> CustomBrowserLayer::onFetchLevels() {
         self->m_totalLevels = 0;
         self->m_totalPages = 1;
         self->updatePageButton();
-        co_return;
+        return;
     }
 
     std::vector<int> filteredIDs;
@@ -678,7 +682,7 @@ arc::Future<> CustomBrowserLayer::onFetchLevels() {
             self->m_totalLevels = 0;
             self->m_totalPages = 1;
             self->updatePageButton();
-            co_return;
+            return;
         }
     } else {
         if (onlyCompleted) {
@@ -706,7 +710,7 @@ arc::Future<> CustomBrowserLayer::onFetchLevels() {
                 self->m_totalLevels = 0;
                 self->m_totalPages = 1;
                 self->updatePageButton();
-                co_return;
+                return;
             }
         } else {
             filteredIDs = allIDs;
@@ -782,6 +786,7 @@ arc::Future<> CustomBrowserLayer::onFetchLevels() {
     }
     self->m_scrollLayer->m_contentLayer->updateLayout();
     self->m_listNode->scrollToTop();
+    });
 
     co_return;
 }

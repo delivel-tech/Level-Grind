@@ -433,9 +433,10 @@ bool CreatorLayer::initMd() {
 arc::Future<> CreatorLayer::onLoadServerHealth(Ref<CCLabelBMFont> serverLabelRef) {
     auto parsed = co_await BackendManager::getInstance().health();
 
-    if (!serverLabelRef) co_return;
-
-    serverLabelRef->setString(parsed.ok ? "Server: Online" : "Server: Offline");
+    co_await async::waitForMainThread([&] {
+        if (!serverLabelRef) return;
+        serverLabelRef->setString(parsed.ok ? "Server: Online" : "Server: Offline");
+    });
 
     co_return;
 }

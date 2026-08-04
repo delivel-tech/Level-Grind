@@ -187,22 +187,24 @@ private:
     }
 
     arc::Future<> onDeleteClicked(int packId) {
-        auto uPopup = UploadActionPopup::create(nullptr, "Deleting pack...");
-        uPopup->show();
-
-        auto uPopupRef = Ref(uPopup);
+        Ref<UploadActionPopup> uPopupRef;
+        co_await async::waitForMainThread([&] {
+            auto uPopup = UploadActionPopup::create(nullptr, "Deleting pack...");
+            uPopup->show();
+            uPopupRef = uPopup;
+        });
 
         auto parsed = co_await BackendManager::getInstance().deleteGrindPack(packId);
 
-        if (!uPopupRef) co_return;
-
-        if (!parsed.ok) {
-            log::error("bad web req");
-            uPopupRef->showFailMessage("Failed! Try again later.");
-            co_return;
-        }
-
-        uPopupRef->showSuccessMessage("Success! Pack deleted.");
+        co_await async::waitForMainThread([&] {
+            if (!uPopupRef) return;
+            if (!parsed.ok) {
+                log::error("bad web req");
+                uPopupRef->showFailMessage("Failed! Try again later.");
+                return;
+            }
+            uPopupRef->showSuccessMessage("Success! Pack deleted.");
+        });
         co_return;
     }
 };

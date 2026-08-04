@@ -23,8 +23,6 @@ const int kButtonWidth = 250.f;
 
 namespace levelgrind {
 
-// Ban Pet Popup class is here because it's only used in this file and it's easier to manage it here
-
 class BanPetPopup : public BasePopup {
 public:
     static BanPetPopup* create(int accountID) {
@@ -83,21 +81,20 @@ private:
     }
 
     arc::Future<> onBanClicked(int accountID, std::string reason) {
-        auto uPopup = UploadActionPopup::create(nullptr, "Banning pet...");
-        uPopup->show();
-
-        auto uPopupRef = Ref(uPopup);
+        Ref<UploadActionPopup> uPopupRef;
+        co_await async::waitForMainThread([&] {
+            auto uPopup = UploadActionPopup::create(nullptr, "Banning pet...");
+            uPopup->show();
+            uPopupRef = uPopup;
+        });
 
         auto parsed = co_await BackendManager::getInstance().banPet(accountID, reason);
 
-        if (!uPopupRef) co_return;
-
-        if (!parsed.ok) {
-            uPopupRef->showFailMessage("Failed! Try again later");
-            co_return;
-        }
-
-        uPopupRef->showSuccessMessage("Success! Pet banned.");
+        co_await async::waitForMainThread([&] {
+            if (!uPopupRef) return;
+            if (!parsed.ok) { uPopupRef->showFailMessage("Failed! Try again later"); return; }
+            uPopupRef->showSuccessMessage("Success! Pet banned.");
+        });
         co_return;
     }
 };
@@ -222,16 +219,20 @@ void UserManagePopup::buildUI() {
 }
 
 arc::Future<> UserManagePopup::onLoadUserRoles() {
-    Ref<UserManagePopup> self = this;
+    Ref<UserManagePopup> self;
+    co_await async::waitForMainThread([&] {
+        self = this;
+    });
 
     auto parsed = co_await BackendManager::getInstance().getUserRoles(m_targetUser->m_accountID);
 
-    if (!self) co_return;
+    co_await async::waitForMainThread([&] {
+    if (!self) return;
 
     if (!parsed.ok) {
         Notification::create("Failed to get user roles!", NotificationIcon::Error)->show();
         self->m_spinner->removeFromParent();
-        co_return;
+        return;
     }
 
     auto badge = self->getBadgeByHighestRole(parsed.roles);
@@ -333,45 +334,44 @@ arc::Future<> UserManagePopup::onLoadUserRoles() {
     self->m_targetLabelMenu->updateLayout();
 
     self->m_spinner->removeFromParent();
+    });
 
     co_return;
 }
 
 arc::Future<> UserManagePopup::onWipePetClicked() {
-    auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().wipePet(m_targetUser->m_accountID);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed! Try again later");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Pet wiped.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed! Try again later"); return; }
+        uPopupRef->showSuccessMessage("Success! Pet wiped.");
+    });
     co_return;
 }
 
 arc::Future<> UserManagePopup::onUnbanPetClicked() {
-    auto uPopup = UploadActionPopup::create(nullptr, "Unbanning pet...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Unbanning pet...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().unbanPet(m_targetUser->m_accountID);
 
-    if (!uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        uPopupRef->showFailMessage("Failed! Try again later");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Pet unbanned.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) { uPopupRef->showFailMessage("Failed! Try again later"); return; }
+        uPopupRef->showSuccessMessage("Success! Pet unbanned.");
+    });
     co_return;
 }
 

@@ -750,59 +750,66 @@ void SettingsLayer::createOtherList() {
 }
 
 arc::Future<> SettingsLayer::onRequestStaffAccessClicked() {
-    auto uPopup = UploadActionPopup::create(nullptr, "Loading...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Loading...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().requestStaffAccess();
 
-    if (!uPopupRef) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
 
-    if (!parsed.ok) {
-        log::error("req failed");
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        DataManager::getInstance().setUserPosition(GrindPosition::User);
-        co_return;
-    }
+        if (!parsed.ok) {
+            log::error("req failed");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            DataManager::getInstance().setUserPosition(GrindPosition::User);
+            return;
+        }
 
-    int pos = parsed.pos;
+        int pos = parsed.pos;
 
-    if (pos == 1) {
-        uPopupRef->showSuccessMessage("Success! Helper granted.");
-        DataManager::getInstance().setUserPosition(GrindPosition::Helper);
-    } else if (pos == 2) {
-        uPopupRef->showSuccessMessage("Success! Admin granted.");
-        DataManager::getInstance().setUserPosition(GrindPosition::Admin);
-    } else if (pos == 3) {
-        uPopupRef->showSuccessMessage("Success! Owner granted.");
-        DataManager::getInstance().setUserPosition(GrindPosition::Owner);
-    } else {
-        uPopupRef->showFailMessage("Failed! User is not staff.");
-        DataManager::getInstance().setUserPosition(GrindPosition::User);
-    }
-
+        if (pos == 1) {
+            uPopupRef->showSuccessMessage("Success! Helper granted.");
+            DataManager::getInstance().setUserPosition(GrindPosition::Helper);
+        } else if (pos == 2) {
+            uPopupRef->showSuccessMessage("Success! Admin granted.");
+            DataManager::getInstance().setUserPosition(GrindPosition::Admin);
+        } else if (pos == 3) {
+            uPopupRef->showSuccessMessage("Success! Owner granted.");
+            DataManager::getInstance().setUserPosition(GrindPosition::Owner);
+        } else {
+            uPopupRef->showFailMessage("Failed! User is not staff.");
+            DataManager::getInstance().setUserPosition(GrindPosition::User);
+        }
+    });
     co_return;
 }
 
 arc::Future<> SettingsLayer::onSyncClicked() {
-    auto uPopup = UploadActionPopup::create(nullptr, "Syncing data...");
-    uPopup->show();
-
-    auto uPopupRef = Ref(uPopup);
+    Ref<UploadActionPopup> uPopupRef;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Syncing data...");
+        uPopup->show();
+        uPopupRef = uPopup;
+    });
 
     auto parsed = co_await BackendManager::getInstance().bootupGet();
 
-    if (!uPopupRef) co_return;
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
 
-    if (!parsed.ok) {
-        log::error("req failed");
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
+        if (!parsed.ok) {
+            log::error("req failed");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
 
-    DataManager::getInstance().setSharedData(parsed);
-    uPopupRef->showSuccessMessage("Success! Data synced.");
+        DataManager::getInstance().setSharedData(parsed);
+        uPopupRef->showSuccessMessage("Success! Data synced.");
+    });
     co_return;
 }
 

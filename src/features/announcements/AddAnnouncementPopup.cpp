@@ -147,27 +147,27 @@ bool AddAnnouncementPopup::init() {
 }
 
 arc::Future<> AddAnnouncementPopup::onAddClicked() {
-    Ref<AddAnnouncementPopup> self = this;
+    Ref<UploadActionPopup> uPopupRef;
+    std::string title, content;
+    co_await async::waitForMainThread([&] {
+        auto uPopup = UploadActionPopup::create(nullptr, "Adding announcement...");
+        uPopup->show();
+        uPopupRef = uPopup;
+        title = m_titleTextInput->getString();
+        content = m_contentTextInput->getString();
+    });
 
-    auto uPopup = UploadActionPopup::create(nullptr, "Adding announcement...");
-    uPopup->show();
+    auto parsed = co_await BackendManager::getInstance().addAnnouncement(title, content);
 
-    auto uPopupRef = Ref(uPopup);
-
-    auto parsed = co_await BackendManager::getInstance().addAnnouncement(
-        m_titleTextInput->getString(),
-        m_contentTextInput->getString()
-    );
-
-    if (!self || !uPopupRef) co_return;
-
-    if (!parsed.ok) {
-        log::error("bad web req. add announcement endpoint");
-        uPopupRef->showFailMessage("Failed! Try again later.");
-        co_return;
-    }
-
-    uPopupRef->showSuccessMessage("Success! Announcement added.");
+    co_await async::waitForMainThread([&] {
+        if (!uPopupRef) return;
+        if (!parsed.ok) {
+            log::error("bad web req. add announcement endpoint");
+            uPopupRef->showFailMessage("Failed! Try again later.");
+            return;
+        }
+        uPopupRef->showSuccessMessage("Success! Announcement added.");
+    });
     co_return;
 }
 
