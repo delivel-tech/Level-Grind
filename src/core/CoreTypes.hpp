@@ -43,4 +43,8 @@ enum GuidePopupState {
     FromOutside = 1
 };
 
+struct HealthResponse {
+    bool ok;
+};
+
 }
