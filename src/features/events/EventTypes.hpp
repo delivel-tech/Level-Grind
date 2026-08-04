@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 namespace levelgrind {
 
@@ -31,6 +32,12 @@ struct GetEventDatesResponse {
     std::string dailyDate;
     std::string weeklyDate;
     std::string monthlyDate;
+};
+
+struct GetEventsHistoryResponse {
+    bool ok;
+    int count;
+    std::vector<int> ids;
 };
 
 }

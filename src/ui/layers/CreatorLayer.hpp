@@ -1,8 +1,9 @@
 #include <Geode/Geode.hpp>
 #include "../BaseLayer.hpp"
+#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <arc/future/Future.hpp>
 #include <functional>
 #include <vector>
 #include <string>
@@ -43,11 +44,7 @@ private:
     void turnCategoryPage(int dir);
     int getCategoryPageCount();
 
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~CreatorLayer() {
-        m_listener.cancel();
-    }
+    arc::Future<> onLoadServerHealth(Ref<CCLabelBMFont> serverLabelRef);
 };
 
 }

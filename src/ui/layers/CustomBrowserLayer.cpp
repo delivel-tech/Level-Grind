@@ -15,9 +15,10 @@
 #include <Geode/binding/GameStatsManager.hpp>
 #include <Geode/binding/LevelCell.hpp>
 #include <Geode/binding/SetIDPopup.hpp>
-#include <Geode/utils/web.hpp>
+#include <Geode/utils/async.hpp>
 #include <algorithm>
 
+#include "../../core/BackendManager.hpp"
 #include "../popups/GuidePopup.hpp"
 
 #include <UIBuilder.hpp>
@@ -580,70 +581,121 @@ void CustomBrowserLayer::performFetchLevels() {
 
     this->startLoading();
 
-    auto req = web::WebRequest();
+    async::spawn(this->onFetchLevels());
+}
 
-    if (m_type == CustomBrowserType::Search) {
-        matjson::Value body;
-        if (!m_body.difficulties.empty()) body["difficulties"] = m_body.difficulties;
-        if (!m_body.lengths.empty()) body["lengths"] = m_body.lengths;
-        if (!m_body.demonDifficulties.empty()) body["demonDifficulties"] = m_body.demonDifficulties;
-        if (!m_body.grindTypes.empty()) body["grindTypes"] = m_body.grindTypes;
-        if (!m_body.versions.empty()) body["versions"] = m_body.versions;
-        body["newerFirst"] = m_body.isNewerFirst;
-        body["recentlyAdded"] = m_body.isRecentlyAdded;
-        req.bodyJSON(body);
-    }
-
+arc::Future<> CustomBrowserLayer::onFetchLevels() {
     WeakRef<CustomBrowserLayer> weakSelf = this;
 
-    auto getURL = [this, &req](CustomBrowserType type, EventType eventType) {
-        if (type == CustomBrowserType::Search) {
-            return "https://api.delivel.tech/get_levels";
-        } else {
-            req.param("mode", fmt::format("{}", static_cast<int>(m_eventType)));
-            return "https://api.delivel.tech/get_events_history";
+    bool ok;
+    int totalCount = 0;
+    std::vector<int> allIDs;
+
+    if (m_type == CustomBrowserType::Search) {
+        auto parsed = co_await BackendManager::getInstance().getLevels(m_body);
+        ok = parsed.ok;
+        totalCount = parsed.count;
+        allIDs = parsed.ids;
+    } else {
+        auto parsed = co_await BackendManager::getInstance().getEventsHistory(static_cast<int>(m_eventType));
+        ok = parsed.ok;
+        totalCount = parsed.count;
+        allIDs = parsed.ids;
+    }
+
+    auto self = weakSelf.lock();
+    if (!self) co_return;
+    if (!self->getParent() || !self->isRunning()) co_return;
+
+    if (!ok) {
+        Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
+        self->stopLoading();
+        co_return;
+    }
+
+    if (totalCount == 0) {
+        Notification::create("No levels found", NotificationIcon::Info)->show();
+        self->stopLoading();
+
+        if (self->m_listNode) self->m_listNode->clear();
+
+        if (self->m_levelsLabel) {
+            self->m_levelsLabel->setString("0 to 0 of 0");
         }
-    };
+        self->m_totalLevels = 0;
+        self->m_totalPages = 1;
+        self->updatePageButton();
+        co_return;
+    }
 
-    auto getFuture = [&](CustomBrowserType type) {
-        if (type == CustomBrowserType::Search) {
-            return req.post(getURL(m_type, m_eventType));
-        } else {
-            return req.get(getURL(m_type, m_eventType));
+    if (allIDs.empty()) {
+        Notification::create("No levels found", NotificationIcon::Info)->show();
+        self->stopLoading();
+
+        if (self->m_listNode) self->m_listNode->clear();
+
+        if (self->m_levelsLabel) {
+            self->m_levelsLabel->setString("0 to 0 of 0");
         }
-    };
+        self->m_totalLevels = 0;
+        self->m_totalPages = 1;
+        self->updatePageButton();
+        co_return;
+    }
 
-    m_searchTask.spawn(
-        getFuture(m_type),
-        [weakSelf](web::WebResponse const& res) {
-            auto self = weakSelf.lock();
-            if (!self) return;
-            if (!self->getParent() || !self->isRunning()) return;
+    std::vector<int> filteredIDs;
+    bool onlyUncompleted = false;
+    bool onlyCompleted = false;
 
-            if (!res.ok()) {
-                Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
-                self->stopLoading();
-                return;
-            }
+    if (self->m_type == CustomBrowserType::Search) {
+    if (auto mod = Mod::get()) {
+        onlyUncompleted = mod->getSavedValue<bool>("only-uncompleted");
+        onlyCompleted = mod->getSavedValue<bool>("only-completed");
+    }
 
-            auto jsonRes = res.json();
-            if (!jsonRes) {
-                Notification::create("Invalid response from server", NotificationIcon::Error)->show();
-                self->stopLoading();
-                return;
-            }
-
-            auto json = jsonRes.unwrap();
-
-            int totalCount = 0;
-            if (json.contains("count")) {
-                if (auto count = json["count"].as<int>(); count) {
-                    totalCount = count.unwrap();
+    if (onlyUncompleted) {
+        auto gsm = GameStatsManager::sharedState();
+        if (gsm) {
+            for (auto id : allIDs) {
+                auto isCompleted = gsm->hasCompletedOnlineLevel(id);
+                if (!isCompleted) {
+                    filteredIDs.push_back(id);
                 }
             }
+        } else {
+            filteredIDs = allIDs;
+        }
 
-            if (totalCount == 0) {
-                Notification::create("No levels found", NotificationIcon::Info)->show();
+        if (filteredIDs.empty()) {
+            Notification::create("No uncompleted levels found", NotificationIcon::Info)->show();
+            self->stopLoading();
+
+            if (self->m_listNode) self->m_listNode->clear();
+
+            if (self->m_levelsLabel) {
+                self->m_levelsLabel->setString("0 to 0 of 0");
+            }
+            self->m_totalLevels = 0;
+            self->m_totalPages = 1;
+            self->updatePageButton();
+            co_return;
+        }
+    } else {
+        if (onlyCompleted) {
+            auto gsm = GameStatsManager::sharedState();
+            if (gsm) {
+                for (auto id : allIDs) {
+                    auto isCompleted = gsm->hasCompletedOnlineLevel(id);
+                    if (isCompleted) {
+                        filteredIDs.push_back(id);
+                    }
+                }
+            } else {
+                filteredIDs = allIDs;
+            }
+
+            if (filteredIDs.empty()) {
+                Notification::create("No completed levels found", NotificationIcon::Info)->show();
                 self->stopLoading();
 
                 if (self->m_listNode) self->m_listNode->clear();
@@ -654,177 +706,84 @@ void CustomBrowserLayer::performFetchLevels() {
                 self->m_totalLevels = 0;
                 self->m_totalPages = 1;
                 self->updatePageButton();
-                return;
+                co_return;
             }
-
-            std::vector<int> allIDs;
-            if (json.contains("ids")) {
-                auto arrRes = json["ids"].asArray();
-                if (arrRes) {
-                    for (auto id : arrRes.unwrap()) {
-                        if (auto idVal = id.asInt(); idVal) {
-                            allIDs.push_back(idVal.unwrap());
-                        }
-                    }
-                }
-            }
-
-            if (allIDs.empty()) {
-                Notification::create("No levels found", NotificationIcon::Info)->show();
-                self->stopLoading();
-
-                if (self->m_listNode) self->m_listNode->clear();
-
-                if (self->m_levelsLabel) {
-                    self->m_levelsLabel->setString("0 to 0 of 0");
-                }
-                self->m_totalLevels = 0;
-                self->m_totalPages = 1;
-                self->updatePageButton();
-                return;
-            }
-
-            std::vector<int> filteredIDs;
-            bool onlyUncompleted = false;
-            bool onlyCompleted = false;
-
-            if (self->m_type == CustomBrowserType::Search) {
-            if (auto mod = Mod::get()) {
-                onlyUncompleted = mod->getSavedValue<bool>("only-uncompleted");
-                onlyCompleted = mod->getSavedValue<bool>("only-completed");
-            }
-
-            if (onlyUncompleted) {
-                auto gsm = GameStatsManager::sharedState();
-                if (gsm) {
-                    for (auto id : allIDs) {
-                        auto isCompleted = gsm->hasCompletedOnlineLevel(id);
-                        if (!isCompleted) {
-                            filteredIDs.push_back(id);
-                        }
-                    }
-                } else {
-                    filteredIDs = allIDs;
-                }
-
-                if (filteredIDs.empty()) {
-                    Notification::create("No uncompleted levels found", NotificationIcon::Info)->show();
-                    self->stopLoading();
-
-                    if (self->m_listNode) self->m_listNode->clear();
-
-                    if (self->m_levelsLabel) {
-                        self->m_levelsLabel->setString("0 to 0 of 0");
-                    }
-                    self->m_totalLevels = 0;
-                    self->m_totalPages = 1;
-                    self->updatePageButton();
-                    return;
-                }
-            } else {
-                if (onlyCompleted) {
-                    auto gsm = GameStatsManager::sharedState();
-                    if (gsm) {
-                        for (auto id : allIDs) {
-                            auto isCompleted = gsm->hasCompletedOnlineLevel(id);
-                            if (isCompleted) {
-                                filteredIDs.push_back(id);
-                            }
-                        }
-                    } else {
-                        filteredIDs = allIDs;
-                    }
-
-                    if (filteredIDs.empty()) {
-                        Notification::create("No completed levels found", NotificationIcon::Info)->show();
-                        self->stopLoading();
-
-                        if (self->m_listNode) self->m_listNode->clear();
-
-                        if (self->m_levelsLabel) {
-                            self->m_levelsLabel->setString("0 to 0 of 0");
-                        }
-                        self->m_totalLevels = 0;
-                        self->m_totalPages = 1;
-                        self->updatePageButton();
-                        return;
-                    }
-                } else {
-                    filteredIDs = allIDs;
-                }
-            }
-            } else {filteredIDs = allIDs;}
-
-            self->m_allLevelIDs = filteredIDs;
-            self->m_totalLevels = static_cast<int>(filteredIDs.size());
-            self->m_totalPages = (self->m_totalLevels + PER_PAGE - 1) / PER_PAGE;
-            if (self->m_totalPages < 1) {
-                self->m_totalPages = 1;
-            }
-
-            if (self->m_completionInfoLabel) {
-                auto gsm = GameStatsManager::get();
-                int completedLevels = 0;
-                if (gsm) {
-                    for (auto levelID : self->m_allLevelIDs) {
-                        if (gsm->hasCompletedOnlineLevel(levelID)) completedLevels++;
-                    }
-                }
-
-                self->m_completionInfoLabel->setString(
-                    fmt::format("Completed {} from {}", completedLevels, self->m_allLevelIDs.size()).c_str()
-                );
-            }
-
-            if (self->m_progressBar) {
-                auto gsm = GameStatsManager::get();
-                int completedLevels = 0;
-                if (gsm) {
-                    for (auto levelID : self->m_allLevelIDs) {
-                        if (gsm->hasCompletedOnlineLevel(levelID)) completedLevels++;
-                    }
-                }
-
-                float perc = ((float)completedLevels / self->m_allLevelIDs.size()) * 100;
-
-                self->m_progressBar->updateProgress(perc);
-            }
-
-            if (self->m_page >= self->m_totalPages) {
-                self->m_page = std::max(0, self->m_totalPages - 1);
-            }
-
-            int startIdx = self->m_page * PER_PAGE;
-            int endIdx = std::min(startIdx + PER_PAGE, static_cast<int>(filteredIDs.size()));
-
-            std::vector<int> pageIDs;
-            for (int i = startIdx; i < endIdx; ++i) {
-                pageIDs.push_back(filteredIDs[i]);
-            }
-
-            if (pageIDs.size() > 99) {
-                pageIDs.resize(99);
-            }
-
-            std::string levelIDs;
-            for (size_t i = 0; i < pageIDs.size(); ++i) {
-                if (i > 0) levelIDs += ",";
-                levelIDs += numToString(pageIDs[i]);
-            }
-
-            self->m_searchObject = GJSearchObject::create(SearchType::Type19, levelIDs);
-
-            auto glm = GameLevelManager::get();
-            if (glm && self->getParent() && self->isRunning()) {
-                glm->m_levelManagerDelegate = self;
-                glm->getOnlineLevels(self->m_searchObject);
-            } else {
-                self->stopLoading();
-            }
-            self->m_scrollLayer->m_contentLayer->updateLayout();
-            self->m_listNode->scrollToTop();
+        } else {
+            filteredIDs = allIDs;
         }
-    );
+    }
+    } else {filteredIDs = allIDs;}
+
+    self->m_allLevelIDs = filteredIDs;
+    self->m_totalLevels = static_cast<int>(filteredIDs.size());
+    self->m_totalPages = (self->m_totalLevels + PER_PAGE - 1) / PER_PAGE;
+    if (self->m_totalPages < 1) {
+        self->m_totalPages = 1;
+    }
+
+    if (self->m_completionInfoLabel) {
+        auto gsm = GameStatsManager::get();
+        int completedLevels = 0;
+        if (gsm) {
+            for (auto levelID : self->m_allLevelIDs) {
+                if (gsm->hasCompletedOnlineLevel(levelID)) completedLevels++;
+            }
+        }
+
+        self->m_completionInfoLabel->setString(
+            fmt::format("Completed {} from {}", completedLevels, self->m_allLevelIDs.size()).c_str()
+        );
+    }
+
+    if (self->m_progressBar) {
+        auto gsm = GameStatsManager::get();
+        int completedLevels = 0;
+        if (gsm) {
+            for (auto levelID : self->m_allLevelIDs) {
+                if (gsm->hasCompletedOnlineLevel(levelID)) completedLevels++;
+            }
+        }
+
+        float perc = ((float)completedLevels / self->m_allLevelIDs.size()) * 100;
+
+        self->m_progressBar->updateProgress(perc);
+    }
+
+    if (self->m_page >= self->m_totalPages) {
+        self->m_page = std::max(0, self->m_totalPages - 1);
+    }
+
+    int startIdx = self->m_page * PER_PAGE;
+    int endIdx = std::min(startIdx + PER_PAGE, static_cast<int>(filteredIDs.size()));
+
+    std::vector<int> pageIDs;
+    for (int i = startIdx; i < endIdx; ++i) {
+        pageIDs.push_back(filteredIDs[i]);
+    }
+
+    if (pageIDs.size() > 99) {
+        pageIDs.resize(99);
+    }
+
+    std::string levelIDs;
+    for (size_t i = 0; i < pageIDs.size(); ++i) {
+        if (i > 0) levelIDs += ",";
+        levelIDs += numToString(pageIDs[i]);
+    }
+
+    self->m_searchObject = GJSearchObject::create(SearchType::Type19, levelIDs);
+
+    auto glm = GameLevelManager::get();
+    if (glm && self->getParent() && self->isRunning()) {
+        glm->m_levelManagerDelegate = self;
+        glm->getOnlineLevels(self->m_searchObject);
+    } else {
+        self->stopLoading();
+    }
+    self->m_scrollLayer->m_contentLayer->updateLayout();
+    self->m_listNode->scrollToTop();
+
+    co_return;
 }
 
 }

@@ -11,8 +11,8 @@
 #include "../../core/BrowserTypes.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
 
+#include <arc/future/Future.hpp>
 #include <cue/ListNode.hpp>
 
 using namespace geode::prelude;
@@ -25,7 +25,6 @@ public:
     void keyBackClicked() override;
 
     ~CustomBrowserLayer() {
-        m_searchTask.cancel();
         auto glm = GameLevelManager::get();
         if (glm && glm->m_levelManagerDelegate == this) {
             glm->m_levelManagerDelegate = nullptr;
@@ -49,6 +48,7 @@ private:
     void showUIElements();
     void populateFromArray(CCArray* levels);
     void performFetchLevels();
+    arc::Future<> onFetchLevels();
     void loadPageFromStoredIDs();
 
     void loadLevelsFinished(CCArray* levels, char const* key, int p2) override;
@@ -63,8 +63,6 @@ private:
     std::string m_title;
     CustomBrowserType m_type;
     EventType m_eventType;
-
-    geode::async::TaskHolder<web::WebResponse> m_searchTask;
 
     std::vector<int> m_allLevelIDs;
     int m_totalLevels = 0;

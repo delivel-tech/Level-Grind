@@ -19,10 +19,10 @@
 #include "../popups/EventPopup.hpp"
 #include "../popups/WeeklyAchievementPopup.hpp"
 #include "../../managers/DataManager.hpp"
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "../popups/StaffPopup.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/cocos.hpp"
-#include "Geode/utils/web.hpp"
 #include "GrindPacksLayer.hpp"
 #include "MainLayer.hpp"
 #include "SuggestionsLayer.hpp"
@@ -413,22 +413,7 @@ bool CreatorLayer::initMd() {
         .parent(this)
         .collect();
 
-    auto serverLabelRef = Ref(serverLabel);
-
-    m_listener.spawn(
-        APIClient::getInstance().health(),
-        [serverLabelRef](web::WebResponse res) {
-            if (!serverLabelRef) return;
-            bool ok = APIClient::getInstance().healthParse(res);
-
-            if (ok) {
-                serverLabelRef->setString("Server: Online");
-                return;
-            } else {
-                serverLabelRef->setString("Server: Offline");
-            }
-        }
-    );
+    async::spawn(this->onLoadServerHealth(Ref(serverLabel)));
 
     if (Mod::get()->getSavedValue<bool>(fmt::format("discord-popup-opened-{}", Mod::get()->getVersion()))) return true;
 
@@ -444,4 +429,15 @@ bool CreatorLayer::initMd() {
 
     return true;
 }
+
+arc::Future<> CreatorLayer::onLoadServerHealth(Ref<CCLabelBMFont> serverLabelRef) {
+    auto parsed = co_await BackendManager::getInstance().health();
+
+    if (!serverLabelRef) co_return;
+
+    serverLabelRef->setString(parsed.ok ? "Server: Online" : "Server: Offline");
+
+    co_return;
+}
+
 }

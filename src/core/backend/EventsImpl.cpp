@@ -92,5 +92,41 @@ arc::Future<GetEventDatesResponse> BackendManager::getEventDates() {
     co_return co_await request<GetEventDatesResponse>("GET", "/get_events_dates");
 }
 
+template <>
+struct matjson::Serialize<GetEventsHistoryResponse> {
+    static geode::Result<GetEventsHistoryResponse> fromJson(matjson::Value const& json) {
+        GetEventsHistoryResponse ret;
+
+        int totalCount = 0;
+        if (json.contains("count")) {
+            if (auto count = json["count"].as<int>(); count) {
+                totalCount = count.unwrap();
+            }
+        }
+
+        std::vector<int> allIDs;
+        if (json.contains("ids")) {
+            auto arrRes = json["ids"].asArray();
+            if (arrRes) {
+                for (auto id : arrRes.unwrap()) {
+                    if (auto idVal = id.asInt(); idVal) {
+                        allIDs.push_back(idVal.unwrap());
+                    }
+                }
+            }
+        }
+
+        ret.count = totalCount;
+        ret.ids = allIDs;
+        ret.ok = true;
+
+        return geode::Ok(ret);
+    }
+};
+
+arc::Future<GetEventsHistoryResponse> BackendManager::getEventsHistory(int mode) {
+    co_return co_await request<GetEventsHistoryResponse>("GET", fmt::format("/get_events_history?mode={}", mode));
+}
+
 
 }
