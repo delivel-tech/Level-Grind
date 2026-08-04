@@ -72,5 +72,25 @@ arc::Future<Events> BackendManager::getEvents(int mode) {
     co_return co_await request<Events>("GET", fmt::format("/get_events_new?mode={}", mode));
 }
 
+template <>
+struct matjson::Serialize<GetEventDatesResponse> {
+    static geode::Result<GetEventDatesResponse> fromJson(matjson::Value const& json) {
+        GetEventDatesResponse ret;
+        ret.ok = true;
+
+        auto dates = json["dates"];
+
+        ret.dailyDate = dates["daily"].asString().unwrapOrDefault();
+        ret.weeklyDate = dates["weekly"].asString().unwrapOrDefault();
+        ret.monthlyDate = dates["monthly"].asString().unwrapOrDefault();
+
+        return geode::Ok(ret);
+    }
+};
+
+arc::Future<GetEventDatesResponse> BackendManager::getEventDates() {
+    co_return co_await request<GetEventDatesResponse>("GET", "/get_events_dates");
+}
+
 
 }

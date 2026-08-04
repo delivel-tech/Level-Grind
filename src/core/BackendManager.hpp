@@ -74,6 +74,7 @@ public:
     arc::Future<GetGrindPacksResponse> getGrindPacks();
     arc::Future<SetEventsResponse> setEvents(int mode, int classicID, int platID);
     arc::Future<Events> getEvents(int mode);
+    arc::Future<GetEventDatesResponse> getEventDates();
     arc::Future<ViewClansResponse> viewClans(bool shouldUpdateStars, int starsDelta, bool shouldUpdateMoons, int moonsDelta, int page = 1, int limit = 50);
     arc::Future<GetClanResponse> getClan(int clanID);
     arc::Future<ClanDataResponse> createClan(std::string name, std::string description, LGClanType type, int colorID, LGClanJoinType joinType, int statRequirement);

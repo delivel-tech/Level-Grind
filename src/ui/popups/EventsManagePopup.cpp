@@ -13,9 +13,9 @@
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
 
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
+#include "Geode/utils/async.hpp"
 #include "Geode/utils/general.hpp"
-#include "Geode/utils/web.hpp"
 
 namespace levelgrind {
 
@@ -28,12 +28,6 @@ EventsManagePopup* EventsManagePopup::create() {
     delete ret;
     return nullptr;
 }
-
-struct EventSection {
-    int mode;
-    std::string name;
-    std::string menuId;
-};
 
 bool EventsManagePopup::init() {
     if (!BasePopup::init({300, 190})) return false;
@@ -99,29 +93,11 @@ bool EventsManagePopup::init() {
                     return;
                 }
 
-                auto uPopup = UploadActionPopup::create(nullptr, fmt::format("Queueing {}...", section.name));
-                uPopup->show();
-
-                auto uPopupRef = Ref(uPopup);
-                auto self = Ref(this);
-
-                m_listener.spawn(
-                    APIClient::getInstance().setEvents(
-                        section.mode, 
-                        numFromString<int>(classicInput->getString()).unwrap(), 
-                        numFromString<int>(platInput->getString()).unwrap()
-                    ),
-                    [uPopupRef, self](web::WebResponse res) {
-                        if (!uPopupRef || !self) return;
-                        bool ok = APIClient::getInstance().setEventsParse(res);
-
-                        if (ok) {
-                            uPopupRef->showSuccessMessage("Success! Events queued.");
-                        } else {
-                            uPopupRef->showFailMessage("Failed! Try again later.");
-                        }
-                    }
-                );
+                async::spawn(this->onQueueClicked(
+                    section,
+                    numFromString<int>(classicInput->getString()).unwrap(),
+                    numFromString<int>(platInput->getString()).unwrap()
+                ));
             })
             .parent(menu)
             .collect();
@@ -139,67 +115,75 @@ bool EventsManagePopup::init() {
         .id("loading-spinner")
         .collect();
 
-    auto self = Ref(this);
-    auto loadingRef = Ref(loading);
-
-    m_listener.spawn(
-        web::WebRequest().get("https://api.delivel.tech/get_events_dates"),
-        [self, loadingRef](web::WebResponse res) {
-            if (!self || !loadingRef) return;
-            if (!res.ok()) {
-                log::error("bad req");
-                loadingRef->removeFromParent();
-                return;
-            }
-
-            auto jsonRes = res.json();
-
-            if (!jsonRes) {
-                log::error("bad req");
-                loadingRef->removeFromParent();
-                return;
-            }
-
-            auto json = jsonRes.unwrap();
-
-            auto dates = json["dates"];
-
-            std::string dailyDate = dates["daily"].asString().unwrapOrDefault();
-            std::string weeklyDate = dates["weekly"].asString().unwrapOrDefault();
-            std::string monthlyDate = dates["monthly"].asString().unwrapOrDefault();
-
-            loadingRef->removeFromParent();
-
-            auto rowMenu = Build<CCMenu>::create()
-                .layout(RowLayout::create()->setGap(10))
-                .parent(self->m_mainLayer)
-                .scale(0.65f)
-                .pos(self->centerX(), self->centerY() - 55)
-                .collect();
-
-            auto dailyLabel = Build(CCLabelBMFont::create(
-                fmt::format("{}: {}", "Daily", dailyDate.substr(0, dailyDate.find('T'))).c_str(), "chatFont.fnt"
-            ))
-                .parent(rowMenu)
-                .collect();
-
-            auto weeklyLabel = Build(CCLabelBMFont::create(
-                fmt::format("{}: {}", "Weekly", weeklyDate.substr(0, weeklyDate.find('T'))).c_str(), "chatFont.fnt"
-            ))
-                .parent(rowMenu)
-                .collect();
-
-            auto monthlyLabel = Build(CCLabelBMFont::create(
-                fmt::format("{}: {}", "Monthly", monthlyDate.substr(0, monthlyDate.find('T'))).c_str(), "chatFont.fnt"
-            ))
-                .parent(rowMenu)
-                .collect();
-
-            rowMenu->updateLayout();
-        }
-    );
+    async::spawn(this->onLoadEventDates());
 
     return true;
+}
+
+arc::Future<> EventsManagePopup::onQueueClicked(EventSection section, int classicId, int platId) {
+    auto uPopup = UploadActionPopup::create(nullptr, fmt::format("Queueing {}...", section.name));
+    uPopup->show();
+
+    auto uPopupRef = Ref(uPopup);
+    Ref<EventsManagePopup> self = this;
+
+    auto parsed = co_await BackendManager::getInstance().setEvents(section.mode, classicId, platId);
+
+    if (!uPopupRef || !self) co_return;
+
+    if (!parsed.ok) {
+        uPopupRef->showFailMessage("Failed! Try again later.");
+        co_return;
+    }
+
+    uPopupRef->showSuccessMessage("Success! Events queued.");
+    co_return;
+}
+
+arc::Future<> EventsManagePopup::onLoadEventDates() {
+    Ref<EventsManagePopup> self = this;
+    Ref<LoadingSpinner> loadingRef = typeinfo_cast<LoadingSpinner*>(m_mainLayer->getChildByID("loading-spinner"));
+
+    auto parsed = co_await BackendManager::getInstance().getEventDates();
+
+    if (!self || !loadingRef) co_return;
+
+    if (!parsed.ok) {
+        log::error("bad req");
+        loadingRef->removeFromParent();
+        co_return;
+    }
+
+    loadingRef->removeFromParent();
+
+    auto rowMenu = Build<CCMenu>::create()
+        .layout(RowLayout::create()->setGap(10))
+        .parent(self->m_mainLayer)
+        .scale(0.65f)
+        .pos(self->centerX(), self->centerY() - 55)
+        .collect();
+
+    auto dailyLabel = Build(CCLabelBMFont::create(
+        fmt::format("{}: {}", "Daily", parsed.dailyDate.substr(0, parsed.dailyDate.find('T'))).c_str(), "chatFont.fnt"
+    ))
+        .parent(rowMenu)
+        .collect();
+
+    auto weeklyLabel = Build(CCLabelBMFont::create(
+        fmt::format("{}: {}", "Weekly", parsed.weeklyDate.substr(0, parsed.weeklyDate.find('T'))).c_str(), "chatFont.fnt"
+    ))
+        .parent(rowMenu)
+        .collect();
+
+    auto monthlyLabel = Build(CCLabelBMFont::create(
+        fmt::format("{}: {}", "Monthly", parsed.monthlyDate.substr(0, parsed.monthlyDate.find('T'))).c_str(), "chatFont.fnt"
+    ))
+        .parent(rowMenu)
+        .collect();
+
+    rowMenu->updateLayout();
+
+    co_return;
 }
 
 }

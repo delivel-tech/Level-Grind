@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace levelgrind {
 
@@ -23,6 +24,13 @@ enum EventType {
 
 struct SetEventsResponse {
     bool ok;
+};
+
+struct GetEventDatesResponse {
+    bool ok;
+    std::string dailyDate;
+    std::string weeklyDate;
+    std::string monthlyDate;
 };
 
 }

@@ -2,11 +2,17 @@
 #include <Geode/Geode.hpp>
 #include "../BasePopup.hpp"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
 namespace levelgrind {
+
+struct EventSection {
+    int mode;
+    std::string name;
+    std::string menuId;
+};
 
 class EventsManagePopup : public BasePopup {
 public:
@@ -15,7 +21,8 @@ public:
 private:
     bool init() override;
 
-    TaskHolder<web::WebResponse> m_listener;
+    arc::Future<> onQueueClicked(EventSection section, int classicId, int platId);
+    arc::Future<> onLoadEventDates();
 };
 
 }

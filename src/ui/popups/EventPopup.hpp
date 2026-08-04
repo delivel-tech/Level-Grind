@@ -9,7 +9,7 @@
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/ui/NineSlice.hpp"
 #include "Geode/utils/async.hpp"
-#include "Geode/utils/web.hpp"
+#include <arc/future/Future.hpp>
 
 using namespace geode::prelude;
 
@@ -35,14 +35,9 @@ public:
 private:
     bool init(EventType type);
     void update(float dt) override;
+    arc::Future<> onLoadEvents(EventType type);
 
     double m_secondsLeft = 0.f;
-
-    TaskHolder<web::WebResponse> m_listener;
-
-    ~EventPopup() {
-        m_listener.cancel();
-    }
 };
 
 }

@@ -12,9 +12,8 @@
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
-#include "../../managers/APIClient.hpp"
+#include "../../core/BackendManager.hpp"
 #include "Geode/ui/Notification.hpp"
-#include "Geode/utils/web.hpp"
 
 #include "GuidePopup.hpp"
 
@@ -241,38 +240,39 @@ bool EventPopup::init(EventType type) {
 
     this->scheduleUpdate();
 
-    auto self = Ref(this);
-
-    m_listener.spawn(
-        APIClient::getInstance().getEvents(static_cast<int>(type)),
-        [self](web::WebResponse res) {
-            if (!self) return;
-
-            auto parsed = APIClient::getInstance().getEventsParse(res);
-
-            if (!parsed.ok) {
-                Notification::create("Failed to load events.", NotificationIcon::Error)->show();
-                return;
-            }
-
-            if (!parsed.classicEvent.exists || !parsed.platEvent.exists) {
-                Notification::create("Failed to load events.", NotificationIcon::Error)->show();
-                return;
-            }
-
-            self->m_secondsLeft = parsed.classicEvent.secondsLeft;
-
-            if (parsed.classicEvent.levelId > 0 && self->m_classicCell) {
-                self->m_classicCell->loadLevel(parsed.classicEvent.levelId);
-            }
-            if (parsed.platEvent.levelId > 0 && self->m_platCell) {
-                self->m_platCell->loadLevel(parsed.platEvent.levelId);
-            }
-            if (self->m_spinner) self->m_spinner->setVisible(false);
-        }
-    );
+    async::spawn(this->onLoadEvents(type));
 
     return true;
+}
+
+arc::Future<> EventPopup::onLoadEvents(EventType type) {
+    Ref<EventPopup> self = this;
+
+    auto parsed = co_await BackendManager::getInstance().getEvents(static_cast<int>(type));
+
+    if (!self) co_return;
+
+    if (!parsed.ok) {
+        Notification::create("Failed to load events.", NotificationIcon::Error)->show();
+        co_return;
+    }
+
+    if (!parsed.classicEvent.exists || !parsed.platEvent.exists) {
+        Notification::create("Failed to load events.", NotificationIcon::Error)->show();
+        co_return;
+    }
+
+    self->m_secondsLeft = parsed.classicEvent.secondsLeft;
+
+    if (parsed.classicEvent.levelId > 0 && self->m_classicCell) {
+        self->m_classicCell->loadLevel(parsed.classicEvent.levelId);
+    }
+    if (parsed.platEvent.levelId > 0 && self->m_platCell) {
+        self->m_platCell->loadLevel(parsed.platEvent.levelId);
+    }
+    if (self->m_spinner) self->m_spinner->setVisible(false);
+
+    co_return;
 }
 
 void EventPopup::update(float dt) {
