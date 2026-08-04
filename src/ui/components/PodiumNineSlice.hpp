@@ -1,6 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../../utils/globals.hpp"
+#include "../../features/weekly-achievements/WeeklyAchTypes.hpp"
 
 using namespace geode::prelude;
 

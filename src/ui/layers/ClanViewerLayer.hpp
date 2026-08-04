@@ -3,7 +3,7 @@
 #include "Geode/ui/NineSlice.hpp"
 #include "Geode/utils/web.hpp"
 #include <Geode/Geode.hpp>
-#include "../../utils/globals.hpp"
+#include "../../features/clans/ClanTypes.hpp"
 
 using namespace geode::prelude;
 

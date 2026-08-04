@@ -1,4 +1,4 @@
-#include "../../utils/globals.hpp"
+#include "../../features/weekly-achievements/WeeklyAchTypes.hpp"
 #include <Geode/Geode.hpp>
 #include "PodiumNineSlice.hpp"
 

@@ -1,5 +1,5 @@
 #include "../utils/singleton.hpp"
-#include "../utils/globals.hpp"
+#include "../features/weekly-achievements/WeeklyAchTypes.hpp"
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;

@@ -2,7 +2,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/GJUserScore.hpp>
 #include "../BasePopup.hpp"
-#include "../../utils/globals.hpp"
+#include "../../features/admin/AdminTypes.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/LoadingSpinner.hpp"

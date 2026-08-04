@@ -6,7 +6,7 @@
 #include <Geode/binding/GameLevelManager.hpp>
 #include <Geode/binding/GameManager.hpp>
 #include <Geode/binding/GameStatsManager.hpp>
-#include "../../utils/globals.hpp"
+#include "../../features/levels/LevelTypes.hpp"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/base_nodes/CCNode.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"

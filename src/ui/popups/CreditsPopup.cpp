@@ -18,7 +18,7 @@
 #include <fmt/format.h>
 #include <unordered_map>
 
-#include "../../utils/globals.hpp"
+#include "../../core/CoreTypes.hpp"
 #include "GuidePopup.hpp"
 
 using namespace geode::prelude;

@@ -134,15 +134,15 @@ bool CreateClanPopup::init(std::function<void()> onCreated) {
 
     joinMenu->updateLayout();
 
-    Build(CCLabelBMFont::create("Min stat to join:", "bigFont.fnt"))
+    Build(CCLabelBMFont::create("Min pet stat to join:", "bigFont.fnt"))
         .scale(0.4f)
         .anchorPoint({ 0.f, 0.5f })
-        .pos(centerX() - 110.f, centerY() - 38.f)
+        .pos(centerX() - 120.f, centerY() - 38.f)
         .parent(m_mainLayer)
         .collect();
 
     m_statReqInput = Build(TextInput::create(90.f, "0", "chatFont.fnt"))
-        .pos(centerX() + 55.f, centerY() - 38.f)
+        .pos(centerX() + 75.f, centerY() - 38.f)
         .parent(m_mainLayer)
         .id("stat-req-input")
         .with([](TextInput* ti) {

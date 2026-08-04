@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include "../BasePopup.hpp"
-#include "../../utils/globals.hpp"
+#include "../../features/events/EventTypes.hpp"
 #include "../components/EventLevelCell.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h"

@@ -6,7 +6,9 @@
 #include <Geode/binding/SetIDPopupDelegate.hpp>
 #include <Geode/modify/GameLevelManager.hpp>
 #include "../BaseLayer.hpp"
-#include "../../utils/globals.hpp"
+#include "../../features/levels/LevelTypes.hpp"
+#include "../../features/events/EventTypes.hpp"
+#include "../../core/BrowserTypes.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"

@@ -6,7 +6,7 @@
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 
-#include "../../utils/globals.hpp"
+#include "../../features/levels/LevelTypes.hpp"
 
 using namespace geode::prelude;
 

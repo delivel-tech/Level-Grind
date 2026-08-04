@@ -2,7 +2,7 @@
 
 #include <Geode/Geode.hpp>
 #include "../BaseLayer.hpp"
-#include "../../utils/globals.hpp"
+#include "../../features/levels/LevelTypes.hpp"
 #include "Geode/ui/ScrollLayer.hpp"
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"

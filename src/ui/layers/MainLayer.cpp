@@ -13,7 +13,9 @@
 #include <arc/future/Future.hpp>
 #include <fmt/format.h>
 
-#include "../../utils/globals.hpp"
+#include "../../features/levels/LevelTypes.hpp"
+#include "../../features/events/EventTypes.hpp"
+#include "../../core/BrowserTypes.hpp"
 #include "../../utils/utils.hpp"
 #include "../../ui/popups/StaffPopup.hpp"
 #include "../../managers/APIClient.hpp"

@@ -4,7 +4,7 @@
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <cue/RadioLogic.hpp>
 #include "../BasePopup.hpp"
-#include "../../utils/globals.hpp"
+#include "../../features/clans/ClanTypes.hpp"
 #include "Geode/ui/TextInput.hpp"
 #include "Geode/utils/web.hpp"
 #include "ccTypes.h"

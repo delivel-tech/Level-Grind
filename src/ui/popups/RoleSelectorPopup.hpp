@@ -1,6 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../../utils/globals.hpp"
+#include "../../features/admin/AdminTypes.hpp"
 #include "../BasePopup.hpp"
 #include "Geode/utils/web.hpp"
 

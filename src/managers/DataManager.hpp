@@ -1,6 +1,7 @@
 #pragma once
 #include "../utils/singleton.hpp"
-#include "../utils/globals.hpp"
+#include "../features/levels/LevelTypes.hpp"
+#include "../core/CoreTypes.hpp"
 #include "../ui/popups/DiscordPopup.hpp"
 
 using namespace geode::prelude;

@@ -1,6 +1,6 @@
 #include <Geode/Geode.hpp>
 #include "../BasePopup.hpp"
-#include "../../utils/globals.hpp"
+#include "../../features/levels/LevelTypes.hpp"
 
 using namespace geode::prelude;
 

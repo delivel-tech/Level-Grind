@@ -1,10 +1,9 @@
 #include <Geode/Geode.hpp>
-#include "../../utils/globals.hpp"
+#include "../../features/clans/ClanTypes.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/NineSlice.hpp"
-#include "Geode/ui/Notification.hpp"
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 #include "ccTypes.h"
@@ -15,9 +14,6 @@
 #include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
-
-#include "../../managers/ClanManager.hpp"
-#include "../../managers/APIClient.hpp"
 
 using namespace geode::prelude;
 
@@ -100,16 +96,7 @@ private:
             .scale(0.5f)
             .anchorPoint({1, 0.5f})
             .intoMenuItem([&] {
-                if (data.m_clanJoinType == LGClanJoinType::Open) {
-                    if (ClanManager::getInstance().getStat(data) >= data.m_statRequirementForRequest) {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Joining clan...");
-                        uPopup->show();
-                    } else {Notification::create(fmt::format("Required to join: {}", data.m_statRequirementForRequest), NotificationIcon::Info)->show();}
-                } else if (data.m_clanJoinType == LGClanJoinType::ByRequest) {
 
-                } else {
-
-                }
             })
             .parent(this)
             .id("join-btn")

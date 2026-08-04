@@ -4,7 +4,8 @@
 #include <Geode/binding/CCScrollLayerExt.hpp>
 #include <cue/ListNode.hpp>
 #include "../BasePopup.hpp"
-#include "../../utils/globals.hpp"
+#include "../../features/levels/LevelTypes.hpp"
+#include "../../core/CoreTypes.hpp"
 
 using namespace geode::prelude;
 

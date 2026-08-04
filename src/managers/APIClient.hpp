@@ -1,6 +1,13 @@
 #pragma once
 #include "../utils/singleton.hpp"
-#include "../utils/globals.hpp"
+#include "../features/levels/LevelTypes.hpp"
+#include "../features/clans/ClanTypes.hpp"
+#include "../features/events/EventTypes.hpp"
+#include "../features/weekly-achievements/WeeklyAchTypes.hpp"
+#include "../features/announcements/AnnouncementTypes.hpp"
+#include "../features/admin/AdminTypes.hpp"
+#include "../features/pets/PetTypes.hpp"
+#include "../core/CoreTypes.hpp"
 
 #include "Geode/utils/web.hpp"
 #include <Geode/Geode.hpp>

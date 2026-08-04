@@ -2,7 +2,7 @@
 
 #include <Geode/Geode.hpp>
 #include "../BaseLayer.hpp"
-#include "../../utils/globals.hpp"
+#include "../../features/levels/LevelTypes.hpp"
 
 #include <cue/ListNode.hpp>
 #include <matjson.hpp>

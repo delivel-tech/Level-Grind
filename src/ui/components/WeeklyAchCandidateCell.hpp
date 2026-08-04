@@ -3,7 +3,7 @@
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/GJUserScore.hpp>
-#include "../../utils/globals.hpp"
+#include "../../features/weekly-achievements/WeeklyAchTypes.hpp"
 
 using namespace geode::prelude;
 
