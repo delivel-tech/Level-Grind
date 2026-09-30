@@ -6,6 +6,7 @@
 #include "../ui/popups/UserManagePopup.hpp"
 // #include "../ui/popups/GuidePopup.hpp"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
+#include "Geode/ui/BasedButtonSprite.hpp"
 // #include "Geode/utils/cocos.hpp"
 // #include "Geode/utils/function.hpp"
 
@@ -169,8 +170,11 @@ class $modify(GrindProfilePage, ProfilePage) {
         GrindPosition pos = dm.getUserPosition();
 
         if (pos == GrindPosition::Admin || pos == GrindPosition::Owner) {
-            auto manageUserBtn = Build<CCSprite>::create("button_add_2.png"_spr)
-                .scale(0.55f)
+            CCSprite* topSpr = CCSprite::create("user_config_spr.png"_spr);
+            auto manageUserBtn = Build(CircleButtonSprite::create(topSpr, CircleBaseColor::Blue))
+                .with([](CircleButtonSprite* spr) {spr->getTopNode()->setPosition({25, 23.5});
+                spr->getTopNode()->setScale(1.025f);})
+                .scale(0.625f)
                 .intoMenuItem([score] { UserManagePopup::create(score)->show(); })
                 .id("manage-user-btn"_spr)
                 .parent(leftMenu)

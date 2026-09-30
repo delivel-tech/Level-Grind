@@ -157,7 +157,7 @@ private:
         }();
 
         if (currentCategoryBadgeName) {
-            auto badge = Build<CCSprite>::create(currentCategoryBadgeName)
+            auto badge = Build<CCSprite>::createSpriteName(currentCategoryBadgeName)
                 .parent(titleMenu)
                 .collect();
 

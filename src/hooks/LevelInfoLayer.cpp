@@ -106,8 +106,11 @@ class $modify(LevelGrind, LevelInfoLayer) {
         && userPos != GrindPosition::Admin
         && userPos != GrindPosition::Owner) return true;
 
-        Build<CCSprite>::create("button_add_1.png"_spr)
-            .scale(0.847f)
+        CCSprite* topSpr = CCSprite::create("database_config_spr.png"_spr);
+
+        Build(CircleButtonSprite::create(topSpr, CircleBaseColor::Cyan))
+            .with([](CircleButtonSprite* spr) {spr->getTopNode()->setPosition({24.375f, 23.5f});
+            spr->getTopNode()->setScale(1.05f);})
             .intoMenuItem([this, userPos] {
                 bool isRated = this->m_level->m_stars.value() > 0;
                 if (isRated) {
