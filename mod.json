@@ -10,12 +10,20 @@
 	"name": "Level Grind",
 	"version": "v2.1.0",
 	"developers": ["Delivel", "DasshuDev"],
-	"description": "A big storage of levels for grinding!",
+	"description": "A big database of levels for grinding!",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
 		"dasshu.badgified": ">=v1.0.4"
 	},
 	"resources": {
+		"spritesheets": {
+			"badgeSheet": [
+				"resources/badges/*.png"
+			],
+			"buttonSheet": [
+				"resources/layer/*.png"
+			]
+		},
 		"sprites": [
 			"resources/*.png"
 		]

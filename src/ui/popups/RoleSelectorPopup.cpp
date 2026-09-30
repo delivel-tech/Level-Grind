@@ -74,8 +74,8 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
         .zOrder(1);
 
     if (DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
-        auto badgeAdmin = CCSprite::create("badge_admin.png"_spr);
-        auto badgeAdminOff = CCSprite::create("badge_admin.png"_spr);
+        auto badgeAdmin = CCSprite::createWithSpriteFrameName("badge_admin.png"_spr);
+        auto badgeAdminOff = CCSprite::createWithSpriteFrameName("badge_admin.png"_spr);
         badgeAdminOff->setColor({ 100, 100, 100 });
 
         auto badgeAdminBtn = Build(CCMenuItemToggler::create(
@@ -88,8 +88,8 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
         if (roles.isAdmin) badgeAdminBtn->toggle(true);
     }
 
-    auto badgeHelper = CCSprite::create("badge_helper.png"_spr);
-    auto badgeHelperOff = CCSprite::create("badge_helper.png"_spr);
+    auto badgeHelper = CCSprite::createWithSpriteFrameName("badge_helper.png"_spr);
+    auto badgeHelperOff = CCSprite::createWithSpriteFrameName("badge_helper.png"_spr);
     badgeHelperOff->setColor({ 100, 100, 100 });
 
     auto badgeHelperBtn = Build(CCMenuItemToggler::create(
@@ -99,8 +99,8 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
         .id("helper-toggle-btn")
         .collect();
 
-    auto badgeArtist = CCSprite::create("badge_artist.png"_spr);
-    auto badgeArtistOff = CCSprite::create("badge_artist.png"_spr);
+    auto badgeArtist = CCSprite::createWithSpriteFrameName("badge_artist.png"_spr);
+    auto badgeArtistOff = CCSprite::createWithSpriteFrameName("badge_artist.png"_spr);
     badgeArtistOff->setColor({ 100, 100, 100 });
 
     auto badgeArtistBtn = Build(CCMenuItemToggler::create(
@@ -110,8 +110,8 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
         .id("artist-toggle-btn")
         .collect();
 
-    auto badgeContributor = CCSprite::create("badge_contributor.png"_spr);
-    auto badgeContributorOff = CCSprite::create("badge_contributor.png"_spr);
+    auto badgeContributor = CCSprite::createWithSpriteFrameName("badge_contributor.png"_spr);
+    auto badgeContributorOff = CCSprite::createWithSpriteFrameName("badge_contributor.png"_spr);
     badgeContributorOff->setColor({ 100, 100, 100 });
 
     auto badgeContributorBtn = Build(CCMenuItemToggler::create(
@@ -121,8 +121,8 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
         .id("contributor-toggle-btn")
         .collect();
 
-    auto badgeBooster = CCSprite::create("badge_booster.png"_spr);
-    auto badgeBoosterOff = CCSprite::create("badge_booster.png"_spr);
+    auto badgeBooster = CCSprite::createWithSpriteFrameName("badge_booster.png"_spr);
+    auto badgeBoosterOff = CCSprite::createWithSpriteFrameName("badge_booster.png"_spr);
     badgeBoosterOff->setColor({ 100, 100, 100 });
 
     auto badgeBoosterBtn = Build(CCMenuItemToggler::create(

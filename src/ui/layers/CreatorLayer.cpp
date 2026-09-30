@@ -80,7 +80,7 @@ bool CreatorLayer::init() {
         .parent(this)
         .collect();
 
-    auto searchCat = Build(CCSprite::create("search_cat.png"_spr))
+    auto searchCat = Build(CCSprite::createWithSpriteFrameName("search_cat.png"_spr))
         .intoMenuItem([] {
             MainLayer::create()->open();
         })
@@ -88,7 +88,7 @@ bool CreatorLayer::init() {
         .id("search-cat")
         .collect();
 
-    auto packsCat = Build(CCSprite::create("packs_cat.png"_spr))
+    auto packsCat = Build(CCSprite::createWithSpriteFrameName("packs_cat.png"_spr))
         .intoMenuItem([] {
             GrindPacksLayer::create()->open();
         })
@@ -96,7 +96,7 @@ bool CreatorLayer::init() {
         .id("packs-cat")
         .collect();
 
-    auto weeklyAchCat = Build(CCSprite::create("weekly_ach_cat.png"_spr))
+    auto weeklyAchCat = Build(CCSprite::createWithSpriteFrameName("weekly_ach_cat.png"_spr))
         .intoMenuItem([] {
             WeeklyAchievementPopup::create()->show();
         })
@@ -104,7 +104,7 @@ bool CreatorLayer::init() {
         .id("weekly-ach-cat")
         .collect();
 
-    auto petCatSpr = CCSprite::create("pet_cat.png"_spr);
+    auto petCatSpr = CCSprite::createWithSpriteFrameName("pet_cat.png"_spr);
     auto topPetSpr = []() {
 		if (Mod::get()->getSavedValue<int>("last-pet-lvl") < 1 || Mod::get()->getSavedValue<int>("last-pet-lvl") > 30) {
 			auto spr =  PetManager::getInstance().getPetSprByStyle(PetManager::PetStyle::StandardCube);
@@ -152,7 +152,7 @@ bool CreatorLayer::init() {
             .collect();
     }
 
-    auto dailyCat = Build(CCSprite::create("daily_cat.png"_spr))
+    auto dailyCat = Build(CCSprite::createWithSpriteFrameName("daily_cat.png"_spr))
         .intoMenuItem([] {
             EventPopup::create(EventType::Daily)->show();
         })
@@ -160,7 +160,7 @@ bool CreatorLayer::init() {
         .id("daily-cat")
         .collect();
 
-    auto weeklyCat = Build(CCSprite::create("weekly_cat.png"_spr))
+    auto weeklyCat = Build(CCSprite::createWithSpriteFrameName("weekly_cat.png"_spr))
         .intoMenuItem([] {
             EventPopup::create(EventType::Weekly)->show();
         })
@@ -168,7 +168,7 @@ bool CreatorLayer::init() {
         .id("weekly-cat")
         .collect();
 
-    auto monthlyCat = Build(CCSprite::create("monthly_cat.png"_spr))
+    auto monthlyCat = Build(CCSprite::createWithSpriteFrameName("monthly_cat.png"_spr))
         .intoMenuItem([] {
             EventPopup::create(EventType::Monthly)->show();
         })
@@ -176,7 +176,7 @@ bool CreatorLayer::init() {
         .id("monthly-cat")
         .collect();
 
-    auto helperSuggestionsCat = Build(CCSprite::create("helper_suggestions_cat.png"_spr))
+    auto helperSuggestionsCat = Build(CCSprite::createWithSpriteFrameName("helper_suggestions_cat.png"_spr))
         .intoMenuItem([] {
             SuggestionsLayer::create()->open();
         })
@@ -245,7 +245,7 @@ bool CreatorLayer::initFarMenus() {
 
     if (DataManager::getInstance().getUserPosition() == GrindPosition::Admin
     || DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
-        auto staffBtn = Build(CircleButtonSprite::createWithSprite(getBadge(), 0.8f, CircleBaseColor::Blue))
+        auto staffBtn = Build(CircleButtonSprite::createWithSpriteFrameName(getBadge(), 0.8f, CircleBaseColor::Blue))
             .scale(1.2f)
             .intoMenuItem([] {
                 StaffPopup::create()->show();

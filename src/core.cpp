@@ -5,6 +5,7 @@
 
 using namespace geode::prelude;
 using namespace levelgrind;
+using namespace dasshu::badgified;
 
 $execute {
     SettingsLayer::initSettings();
@@ -15,13 +16,13 @@ $execute {
     DataManager::getInstance().initPermsOnBootup();
     DataManager::getInstance().initTokenOnBootup();
 
-    dasshu::badgified::registerBadge(
+    registerBadge(
         "grind-coordinator-badge"_spr,
         "Grind Coordinator",
         "# <cp>Coordinator Role</c>\n\n"
         "<cp>Coordinators</c> are <cy>responsible for</c> leading the <cg>Level Grind</c> project.\n"
         "They oversee all decisions, roles, and overall responsible for managing the mod.",
-        [] (const dasshu::badgified::Badge& badge) {
+        [] (const Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
             auto& dm = DataManager::getInstance();
@@ -33,21 +34,21 @@ $execute {
 
             if (!ownerFound) return;
 
-            if (badge.location == dasshu::badgified::Location::Profile || badge.location == dasshu::badgified::Location::Comment) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_owner.png"_spr));
+            if (badge.location == Location::Profile || badge.location == Location::Comment) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_owner.png"_spr));
             }
-            if (badge.location == dasshu::badgified::Location::InfoPopup) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_owner_big.png"_spr));
+            if (badge.location == Location::InfoPopup) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_owner_big.png"_spr));
             }
         }
     );
-    dasshu::badgified::registerBadge(
+    registerBadge(
         "grind-developer-badge"_spr,
         "Grind Developer",
         "# <cg>Developer Role</c>\n\n"
         "<cg>Developers</c> are <cy>responsible for</c> developing the <cg>Level Grind</c> project.\n"
         "They fix bugs, add new features, etc.",
-        [] (const dasshu::badgified::Badge& badge) {
+        [] (const Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
             auto& dm = DataManager::getInstance();
@@ -59,22 +60,22 @@ $execute {
 
             if (!devFound) return;
 
-            if (badge.location == dasshu::badgified::Location::Profile || badge.location == dasshu::badgified::Location::Comment) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_artist.png"_spr));
+            if (badge.location == Location::Profile || badge.location == Location::Comment) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_developer.png"_spr));
             }
-            if (badge.location == dasshu::badgified::Location::InfoPopup) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_artist_big.png"_spr));
+            if (badge.location == Location::InfoPopup) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_developer_big.png"_spr));
             }
         }
     );
-    dasshu::badgified::registerBadge(
+    registerBadge(
         "grind-admin-badge"_spr,
         "Grind Admin",
         "# <cc>Admin Role</c>\n\n"
         "<cc>Admins</c> manage the <cp>Level Grind</c> <cl>database</c>.\n\n"
         "They are responsible for <cg>adding</c> and <co>deleting</c> levels, selecting <cr>Event</c> levels, choosing <cy>Weekly Achievements</c>, and more.\n\n"
         "They also manage the <cg>Helper</c> team to ensure the project stays organized.\n",
-        [] (const dasshu::badgified::Badge& badge) {
+        [] (const Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
             auto& dm = DataManager::getInstance();
@@ -86,22 +87,22 @@ $execute {
 
             if (!adminFound) return;
 
-            if (badge.location == dasshu::badgified::Location::Profile || badge.location == dasshu::badgified::Location::Comment) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_admin.png"_spr));
+            if (badge.location == Location::Profile || badge.location == Location::Comment) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_admin.png"_spr));
             }
-            if (badge.location == dasshu::badgified::Location::InfoPopup) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_admin_big.png"_spr));
+            if (badge.location == Location::InfoPopup) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_admin_big.png"_spr));
             }
         }
     );
-    dasshu::badgified::registerBadge(
+    registerBadge(
         "grind-helper-badge"_spr,
         "Grind Helper",
         "# <cg>Helper Role</c>\n\n"
         "<cg>Helpers</c> are an integral part of the <cp>Level Grind</c> mod.\n\n"
         "They are responsible for suggesting levels, providing helpful <ca>Level Notes</c>, and more.\n\n"
         "You can join our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server to learn more about the role and how you can become one too! :)\n",
-        [] (const dasshu::badgified::Badge& badge) {
+        [] (const Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
 			auto& dm = DataManager::getInstance();
@@ -113,20 +114,20 @@ $execute {
 
             if (!helperFound) return;
 
-            if (badge.location == dasshu::badgified::Location::Profile || badge.location == dasshu::badgified::Location::Comment) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_helper.png"_spr));
+            if (badge.location == Location::Profile || badge.location == Location::Comment) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_helper.png"_spr));
             }
-            if (badge.location == dasshu::badgified::Location::InfoPopup) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_helper_big.png"_spr));
+            if (badge.location == Location::InfoPopup) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_helper_big.png"_spr));
             }
         }
     );
-    dasshu::badgified::registerBadge(
+    registerBadge(
         "grind-contributor-badge"_spr,
         "Grind Contributor",
         "# <cy>Contributor Role</c>\n\n"
         "<cy>Contributors</c> are the people who have supported the project through <cy>Boosty</c> donations or by providing other meaningful help to the <cp>Level Grind</c> mod.\n",
-        [] (const dasshu::badgified::Badge& badge) {
+        [] (const Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
 			auto& dm = DataManager::getInstance();
@@ -138,21 +139,21 @@ $execute {
 
             if (!contFound) return;
 
-            if (badge.location == dasshu::badgified::Location::Profile || badge.location == dasshu::badgified::Location::Comment) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_contributor.png"_spr));
+            if (badge.location == Location::Profile || badge.location == Location::Comment) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_contributor.png"_spr));
             }
-            if (badge.location == dasshu::badgified::Location::InfoPopup) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_contributor_big.png"_spr));
+            if (badge.location == Location::InfoPopup) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_contributor_big.png"_spr));
             }
         }
     );
-    dasshu::badgified::registerBadge(
+    registerBadge(
         "grind-artist-badge"_spr,
         "Grind Artist",
         "# <cp>Artist Role</c>\n\n"
         "<cp>Artists</c> are responsible for <cy>visual part of the mod</c>, including sprites, textures, and more.\n"
         "Their support is <cg>greatly appreciated <3</c>",
-        [] (const dasshu::badgified::Badge& badge) {
+        [] (const Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
 			auto& dm = DataManager::getInstance();
@@ -164,21 +165,21 @@ $execute {
 
             if (!artistFound) return;
 
-            if (badge.location == dasshu::badgified::Location::Profile || badge.location == dasshu::badgified::Location::Comment) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_artist.png"_spr));
+            if (badge.location == Location::Profile || badge.location == Location::Comment) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_artist.png"_spr));
             }
-            if (badge.location == dasshu::badgified::Location::InfoPopup) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_artist_big.png"_spr));
+            if (badge.location == Location::InfoPopup) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_artist_big.png"_spr));
             }
         }
     );
-    dasshu::badgified::registerBadge(
+    registerBadge(
         "grind-booster-badge"_spr,
         "Grind Booster",
 		"# <ca>Booster Role</c>\n\n"
         "<ca>Boosters</c> help our [<cb>Discord</c>](https://discord.gg/Vt5gWZyaP) server by providing server <ca>boosts</c>.\n\n"
         "Their support is greatly appreciated! :3\n",
-        [] (const dasshu::badgified::Badge& badge) {
+        [] (const Badge& badge) {
 			if (Mod::get()->getSavedValue<bool>("disable-badges")) return;
 
 			auto& dm = DataManager::getInstance();
@@ -190,11 +191,11 @@ $execute {
 
             if (!boosterFound) return;
 
-            if (badge.location == dasshu::badgified::Location::Profile || badge.location == dasshu::badgified::Location::Comment) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_booster.png"_spr));
+            if (badge.location == Location::Profile || badge.location == Location::Comment) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_booster.png"_spr));
             }
-            if (badge.location == dasshu::badgified::Location::InfoPopup) {
-                dasshu::badgified::showBadge(badge, CCSprite::create("badge_booster_big.png"_spr));
+            if (badge.location == Location::InfoPopup) {
+                showBadge(badge, CCSprite::createWithSpriteFrameName("badge_booster_big.png"_spr));
             }
         }
     );

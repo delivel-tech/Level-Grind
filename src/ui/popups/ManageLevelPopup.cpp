@@ -307,13 +307,13 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 .collect();
 
             auto adminTogglerOffSpr = CCSprite::create("GJ_button_04.png");
-            auto adminTogglerOffSprTop = CCSprite::create("badge_admin.png"_spr);
+            auto adminTogglerOffSprTop = CCSprite::createWithSpriteFrameName("badge_admin.png"_spr);
             adminTogglerOffSpr->addChild(adminTogglerOffSprTop);
             adminTogglerOffSprTop->setPosition({20, 20});
             adminTogglerOffSprTop->setScale(1.2f);
 
             auto adminTogglerOnSpr = CCSprite::create("GJ_button_02.png");
-            auto adminTogglerOnSprTop = CCSprite::create("badge_admin.png"_spr);
+            auto adminTogglerOnSprTop = CCSprite::createWithSpriteFrameName("badge_admin.png"_spr);
             adminTogglerOnSpr->addChild(adminTogglerOnSprTop);
             adminTogglerOnSprTop->setPosition({20, 20});
             adminTogglerOnSprTop->setScale(1.2f);

@@ -142,7 +142,7 @@ private:
 
         std::unordered_map<std::string, const char*> badgeNames {
             {"Coordinators", "badge_owner.png"_spr},
-            {"Developers", "badge_artist.png"_spr},
+            {"Developers", "badge_developer.png"_spr},
             {"Admins", "badge_admin.png"_spr},
             {"Helpers", "badge_helper.png"_spr},
             {"Artists", "badge_artist.png"_spr},

@@ -201,19 +201,13 @@ bool UserManagePopup::init(GJUserScore* targetUser) {
 }
 
 CCSprite* UserManagePopup::getBadgeByHighestRole(UserRoles roles) {
-    if (roles.isOwner) {
-        return CCSprite::create("badge_owner.png"_spr);
-    } else if (roles.isAdmin) {
-        return CCSprite::create("badge_admin.png"_spr);
-    } else if (roles.isHelper) {
-        return CCSprite::create("badge_helper.png"_spr);
-    } else if (roles.isArtist) {
-        return CCSprite::create("badge_artist.png"_spr);
-    } else if (roles.isBooster) {
-        return CCSprite::create("badge_booster.png"_spr);
-    } else if (roles.isContributor) {
-        return CCSprite::create("badge_contributor.png"_spr);
-    }
+    if (roles.isOwner) return CCSprite::createWithSpriteFrameName("badge_owner.png"_spr);
+    else if (roles.isAdmin) return CCSprite::createWithSpriteFrameName("badge_admin.png"_spr);
+    else if (roles.isHelper) return CCSprite::createWithSpriteFrameName("badge_helper.png"_spr);
+    else if (roles.isArtist) return CCSprite::createWithSpriteFrameName("badge_artist.png"_spr);
+    else if (roles.isBooster) return CCSprite::createWithSpriteFrameName("badge_booster.png"_spr);
+    else if (roles.isContributor) return CCSprite::createWithSpriteFrameName("badge_contributor.png"_spr);
+
     return CCSprite::createWithSpriteFrameName("GJ_plus2Btn_001.png");
 }
 
