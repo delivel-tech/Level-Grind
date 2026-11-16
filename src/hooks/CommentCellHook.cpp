@@ -22,19 +22,13 @@ class $modify(CommentCell) {
         auto mod = Mod::get();
 
         bool hideBadges = mod->getSavedValue<bool>("disable-badges");
-        bool hideBadgesForMods = mod->getSavedValue<bool>("hide-badges-for-mods");
 
         if (!usernameMenu) return;
 
         bool hasModBadge = usernameMenu->getChildByID("mod-badge");
 
-        bool showBadge = [hideBadges, hideBadgesForMods, hasModBadge] {
-            if (hideBadges || (hideBadgesForMods && hasModBadge)) {
-                return false;
-            } else {
-                return true;
-            }
-        }();
+        bool showBadge = !hideBadges; // removed hide for gd mods just in case *
+        (void)hasModBadge;
 
         struct badgeInfo {
             std::string spriteName = "";

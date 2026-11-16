@@ -3,6 +3,7 @@
 #include "../../managers/APIClient.hpp"
 #include "../popups/AddPackPopup.hpp"
 #include "../components/GrindPackCell.hpp"
+#include "../../managers/GrindClansManager.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
@@ -14,6 +15,8 @@
 #include <UIBuilder.hpp>
 #include <fmt/format.h>
 #include <algorithm>
+#include <cctype>
+#include <Geode/binding/ButtonSprite.hpp>
 #include "../popups/GuidePopup.hpp"
 static constexpr CCSize LIST_SIZE {356.f, 220.f};
 static constexpr int PER_PAGE = 10;
@@ -177,12 +180,11 @@ bool GrindPacksLayer::init() {
             }
 
             s->m_allPacks = parsed.packs;
-            s->m_totalPages = (static_cast<int>(s->m_allPacks.size()) + PER_PAGE - 1) / PER_PAGE;
-            if (s->m_totalPages < 1) s->m_totalPages = 1;
             s->m_page = 0;
 
             s->stopLoading();
-            s->populatePacks();
+            s->applyFilters();
+            GrindClansManager::getInstance().checkPacks(parsed.packs);
         }
     );
 
@@ -191,6 +193,11 @@ bool GrindPacksLayer::init() {
             .parent(this)
             .id("add-pack-menu")
             .collect();
+
+    m_showStar = !Mod::get()->getSavedValue<bool>("packs-show-moon", false);
+    m_sortAlpha = Mod::get()->getSavedValue<bool>("packs-sort-alpha", false);
+    m_difficultyFilter = Mod::get()->getSavedValue<int>("packs-difficulty", 0);
+    this->buildFilterButtons();
 
     auto infoBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
         .intoMenuItem([] {
@@ -264,7 +271,7 @@ void GrindPacksLayer::showUIElements() {
 
 void GrindPacksLayer::updatePageButton() {
     if (m_pageButtonLabel)
-        m_pageButtonLabel->setString(std::to_string(m_page + 1).c_str());
+        m_pageButtonLabel->setString(numToString(m_page + 1).c_str());
     if (m_prevButton)
         m_prevButton->setVisible(m_page > 0);
     if (m_nextButton)
@@ -279,15 +286,17 @@ void GrindPacksLayer::populatePacks() {
     m_listNode->clear();
 
     int startIdx = m_page * PER_PAGE;
-    int endIdx   = std::min(startIdx + PER_PAGE, static_cast<int>(m_allPacks.size()));
+    int endIdx   = std::min(startIdx + PER_PAGE, static_cast<int>(m_shownPacks.size()));
 
     for (int i = startIdx; i < endIdx; ++i) {
-        auto cell = GrindPackCell::create(m_allPacks[i]);
+        auto cell = GrindPackCell::create(m_shownPacks[i]);
         if (cell) m_listNode->addCell(cell);
     }
 
+    if (m_emptyLabel) m_emptyLabel->setVisible(m_shownPacks.empty() && !m_allPacks.empty());
+
     int shown = endIdx - startIdx;
-    int total = static_cast<int>(m_allPacks.size());
+    int total = static_cast<int>(m_shownPacks.size());
     int first = total == 0 ? 0 : startIdx + 1;
     int last  = startIdx + shown;
 
@@ -305,6 +314,134 @@ void GrindPacksLayer::populatePacks() {
 
     showUIElements();
     updatePageButton();
+}
+
+static const char* packDifficultyFrame(int difficulty) {
+    switch (difficulty) {
+        case CustomDifficultyEnum::Auto: return "diffIcon_auto_btn_001.png";
+        case CustomDifficultyEnum::Easy: return "diffIcon_01_btn_001.png";
+        case CustomDifficultyEnum::Normal: return "diffIcon_02_btn_001.png";
+        case CustomDifficultyEnum::Hard: return "diffIcon_03_btn_001.png";
+        case CustomDifficultyEnum::Harder: return "diffIcon_04_btn_001.png";
+        case CustomDifficultyEnum::Insane: return "diffIcon_05_btn_001.png";
+        case CustomDifficultyEnum::EasyDemon: return "diffIcon_07_btn_001.png";
+        case CustomDifficultyEnum::MediumDemon: return "diffIcon_08_btn_001.png";
+        case CustomDifficultyEnum::HardDemon: return "diffIcon_06_btn_001.png";
+        case CustomDifficultyEnum::InsaneDemon: return "diffIcon_09_btn_001.png";
+        case CustomDifficultyEnum::ExtremeDemon: return "diffIcon_10_btn_001.png";
+    }
+    return "diffIcon_00_btn_001.png";
+}
+
+void GrindPacksLayer::buildFilterButtons() {
+    auto winSize = CCDirector::sharedDirector()->getWinSize();
+
+    auto tabs = Build<CCMenu>::create()
+        .layout(RowLayout::create()->setGap(6.f)->setAutoScale(false))
+        .contentSize({ 80.f, 34.f })
+        .pos({ 42.f, DataManager::getInstance().getUserPosition() >= GrindPosition::Admin ? 102.f : 68.f })
+        .id("pack-type-tabs")
+        .parent(this)
+        .zOrder(10)
+        .collect();
+
+    m_starTab = CCSprite::createWithSpriteFrameName("GJ_bigStar_001.png");
+    m_starTab->setScale(0.6f);
+    tabs->addChild(CCMenuItemExt::createSpriteExtra(m_starTab, [this](CCObject*) {
+        if (m_showStar) return;
+        m_showStar = true;
+        this->applyFilters();
+    }));
+    m_moonTab = CCSprite::createWithSpriteFrameName("GJ_bigMoon_001.png");
+    m_moonTab->setScale(0.6f);
+    tabs->addChild(CCMenuItemExt::createSpriteExtra(m_moonTab, [this](CCObject*) {
+        if (!m_showStar) return;
+        m_showStar = false;
+        this->applyFilters();
+    }));
+    tabs->updateLayout();
+
+    auto filters = Build<CCMenu>::create()
+        .layout(ColumnLayout::create()->setGap(6.f)->setAxisReverse(true)->setAutoScale(false)->setAxisAlignment(AxisAlignment::End))
+        .contentSize({ 40.f, 100.f })
+        .anchorPoint({ 0.5f, 1.f })
+        .pos({ 25.f, winSize.height - 48.f })
+        .id("pack-filters")
+        .parent(this)
+        .zOrder(10)
+        .collect();
+
+    m_sortSpr = ButtonSprite::create("A-Z", 30, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.5f);
+    m_sortSpr->setScale(0.75f);
+    filters->addChild(CCMenuItemExt::createSpriteExtra(m_sortSpr, [this](CCObject*) {
+        m_sortAlpha = !m_sortAlpha;
+        this->applyFilters();
+    }));
+
+    m_diffHolder = CCNode::create();
+    m_diffHolder->setContentSize({ 34.f, 40.f });
+    filters->addChild(CCMenuItemExt::createSpriteExtra(m_diffHolder, [this](CCObject*) {
+        m_difficultyFilter = (m_difficultyFilter + 1) % 12;
+        this->applyFilters();
+    }));
+    filters->updateLayout();
+
+    m_emptyLabel = Build(CCLabelBMFont::create("No packs here yet", "bigFont.fnt"))
+        .scale(0.5f)
+        .pos({ winSize.width / 2 - 5.f, winSize.height / 2 - 5.f })
+        .parent(this)
+        .zOrder(20)
+        .collect();
+    m_emptyLabel->setVisible(false);
+
+    this->refreshFilterButtons();
+}
+
+void GrindPacksLayer::refreshFilterButtons() {
+    ccColor3B const on { 255, 255, 255 }, off { 90, 90, 90 };
+    if (m_starTab) m_starTab->setColor(m_showStar ? on : off);
+    if (m_moonTab) m_moonTab->setColor(m_showStar ? off : on);
+    if (m_sortSpr) m_sortSpr->updateBGImage(m_sortAlpha ? "GJ_button_02.png" : "GJ_button_04.png");
+
+    if (m_diffHolder) {
+        m_diffHolder->removeAllChildren();
+        auto face = CCSprite::createWithSpriteFrameName(packDifficultyFrame(m_difficultyFilter));
+        face->setScale(0.6f);
+        face->setPosition({ 17.f, 24.f });
+        face->setOpacity(m_difficultyFilter == 0 ? 160 : 255);
+        m_diffHolder->addChild(face);
+        auto cap = CCLabelBMFont::create(m_difficultyFilter == 0 ? "All" : "Filter", "bigFont.fnt");
+        cap->setScale(0.25f);
+        cap->setPosition({ 17.f, 4.f });
+        m_diffHolder->addChild(cap);
+    }
+}
+
+void GrindPacksLayer::applyFilters() {
+    Mod::get()->setSavedValue("packs-show-moon", !m_showStar);
+    Mod::get()->setSavedValue("packs-sort-alpha", m_sortAlpha);
+    Mod::get()->setSavedValue("packs-difficulty", m_difficultyFilter);
+
+    m_shownPacks.clear();
+    for (auto const& p : m_allPacks) {
+        if (p.isStar != m_showStar) continue;
+        if (m_difficultyFilter != 0 && static_cast<int>(p.difficulty) != m_difficultyFilter) continue;
+        m_shownPacks.push_back(p);
+    }
+    if (m_sortAlpha) {
+        auto lower = [](std::string s) {
+            for (auto& ch : s) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+            return s;
+        };
+        std::stable_sort(m_shownPacks.begin(), m_shownPacks.end(), [&](GrindPack const& a, GrindPack const& b) {
+            return lower(a.title) < lower(b.title);
+        });
+    }
+
+    m_totalPages = std::max(1, (static_cast<int>(m_shownPacks.size()) + PER_PAGE - 1) / PER_PAGE);
+    m_page = 0;
+    this->refreshFilterButtons();
+    if (!m_loading) this->populatePacks();
 }
 
 void GrindPacksLayer::onNextPage(CCObject*) {
@@ -366,11 +503,9 @@ void GrindPacksLayer::onRefresh(CCObject*) {
             }
 
             s->m_allPacks = parsed.packs;
-            s->m_totalPages = (static_cast<int>(s->m_allPacks.size()) + PER_PAGE - 1) / PER_PAGE;
-            if (s->m_totalPages < 1) s->m_totalPages = 1;
 
             s->stopLoading();
-            s->populatePacks();
+            s->applyFilters();
         }
     );
 }

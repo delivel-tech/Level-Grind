@@ -5,12 +5,15 @@
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
 #include <Geode/Enums.hpp>
+#include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GameManager.hpp>
 #include <Geode/binding/LoadingCircleSprite.hpp>
 #include <Geode/binding/ProfilePage.hpp>
 
 #include <Geode/binding/SimplePlayer.hpp>
+#include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
 #include <cstddef>
 #include <cue/ListNode.hpp>
@@ -18,6 +21,8 @@
 #include <fmt/format.h>
 #include <unordered_map>
 
+#include "../../managers/APIClient.hpp"
+#include "../../managers/DataManager.hpp"
 #include "../../utils/globals.hpp"
 #include "GuidePopup.hpp"
 
@@ -48,11 +53,38 @@ public:
         return nullptr;
     }
 
+    int getAccountId() const { return m_accountId; }
+
+    void applyUser(const CreditsUser& user) {
+        if (m_icon) {
+            m_icon->updateIcons(cue::Icons {
+                .type = IconType::Cube,
+                .id = user.cube,
+                .color1 = user.color1,
+                .color2 = user.color2,
+                .glowColor = user.glowColor
+            });
+            if (user.glowColor == 0) m_icon->disableGlowOutline();
+        }
+        if (m_nameLabel && m_nameItem) {
+            m_nameLabel->setString(user.username.c_str());
+            m_nameLabel->limitLabelWidth(52.f, 0.45f, 0.05f);
+            auto pos = m_nameItem->getPosition();
+            m_nameItem->updateSprite();
+            m_nameItem->setPosition(pos);
+        }
+    }
+
 private:
+    int m_accountId = 0;
+    cue::PlayerIcon* m_icon = nullptr;
+    CCLabelBMFont* m_nameLabel = nullptr;
+    CCMenuItemSpriteExtra* m_nameItem = nullptr;
+
     bool init(const CreditsUser& user) {
         CCNode::init();
 
-        auto gm = GameManager::sharedState();
+        m_accountId = user.accountId;
 
         auto* playerIcon = Build(cue::PlayerIcon::create(
             cue::Icons {
@@ -69,6 +101,7 @@ private:
                 .collect();
 
         if (user.glowColor == 0) playerIcon->disableGlowOutline();
+        m_icon = playerIcon;
 
         auto* playerShadow = Build<CCSprite>::createSpriteName("chest_shadow_001.png")
             .scale(0.4f)
@@ -82,6 +115,7 @@ private:
         auto menu = Build<CCLabelBMFont>::create(user.username.c_str(), "goldFont.fnt")
             .scale(0.45f)
             .limitLabelWidth(52.f, 0.45f, 0.05f)
+            .store(m_nameLabel)
             .intoMenuItem([accountId = user.accountId, name = user.username] {
                 auto pp = ProfilePage::create(accountId, false);
                 pp->show();
@@ -92,6 +126,8 @@ private:
             .pos(0.f, 0.f)
             .parent(this)
             .collect();
+
+        m_nameItem = nameLabel;
 
         float width = playerIcon->getScaledContentSize().width * 1.1f;
         float height = playerIcon->getScaledContentSize().height * 1.1f + nameLabel->getScaledContentSize().height;
@@ -246,7 +282,7 @@ private:
 
         this->setContentSize(CCSize{LIST_SIZE.width, playerWrapper->getScaledContentSize().height + 8.f + title->getScaledContentSize().height});
 
-        auto membersAmountLabel = Build(CCLabelBMFont::create(fmt::format("{}", cat.users.size()).c_str(), "chatFont.fnt"))
+        auto membersAmountLabel = Build(CCLabelBMFont::create(numToString(cat.users.size()).c_str(), "chatFont.fnt"))
             .scale(0.65f)
             .color({ 0, 0, 0  })
             .opacity(100)
@@ -312,11 +348,6 @@ bool CreditsPopup::init() {
         .parent(m_mainLayer)
         .collect();
 
-    auto* loading = Build<LoadingSpinner>::create(50.f)
-        .parent(m_list)
-        .center()
-        .collect();
-
     auto infoBtn = Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
         .intoMenuItem([] {
             GuidePopup::create(GuidePage::CreditsInfo, GuidePopupState::FromOutside)->show();
@@ -327,13 +358,100 @@ bool CreditsPopup::init() {
         )
         .collect();
 
+    auto* updateSpr = CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png");
+    updateSpr->setScale(infoBtn->getContentHeight() / updateSpr->getContentHeight());
+    m_updateBtn = CCMenuItemSpriteExtra::create(updateSpr, this, menu_selector(CreditsPopup::onUpdateProfile));
+    m_updateBtn->setPosition({
+        infoBtn->getPositionX() - infoBtn->getScaledContentWidth() / 2.f - 6.f - m_updateBtn->getScaledContentWidth() / 2.f,
+        infoBtn->getPositionY()
+    });
+    m_updateBtn->setID("update-profile-btn"_spr);
+    m_updateBtn->setVisible(false);
+    m_buttonMenu->addChild(m_updateBtn);
+
+    this->loadCredits();
+
+    return true;
+}
+
+void CreditsPopup::onUpdateProfile(CCObject*) {
+    if (m_updating) return;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Updating...");
+    uPopup->show();
+    Ref<UploadActionPopup> uPopupRef = uPopup;
+
+    if (DataManager::getInstance().getUserToken().empty()) {
+        uPopup->showFailMessage("Failed! Try again later\nStill logging you in.");
+        return;
+    }
+
+    m_updating = true;
+
+    Ref<CreditsPopup> self = this;
+    m_updateListener.spawn(
+        APIClient::getInstance().updateCreditsProfile(),
+        [self, uPopupRef](web::WebResponse res) {
+            if (!self) return;
+            self->m_updating = false;
+
+            auto parsed = APIClient::getInstance().updateCreditsProfileParse(res);
+
+            if (!parsed.ok) {
+                std::string msg = "Failed! Try again later";
+                if (!parsed.error.empty()) msg += "\n" + parsed.error;
+                if (uPopupRef) uPopupRef->showFailMessage(msg);
+                return;
+            }
+
+            if (uPopupRef) uPopupRef->showSuccessMessage("Success! Updated user info.");
+
+            self->applyProfileUpdate(
+                GJAccountManager::get()->m_accountID,
+                parsed.username, parsed.iconID, parsed.color1, parsed.color2, parsed.color3
+            );
+        }
+    );
+}
+
+static void forEachPlayerNode(CCNode* node, geode::FunctionRef<void(CreditsPlayerNode*)> fn) {
+    if (!node) return;
+    if (auto pn = typeinfo_cast<CreditsPlayerNode*>(node)) {
+        fn(pn);
+        return;
+    }
+    for (auto child : CCArrayExt<CCNode>(node->getChildren())) {
+        forEachPlayerNode(child, fn);
+    }
+}
+
+void CreditsPopup::applyProfileUpdate(int accountId, const std::string& username, int icon, int color1, int color2, int color3) {
+    CreditsPlayerNode::CreditsUser user;
+    user.accountId = accountId;
+    user.username = username;
+    user.cube = icon;
+    user.color1 = color1;
+    user.color2 = color2;
+    user.glowColor = color3;
+
+    forEachPlayerNode(m_list, [&](CreditsPlayerNode* pn) {
+        if (pn->getAccountId() == accountId) pn->applyUser(user);
+    });
+}
+
+void CreditsPopup::loadCredits() {
+    auto* loading = Build<LoadingSpinner>::create(50.f)
+        .parent(m_list)
+        .center()
+        .collect();
+
     Ref<LoadingSpinner> loadingRef = loading;
     Ref<CreditsPopup> self = this;
 
     web::WebRequest req;
 
     m_listener.spawn(
-        req.get("https://api.delivel.tech/v2/get_credits"),
+        req.get(fmt::format("{}/get_credits", APIClient::getInstance().baseUrl)),
         [loadingRef, self](web::WebResponse res) {
             if (!loadingRef || !self) return;
 
@@ -359,134 +477,59 @@ bool CreditsPopup::init() {
                 return;
             }
 
-            CategoryCell::CreditsCategory ownersCat;
-            ownersCat.categoryName = "Coordinators";
-            CategoryCell::CreditsCategory developersCat;
-            developersCat.categoryName = "Developers";
-            CategoryCell::CreditsCategory adminsCat;
-            adminsCat.categoryName = "Admins";
-            CategoryCell::CreditsCategory helpersCat;
-            helpersCat.categoryName = "Helpers";
-            CategoryCell::CreditsCategory artistsCat;
-            artistsCat.categoryName = "Artists";
-            CategoryCell::CreditsCategory contributorsCat;
-            contributorsCat.categoryName = "Contributors";
-            CategoryCell::CreditsCategory boostersCat;
-            boostersCat.categoryName = "Boosters";
+            static constexpr std::pair<const char*, const char*> kCategories[] = {
+                { "owners", "Coordinators" },
+                { "developers", "Developers" },
+                { "admins", "Admins" },
+                { "helpers", "Helpers" },
+                { "artists", "Artists" },
+                { "contributors", "Contributors" },
+                { "boosters", "Boosters" },
+            };
 
-            auto owners = json["owners"].asArray();
-            auto developers = json["developers"].asArray();
-            auto admins = json["admins"].asArray();
-            auto helpers = json["helpers"].asArray();
-            auto artists = json["artists"].asArray();
-            auto contributors = json["contributors"].asArray();
-            auto boosters = json["boosters"].asArray();
+            int myAccountId = GJAccountManager::get()->m_accountID;
+            bool isListed = false;
+            std::vector<CategoryCell::CreditsCategory> categories;
 
-            if (!owners || !developers || !admins || !helpers || !artists || !contributors || !boosters) {
-                log::warn("failed to get credits");
-                loadingRef->removeFromParent();
-                Notification::create("Invalid server response", NotificationIcon::Error)->show();
-                return;
+            for (auto& [key, title] : kCategories) {
+                auto arr = json[key].asArray();
+                if (!arr) {
+                    log::warn("failed to get credits");
+                    loadingRef->removeFromParent();
+                    Notification::create("Invalid server response", NotificationIcon::Error)->show();
+                    return;
+                }
+
+                CategoryCell::CreditsCategory cat;
+                cat.categoryName = title;
+
+                for (auto& userRes : arr.unwrap()) {
+                    CreditsPlayerNode::CreditsUser user;
+                    user.username = userRes["username"].asString().unwrapOrDefault();
+                    user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
+                    user.color1 = userRes["color1"].asInt().unwrapOrDefault();
+                    user.color2 = userRes["color2"].asInt().unwrapOrDefault();
+                    user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
+                    user.cube = userRes["iconid"].asInt().unwrapOrDefault();
+
+                    if (myAccountId > 0 && user.accountId == myAccountId) isListed = true;
+
+                    cat.users.push_back(user);
+                }
+
+                categories.push_back(std::move(cat));
             }
 
-            for (auto& userRes : owners.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                ownersCat.users.push_back(user);
+            for (auto& cat : categories) {
+                self->m_list->addCell(CategoryCell::create(cat));
             }
-
-            for (auto& userRes : developers.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                developersCat.users.push_back(user);
-            }
-
-            for (auto& userRes : admins.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                adminsCat.users.push_back(user);
-            }
-
-            for (auto& userRes : helpers.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                helpersCat.users.push_back(user);
-            }
-
-            for (auto& userRes : artists.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                artistsCat.users.push_back(user);
-            }
-
-            for (auto& userRes : contributors.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                contributorsCat.users.push_back(user);
-            }
-
-            for (auto& userRes : boosters.unwrap()) {
-                CreditsPlayerNode::CreditsUser user;
-                user.username = userRes["username"].asString().unwrapOrDefault();
-                user.accountId = userRes["accountId"].asInt().unwrapOrDefault();
-                user.color1 = userRes["color1"].asInt().unwrapOrDefault();
-                user.color2 = userRes["color2"].asInt().unwrapOrDefault();
-                user.glowColor = userRes["color3"].asInt().unwrapOrDefault();
-                user.cube = userRes["iconid"].asInt().unwrapOrDefault();
-
-                boostersCat.users.push_back(user);
-            }
-
-            self->m_list->addCell(CategoryCell::create(ownersCat));
-            self->m_list->addCell(CategoryCell::create(developersCat));
-            self->m_list->addCell(CategoryCell::create(adminsCat));
-            self->m_list->addCell(CategoryCell::create(helpersCat));
-            self->m_list->addCell(CategoryCell::create(artistsCat));
-            self->m_list->addCell(CategoryCell::create(contributorsCat));
-            self->m_list->addCell(CategoryCell::create(boostersCat));
 
             self->m_list->updateLayout();
             loadingRef->removeFromParent();
+
+            if (self->m_updateBtn) self->m_updateBtn->setVisible(isListed);
         }
     );
-
-    return true;
 }
 
 }

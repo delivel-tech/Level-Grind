@@ -1,3 +1,4 @@
+#include <unordered_set>
 #include "CustomBrowserLayer.hpp"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/cocoa/CCObject.h"
@@ -240,14 +241,14 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
     }
 
     if (enableProgressBar) {
-        m_progressBar = Build(ProgressBar::create(ProgressBarStyle::Slider))
+        m_progressBar = Build(ProgressBar::create(ProgressBar::Style::Slider))
             .scale(0.8f)
             .rotation(-90.f)
             .collect();
 
-        constexpr float gapFromList = 24.f;
+        constexpr float gapFromList = 31.f;
         float listLeftX = m_listNode->getContentWidth() / 2;
-        float listCenterY = winSize.height / 4 - 10;
+        float listCenterY = winSize.height / 2 - 10;
 
         CCPoint barPos {this->getContentWidth() / 2 - listLeftX - gapFromList, listCenterY};
 
@@ -400,15 +401,21 @@ void CustomBrowserLayer::loadPageFromStoredIDs() {
         levelIDs += numToString(pageIDs[i]);
     }
 
-    m_searchObject = GJSearchObject::create(SearchType::Type19, levelIDs);
+    this->requestPage(levelIDs);
+}
 
+void CustomBrowserLayer::requestPage(std::string const& levelIDs) {
     auto glm = GameLevelManager::get();
-    if (glm) {
-        glm->m_levelManagerDelegate = this;
-        glm->getOnlineLevels(m_searchObject);
-    } else {
+    if (!glm) {
         stopLoading();
+        return;
     }
+    m_searchObject = GJSearchObject::create(SearchType::Type19, levelIDs);
+    m_searchKey = m_searchObject->getKey();
+
+    glm->m_searchType = SearchType::Type19;
+    glm->m_levelManagerDelegate = this;
+    glm->getOnlineLevels(m_searchObject);
 }
 
 void CustomBrowserLayer::updatePageButton() {
@@ -450,9 +457,8 @@ void CustomBrowserLayer::keyBackClicked() {
 }
 
 void CustomBrowserLayer::loadLevelsFinished(CCArray* levels, char const* key, int p2) {
-    if (!this->getParent() || !this->isRunning()) {
-        return;
-    }
+    if (!key || m_searchKey != key) return;
+    m_searchKey.clear();
 
     if (!levels) {
         stopLoading();
@@ -467,18 +473,13 @@ void CustomBrowserLayer::loadLevelsFinished(CCArray* levels, char const* key, in
 }
 
 void CustomBrowserLayer::loadLevelsFailed(char const* key, int p1) {
-    if (!this->getParent() || !this->isRunning()) {
-        return;
-    }
+    if (!key || m_searchKey != key) return;
+    m_searchKey.clear();
     Notification::create("Failed to load levels from GD servers", NotificationIcon::Error)->show();
     stopLoading();
 }
 
-void CustomBrowserLayer::populateFromArray(CCArray* levels) {
-    if (!this->getParent() || !this->isRunning()) {
-        return;
-    }
-
+void CustomBrowserLayer::populateFromArray(CCArray* levels, bool keepScroll) {
     if (!m_listNode || !levels) return;
 
     m_listNode->clear();
@@ -514,10 +515,17 @@ void CustomBrowserLayer::populateFromArray(CCArray* levels) {
         );
     }
 
-    m_needsLayout = true;
     this->updatePageButton();
 
-    m_scrollLayer->m_contentLayer->updateLayout();
+    auto content = m_scrollLayer->m_contentLayer;
+    if (keepScroll) {
+        float y = content->getPositionY();
+        content->updateLayout();
+        content->setPositionY(y);
+        return;
+    }
+    m_needsLayout = true;
+    content->updateLayout();
     m_listNode->scrollToTop();
 }
 
@@ -540,6 +548,44 @@ void CustomBrowserLayer::onEnter() {
     CCLayer::onEnter();
     this->setTouchEnabled(true);
     this->scheduleUpdate();
+
+    auto glm = GameLevelManager::get();
+    bool const back = m_entered;
+    m_entered = true;
+    if (glm) glm->m_searchType = SearchType::Type19;
+
+    if (back && glm && m_scrollLayer && m_scrollLayer->m_contentLayer) {
+        this->markDownloadedCells();
+    }
+
+    if (!glm || m_searchKey.empty() || !m_searchObject) return;
+    glm->m_levelManagerDelegate = this;
+    auto key = m_searchKey;
+    if (auto stored = glm->getStoredOnlineLevels(key.c_str()); stored && stored->count() > 0) {
+        this->loadLevelsFinished(stored, key.c_str(), 0);
+    } else {
+        glm->getOnlineLevels(m_searchObject);
+    }
+}
+
+void CustomBrowserLayer::markDownloadedCells() {
+    auto glm = GameLevelManager::get();
+    std::function<void(CCNode*)> visit = [&](CCNode* node) {
+        for (auto child : CCArrayExt<CCNode*>(node->getChildren())) {
+            if (auto cell = typeinfo_cast<LevelCell*>(child)) {
+                if (!cell->m_level || !cell->m_button) continue;
+                auto saved = glm->getSavedLevel(cell->m_level->m_levelID.value());
+                if (!saved || std::string(saved->m_levelString).empty()) continue;
+                if (auto spr = typeinfo_cast<ButtonSprite*>(cell->m_button->getNormalImage())) {
+                    spr->setString("View");
+                    spr->updateBGImage("GJ_button_01.png");
+                }
+                continue;
+            }
+            visit(child);
+        }
+    };
+    visit(m_scrollLayer->m_contentLayer);
 }
 
 void CustomBrowserLayer::onExit() {
@@ -589,6 +635,8 @@ void CustomBrowserLayer::performFetchLevels() {
         if (!m_body.demonDifficulties.empty()) body["demonDifficulties"] = m_body.demonDifficulties;
         if (!m_body.grindTypes.empty()) body["grindTypes"] = m_body.grindTypes;
         if (!m_body.versions.empty()) body["versions"] = m_body.versions;
+        if (!m_body.coins.empty()) body["coins"] = m_body.coins;
+        if (!m_body.ratings.empty()) body["ratings"] = m_body.ratings;
         body["newerFirst"] = m_body.isNewerFirst;
         body["recentlyAdded"] = m_body.isRecentlyAdded;
         req.bodyJSON(body);
@@ -600,7 +648,7 @@ void CustomBrowserLayer::performFetchLevels() {
         if (type == CustomBrowserType::Search) {
             return "https://api.delivel.tech/v2/get_levels";
         } else {
-            req.param("mode", fmt::format("{}", static_cast<int>(m_eventType)));
+            req.param("mode", numToString(static_cast<int>(m_eventType)));
             return "https://api.delivel.tech/v2/get_events_history";
         }
     };
@@ -618,7 +666,7 @@ void CustomBrowserLayer::performFetchLevels() {
         [weakSelf](web::WebResponse const& res) {
             auto self = weakSelf.lock();
             if (!self) return;
-            if (!self->getParent() || !self->isRunning()) return;
+            if (!self->getParent()) return;
 
             if (!res.ok()) {
                 Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
@@ -753,7 +801,12 @@ void CustomBrowserLayer::performFetchLevels() {
                     filteredIDs = allIDs;
                 }
             }
-            } else {filteredIDs = allIDs;}
+            } else {
+                std::unordered_set<int> seen;
+                for (int id : allIDs) {
+                    if (seen.insert(id).second) filteredIDs.push_back(id);
+                }
+            }
 
             self->m_allLevelIDs = filteredIDs;
             self->m_totalLevels = static_cast<int>(filteredIDs.size());
@@ -812,15 +865,7 @@ void CustomBrowserLayer::performFetchLevels() {
                 levelIDs += numToString(pageIDs[i]);
             }
 
-            self->m_searchObject = GJSearchObject::create(SearchType::Type19, levelIDs);
-
-            auto glm = GameLevelManager::get();
-            if (glm && self->getParent() && self->isRunning()) {
-                glm->m_levelManagerDelegate = self;
-                glm->getOnlineLevels(self->m_searchObject);
-            } else {
-                self->stopLoading();
-            }
+            self->requestPage(levelIDs);
             self->m_scrollLayer->m_contentLayer->updateLayout();
             self->m_listNode->scrollToTop();
         }

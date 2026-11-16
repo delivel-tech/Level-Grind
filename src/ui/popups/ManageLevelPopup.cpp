@@ -85,6 +85,9 @@ void ManageLevelPopup::formBody() {
 
     if (m_body.difficulty == 10) m_body.demon = true;
 
+    m_body.coins = APIClient::coinsFromLevel(m_level);
+    m_body.rating = APIClient::ratingFromLevel(m_level);
+
     return;
 }
 
@@ -268,10 +271,12 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                             auto parsed = APIClient::getInstance().changePointParse(res);
 
                             if (!parsed.ok) {
-                                uPopupRef->showFailMessage("Failed to add point.");
+                                uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed to add point."));
                                 return;
                             } else {
-                                uPopupRef->showSuccessMessage("Success! Added point.");
+                                uPopupRef->showSuccessMessage(parsed.bountyGp > 0
+                                    ? fmt::format("Success! Added point.\nBounty: +{} Grind Points!", parsed.bountyGp)
+                                    : std::string("Success! Added point."));
                                 return;
                             }
                         }
@@ -294,10 +299,12 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                             auto parsed = APIClient::getInstance().changePointParse(res);
 
                             if (!parsed.ok) {
-                                uPopupRef->showFailMessage("Failed to remove point.");
+                                uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed to remove point."));
                                 return;
                             } else {
-                                uPopupRef->showSuccessMessage("Success! Removed point.");
+                                uPopupRef->showSuccessMessage(parsed.bountyGp > 0
+                                    ? fmt::format("Success! Removed point.\nBounty: +{} Grind Points!", parsed.bountyGp)
+                                    : std::string("Success! Removed point."));
                                 return;
                             }
                         }
@@ -376,7 +383,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                                 if (!uPopupRef) return;
                                 if (!res.ok()) {
                                     log::error("bad web req");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                    uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed! Try again later."));
                                     return;
                                 } else {
                                     uPopupRef->showSuccessMessage("Success! Notes deleted.");
@@ -466,7 +473,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                                 if (!uPopupRef) return;
                                 if (!res.ok()) {
                                     log::error("bad web req");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                    uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed! Try again later."));
                                 } else {
                                     uPopupRef->showSuccessMessage("Success! Level unlocked.");
                                 }
@@ -492,7 +499,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                                 if (!uPopupRef) return;
                                 if (!res.ok()) {
                                     log::error("bad web req");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                    uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed! Try again later."));
                                 } else {
                                     uPopupRef->showSuccessMessage("Success! Level locked.");
                                 }
@@ -517,7 +524,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                                 if (!uPopupRef) return;
                                 if (!res.ok()) {
                                     log::error("bad web req");
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                    uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed! Try again later."));
                                 } else {
                                     uPopupRef->showSuccessMessage("Success! Level deleted.");
                                 }
@@ -544,7 +551,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                                     uPopupRef->showSuccessMessage("Success! Level re-added.");
                                     return;
                                 } else {
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                    uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed! Try again later."));
                                     return;
                                 }
                             }
@@ -570,7 +577,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                                     uPopupRef->showSuccessMessage("Success! Level added.");
                                     return;
                                 } else {
-                                    uPopupRef->showFailMessage("Failed! Try again later.");
+                                    uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed! Try again later."));
                                     return;
                                 }
                             }
@@ -727,7 +734,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                                 auto parsed = APIClient::getInstance().cancelVoteParse(res);
 
                                 if (!parsed.ok) {
-                                    uPopupRef->showFailMessage("Failed to cancel vote.");
+                                    uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed to cancel vote."));
                                     return;
                                 } else {
                                     uPopupRef->showSuccessMessage("Success! Vote cancelled.");

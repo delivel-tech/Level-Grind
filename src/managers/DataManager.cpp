@@ -37,7 +37,6 @@ std::vector<DiscordPopup::DiscordPageInfo> DataManager::getDiscordPages() {
 
 void DataManager::setUserToken(const std::string& token) {
     userToken = token;
-    Mod::get()->setSavedValue("user-token", token);
     return;
 }
 
@@ -56,8 +55,8 @@ void DataManager::initPermsOnBootup() {
 }
 
 void DataManager::initTokenOnBootup() {
-    std::string savedToken = getUserTokenFromSaved();
-    setUserToken(savedToken);
+    Mod::get()->setSavedValue<std::string>("user-token", "");
+    Mod::get()->setSavedValue<std::string>("argon_token", "");
 }
 
 }

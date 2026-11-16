@@ -8,15 +8,22 @@ using namespace geode::prelude;
 
 namespace levelgrind {
 
+class WeeklyAchCandidateCell;
+
 class WeeklyAchievementConfigurePopup : public BasePopup {
 public:
     static WeeklyAchievementConfigurePopup* create(GJUserScore* userScore);
 
     GJUserScore* m_userScore = nullptr;
-    bool m_triedSetting = false;
 
 private:
     bool init(GJUserScore* userScore);
+
+    void onSet();
+    void sendSet();
+
+    WeeklyAchCandidateCell* m_cells[3] = {};
+    bool m_setting = false;
 
     TaskHolder<web::WebResponse> m_listener;
 

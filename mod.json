@@ -1,19 +1,20 @@
 {
-	"geode": "5.10.1",
+	"geode": "6.0.0-alpha.1",
 	"gd": {
-		"win": "2.2081",
-		"android": "2.2081",
-		"mac": "2.2081",
-		"ios": "2.2081"
+		"win": "2.2091",
+		"android": "2.2091",
+		"mac": "2.2091",
+		"ios": "2.2091"
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v2.1.0",
-	"developers": ["Delivel", "DasshuDev"],
+	"version": "v3.0.0",
+	"developer": "Delivel",
 	"description": "A big database of levels for grinding!",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
-		"dasshu.badgified": ">=v1.0.4"
+		"dasshu.badgified": ">=v1.0.4",
+		"dankmeme.argon": ">=2.0.0-alpha.2"
 	},
 	"resources": {
 		"spritesheets": {

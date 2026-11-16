@@ -5,7 +5,6 @@
 #include "../components/WeeklyAchCandidateCell.hpp"
 #include "../../managers/WeeklyAchievementsManager.hpp"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
-#include "Geode/ui/Layout.hpp"
 #include "Geode/ui/Notification.hpp"
 
 #include <Geode/binding/UploadActionPopup.hpp>
@@ -27,7 +26,9 @@ WeeklyAchievementConfigurePopup* WeeklyAchievementConfigurePopup::create(GJUserS
 }
 
 bool WeeklyAchievementConfigurePopup::init(GJUserScore* userScore) {
-    if (!BasePopup::init({490, 190})) return false;
+    if (!BasePopup::init({ 500.f, 290.f })) return false;
+
+    m_userScore = userScore;
 
     GrindPosition pos = DataManager::getInstance().getUserPosition();
 
@@ -40,78 +41,89 @@ bool WeeklyAchievementConfigurePopup::init(GJUserScore* userScore) {
         this->onClose(nullptr);
     }
 
-    auto pl1CongigData = WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::First);
-    auto pl2ConfigData = WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Second);
-    auto pl3ConfigData = WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Third);
+    Build(CCLabelBMFont::create("Changes are saved as you type. Press Set to publish all three.", "chatFont.fnt"))
+        .scale(0.55f)
+        .pos(fromTop(40.f))
+        .opacity(170)
+        .parent(m_mainLayer);
 
-    auto rowMenu = Build(CCMenu::create())
-        .layout(RowLayout::create())
-        .id("row-menu")
-        .parent(m_buttonMenu)
+    struct Spot { AchievementCellType type; float dx; float dy; };
+    Spot const spots[] = {
+        { AchievementCellType::Third, -158.f, -4.f },
+        { AchievementCellType::First, 0.f, 4.f },
+        { AchievementCellType::Second, 158.f, 0.f },
+    };
+
+    float const cardsY = centerY() - 8.f;
+    for (auto const& spot : spots) {
+        auto cell = WeeklyAchCandidateCell::create(spot.type, userScore);
+        cell->setPosition({ centerX() + spot.dx, cardsY + spot.dy });
+        cell->setID(fmt::format("cell-{}", static_cast<int>(spot.type) + 1));
+        m_mainLayer->addChild(cell);
+        m_cells[spot.type] = cell;
+    }
+
+    Build(ButtonSprite::create("Set", "goldFont.fnt", "GJ_button_01.png", 0.9f))
         .scale(0.8f)
-        .pos(centerX(), centerY() - 10)
-        .collect();
-
-    auto cell2 = Build(WeeklyAchCandidateCell::create(pl2ConfigData, AchievementCellType::Second, userScore))
-        .id("cell-2")
-        .parent(rowMenu)
-        .collect();
-
-    auto cell1 = Build(WeeklyAchCandidateCell::create(pl1CongigData, AchievementCellType::First, userScore))
-        .id("cell-1")
-        .parent(rowMenu)
-        .collect();
-
-    auto cell3 = Build(WeeklyAchCandidateCell::create(pl3ConfigData, AchievementCellType::Third, userScore))
-        .id("cell-3")
-        .parent(rowMenu)
-        .collect();
-
-    rowMenu->updateLayout();
-
-    auto setBtn = Build(ButtonSprite::create(
-        "Set", "bigFont.fnt", "GJ_button_01.png"
-    ))
-        .scale(0.8f)
-        .intoMenuItem([this] {
-            if (!m_triedSetting) {
-                Notification::create("Make sure to save all players!", NotificationIcon::Info)->show();
-                m_triedSetting = true;
-                return;
-            }
-
-            auto uPopup = UploadActionPopup::create(nullptr, "Setting...");
-            uPopup->show();
-
-            auto uPopupRef = Ref(uPopup);
-
-            m_listener.spawn(
-                APIClient::getInstance().newWeeklyAch(
-                    WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::First).second,
-                    WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Second).second,
-                    WeeklyAchievementsManager::getInstance().loadConfigDataFromSaved(AchievementCellType::Third).second
-                ),
-                [uPopupRef](web::WebResponse res) {
-                    if (!uPopupRef) return;
-                    bool ok = APIClient::getInstance().newWeeklyAchParse(res);
-
-                    if (ok) {
-                        uPopupRef->showSuccessMessage("Success! Set.");
-                    } else {
-                        uPopupRef->showFailMessage("Failed! Try again later.");
-                    }
-                }
-            );
-        })
+        .intoMenuItem([this] { this->onSet(); })
         .id("set-btn")
-        .parent(m_buttonMenu)
-        .pos({
-            centerX(),
-            -20
-        })
-        .collect();
+        .pos({ m_buttonMenu->getContentWidth() / 2.f, 20.f })
+        .parent(m_buttonMenu);
 
     return true;
+}
+
+void WeeklyAchievementConfigurePopup::onSet() {
+    if (m_setting) return;
+
+    int empty = 0;
+    for (auto cell : m_cells) {
+        if (cell && !cell->isFilled()) empty++;
+    }
+
+    if (empty > 0) {
+        Ref<WeeklyAchievementConfigurePopup> self = this;
+        createQuickPopup(
+            "Empty spots",
+            fmt::format("<cr>{}</c> of 3 spots {} empty. Set anyway?", empty, empty == 1 ? "is" : "are"),
+            "Cancel", "Set",
+            [self](auto, bool confirmed) {
+                if (confirmed && self) self->sendSet();
+            }
+        );
+        return;
+    }
+
+    this->sendSet();
+}
+
+void WeeklyAchievementConfigurePopup::sendSet() {
+    m_setting = true;
+
+    auto uPopup = UploadActionPopup::create(nullptr, "Setting...");
+    uPopup->show();
+
+    Ref<UploadActionPopup> uPopupRef = uPopup;
+    Ref<WeeklyAchievementConfigurePopup> self = this;
+    auto& mgr = WeeklyAchievementsManager::getInstance();
+
+    m_listener.spawn(
+        APIClient::getInstance().newWeeklyAch(
+            mgr.loadConfigDataFromSaved(AchievementCellType::First).second,
+            mgr.loadConfigDataFromSaved(AchievementCellType::Second).second,
+            mgr.loadConfigDataFromSaved(AchievementCellType::Third).second
+        ),
+        [uPopupRef, self](web::WebResponse res) {
+            if (self) self->m_setting = false;
+            if (!uPopupRef) return;
+
+            if (APIClient::getInstance().newWeeklyAchParse(res)) {
+                uPopupRef->showSuccessMessage("Success! Weekly achievements set.");
+            } else {
+                uPopupRef->showFailMessage("Failed! Try again later.");
+            }
+        }
+    );
 }
 
 }

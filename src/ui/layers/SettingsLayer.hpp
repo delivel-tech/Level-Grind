@@ -78,10 +78,6 @@ private:
 
     ColorChannelSprite* m_bgPreview = nullptr;
 
-    CCMenuItemToggler* m_onlyUncompletedToggler = nullptr;
-    CCMenuItemToggler* m_onlyCompletedToggler = nullptr;
-    CCMenuItemToggler* m_newerFirstToggler = nullptr;
-    CCMenuItemToggler* m_recentlyAddedToggler = nullptr;
 
     static constexpr CCSize CELL_SIZE = {356.f, 28.f};
 

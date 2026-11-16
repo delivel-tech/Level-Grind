@@ -77,7 +77,7 @@ private:
             .scale(1.f)
             .collect();
 
-        auto progressBar = Build(ProgressBar::create(ProgressBarStyle::Solid))
+        auto progressBar = Build(ProgressBar::create(ProgressBar::Style::Solid))
             .parent(otherMenu)
             .with([packInfo](ProgressBar* bar) {
                 bar->setFillColor(packInfo.color);
@@ -139,10 +139,6 @@ private:
             .parent(infoMenu)
             .collect();
 
-        auto packTypeSpr = Build(CCSprite::createWithSpriteFrameName(packInfo.isStar ? "GJ_bigStar_noShadow_001.png" : "GJ_bigMoon_noShadow_001.png"))
-            .scale(0.6f)
-            .parent(infoMenu)
-            .collect();
 
         auto viewBtnMenu = Build(CCMenu::create())
             .parent(this)

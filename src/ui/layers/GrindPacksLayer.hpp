@@ -33,6 +33,20 @@ private:
     void updatePageButton();
     void populatePacks();
 
+    void applyFilters();
+    void buildFilterButtons();
+    void refreshFilterButtons();
+
+    std::vector<GrindPack> m_shownPacks;
+    bool m_showStar = true;
+    bool m_sortAlpha = false;
+    int m_difficultyFilter = 0;
+    CCSprite* m_starTab = nullptr;
+    CCSprite* m_moonTab = nullptr;
+    ButtonSprite* m_sortSpr = nullptr;
+    CCNode* m_diffHolder = nullptr;
+    CCLabelBMFont* m_emptyLabel = nullptr;
+
     void setIDPopupClosed(SetIDPopup* popup, int value) override;
 
     cue::ListNode* m_listNode = nullptr;

@@ -153,6 +153,8 @@ bool GuidePopup::initPage(GuidePage page) {
             return initMainGuidePage();
         case GuidePage::PetGuide:
             return initPetGuidePage();
+        case GuidePage::ClansGuide:
+            return initClansGuidePage();
         case GuidePage::WeeklyAchievementsGuide:
             return initWeeklyAchievementsGuidePage();
         case GuidePage::NotesGuide:
@@ -219,6 +221,7 @@ bool GuidePopup::initMainPage() {
     
     listNode->addCell(createGuideSection("Grind Info", [this] { initPage(GuidePage::MainGuide); }, 1));
     listNode->addCell(createGuideSection("Pet Info", [this] { initPage(GuidePage::PetGuide); }, 2));
+    listNode->addCell(createGuideSection("Grind Clans", [this] { initPage(GuidePage::ClansGuide); }, 17));
     listNode->addCell(createGuideSection("Event Levels", [this]{initPage(GuidePage::EventsGuide);}, 11));
     listNode->addCell(createGuideSection("Grind Packs", [this]{initPage(GuidePage::GrindPacksGuide);}, 12));
     listNode->addCell(createGuideSection("Weekly Achievements", [this] { initPage(GuidePage::WeeklyAchievementsGuide); }, 3));
@@ -332,6 +335,33 @@ bool GuidePopup::initPetGuidePage() {
     );
     addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
     
+    return true;
+}
+
+bool GuidePopup::initClansGuidePage() {
+    addReturnButton();
+    addGrindLogo();
+    addTextArea(
+        "# <cy>Grind Clans Guide</c>\n\n"
+        "Team up with other grinders, climb the <cy>clan leaderboards</c> together and earn <cy>Grind Points</c>!\n\n"
+        "### Grind Points (GP)\n\n"
+        "<cy>Grind Points</c> are your own currency. They are not your pet's stars or moons, and they never leave your account.\n\n"
+        "- <cy>**Any rated level**</c>: 1 GP per star/moon, once per level.\n"
+        "- <cg>**Level Grind levels**</c>: 2 GP per star/moon.\n"
+        "- <co>**Event levels**</c>: x2 daily, x3 weekly, x4 monthly while the event is live.\n"
+        "- <cp>**Grind Packs**</c>: +50 GP for beating all three levels.\n"
+        "- <cl>**Clan weekly tasks**</c>: GP for every member who helped that week.\n\n"
+        "You can earn up to <cy>400 GP a day</c> from levels.\n\n"
+        "### Clans\n\n"
+        "- <cg>**Creating**</c> a clan costs <cy>300 GP</c>. A new color or emblem costs the leader <cy>50 GP</c>.\n"
+        "- A clan's <cy>power</c> is the GP its members earned while in it. It sets the clan <co>level</c>, the <cj>member slots</c> (20, up to 50) and a <cg>GP bonus</c> for everyone (up to +20%).\n"
+        "- Clans are ranked <cy>this week</c> and <cy>all time</c>.\n"
+        "- Every week the clan gets <cl>3 tasks</c>. Finish them together for extra GP.\n"
+        "- <cj>**Roles**</c>: the <cy>Leader</c> runs the clan, <cl>Officers</c> accept requests and can remove members.\n"
+        "- Chat with your clan right on the clan screen.\n"
+    );
+    addScrollbar(typeinfo_cast<geode::MDTextArea*>(getChildByIDRecursive("md-text-area"))->getScrollLayer());
+
     return true;
 }
 

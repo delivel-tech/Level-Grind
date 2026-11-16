@@ -208,7 +208,7 @@ bool EventPopup::init(EventType type) {
 
     auto safeBtn = Build(CCSprite::createWithSpriteFrameName("GJ_safeBtn_001.png"))
         .intoMenuItem([type]{
-            GetLevelsBody body; // placeholder
+            GetLevelsBody body;
             auto getName = [](EventType type) {
                 if (type == EventType::Daily) return "Dailies Safe";
                 else if (type == EventType::Weekly) return "Weeklies Safe";
@@ -334,6 +334,8 @@ bool EventPopup::init(EventType type) {
                     self->m_pendingKey = key;
                     self->m_pendingClassicId = parsed.classicEvent.levelId;
                     self->m_pendingPlatId = parsed.platEvent.levelId;
+                    glm->m_levelManagerDelegate = nullptr;
+                    glm->m_searchType = SearchType::Type19;
                     glm->getOnlineLevels(searchObj);
                 }
             }

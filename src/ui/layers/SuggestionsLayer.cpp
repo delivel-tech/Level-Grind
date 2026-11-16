@@ -9,6 +9,8 @@
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <UIBuilder.hpp>
 #include <cue/ListNode.hpp>
+#include <Geode/ui/NineSlice.hpp>
+#include <algorithm>
 
 #include "../popups/GuidePopup.hpp"
 
@@ -112,19 +114,6 @@ bool SuggestionsLayer::init() {
                     .intoMenuItem([this] {
                         this->onFilterButton(nullptr);
                     })
-                    .parent(pageMenu)
-                    .collect();
-
-                auto modeToggler = Build<CCMenuItemToggler>::createToggle(
-                    Build(CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png")).scale(0.9f).collect(),
-                    Build(CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png")).scale(0.9f).collect(),
-                    [this](CCMenuItemToggler* toggler) {
-                        bool newState = getNewTogglerState(toggler);
-                        this->m_suggestionsMode = newState ? 1 : 0;
-                        this->m_page = 0;
-                        this->refreshLevels();
-                    }
-                )
                     .parent(pageMenu)
                     .collect();
             }
@@ -334,9 +323,62 @@ int SuggestionsLayer::getPointsFilterValue() const {
     return m_pointsFilterValue;
 }
 
+int SuggestionsLayer::difficultyOf(LevelSuggestion const& s) {
+    switch (s.difficulty) {
+        case 1: return CustomDifficultyEnum::Auto;
+        case 2: return CustomDifficultyEnum::Easy;
+        case 3: return CustomDifficultyEnum::Normal;
+        case 4: case 5: return CustomDifficultyEnum::Hard;
+        case 6: case 7: return CustomDifficultyEnum::Harder;
+        case 8: case 9: return CustomDifficultyEnum::Insane;
+        case 10:
+            switch (s.demonDifficulty) {
+                case 3: return CustomDifficultyEnum::EasyDemon;
+                case 4: return CustomDifficultyEnum::MediumDemon;
+                case 5: return CustomDifficultyEnum::InsaneDemon;
+                case 6: return CustomDifficultyEnum::ExtremeDemon;
+                default: return CustomDifficultyEnum::HardDemon;
+            }
+    }
+    return 0;
+}
+
+int SuggestionsLayer::countPointsFilter(PointsFilterOp op, int value, int difficulty) const {
+    int count = 0;
+    for (auto const& suggestion : m_allLevelSuggestions) {
+        if (difficulty != 0 && difficultyOf(suggestion) != difficulty) continue;
+        switch (op) {
+            case PointsFilterOp::More: count += suggestion.points > value; break;
+            case PointsFilterOp::Equals: count += suggestion.points == value; break;
+            case PointsFilterOp::Less: count += suggestion.points < value; break;
+        }
+    }
+    return count;
+}
+
+int SuggestionsLayer::getSuggestionsMode() const {
+    return m_suggestionsMode;
+}
+
+void SuggestionsLayer::setSuggestionsMode(int mode) {
+    if (mode == m_suggestionsMode) return;
+    m_suggestionsMode = mode;
+    m_page = 0;
+    this->refreshLevels();
+}
+
+int SuggestionsLayer::getSuggestionsCount() const {
+    return static_cast<int>(m_allLevelSuggestions.size());
+}
+
 void SuggestionsLayer::applyPointsFilter() {
     m_allLevelIDs.clear();
     for (auto const& suggestion : m_allLevelSuggestions) {
+        if (m_difficultyFilter != 0 && difficultyOf(suggestion) != m_difficultyFilter) continue;
+        if (m_bounties.contains(suggestion.id)) {
+            m_allLevelIDs.push_back(suggestion.id);
+            continue;
+        }
         bool keep = false;
         switch (m_pointsFilterOp) {
             case PointsFilterOp::More:
@@ -352,6 +394,12 @@ void SuggestionsLayer::applyPointsFilter() {
         if (keep) {
             m_allLevelIDs.push_back(suggestion.id);
         }
+    }
+
+    if (!m_bounties.empty()) {
+        std::stable_partition(m_allLevelIDs.begin(), m_allLevelIDs.end(), [this](int id) {
+            return m_bounties.contains(id);
+        });
     }
 
     m_totalLevels = static_cast<int>(m_allLevelIDs.size());
@@ -414,6 +462,7 @@ void SuggestionsLayer::loadPageFromStoredIDs() {
 
     auto glm = GameLevelManager::get();
     if (glm) {
+        glm->m_searchType = SearchType::Type19;
         glm->m_levelManagerDelegate = this;
         glm->getOnlineLevels(m_searchObject);
     } else {
@@ -495,15 +544,57 @@ void SuggestionsLayer::populateFromArray(CCArray* levels) {
     const float cellH = 90.f;
     int index = 0;
 
+    std::vector<GJGameLevel*> ordered;
     for (GJGameLevel* level : CCArrayExt<GJGameLevel*>(levels)) {
-        if (!level) continue;
+        if (level) ordered.push_back(level);
+    }
+    std::unordered_map<int, size_t> rank;
+    for (size_t r = 0; r < m_allLevelIDs.size(); r++) rank.emplace(m_allLevelIDs[r], r);
+    std::stable_sort(ordered.begin(), ordered.end(), [&](GJGameLevel* a, GJGameLevel* b) {
+        auto ra = rank.find(a->m_levelID.value());
+        auto rb = rank.find(b->m_levelID.value());
+        size_t va = ra == rank.end() ? SIZE_MAX : ra->second;
+        size_t vb = rb == rank.end() ? SIZE_MAX : rb->second;
+        return va < vb;
+    });
 
+    for (GJGameLevel* level : ordered) {
         auto cell = LevelCell::create(356.f, cellH);
         if (!cell) continue;
         cell->loadFromLevel(level);
         cell->setContentSize({356.f, cellH});
         cell->setAnchorPoint({0.0f, 1.0f});
         cell->updateBGColor(index);
+
+        if (m_bounties.contains(level->m_levelID.value()) && cell->m_backgroundLayer) {
+            cell->m_backgroundLayer->setColor(index % 2 == 0 ? ccColor3B{ 210, 160, 70 } : ccColor3B{ 230, 180, 85 });
+
+            #ifndef GEODE_IS_IOS
+            auto sparkles = CCParticleSnow::create();
+            sparkles->setTotalParticles(24);
+            sparkles->setPosition({ 178.f, 0.f });
+            sparkles->setPosVar({ 178.f, 0.f });
+            sparkles->setGravity({ 0.f, 18.f });
+            sparkles->setSpeed(8.f);
+            sparkles->setSpeedVar(4.f);
+            sparkles->setAngle(90.f);
+            sparkles->setAngleVar(20.f);
+            sparkles->setLife(3.f);
+            sparkles->setLifeVar(1.f);
+            sparkles->setEmissionRate(6.f);
+            sparkles->setStartSize(4.f);
+            sparkles->setStartSizeVar(2.f);
+            sparkles->setEndSize(0.f);
+            sparkles->setStartColor({ 1.f, 0.9f, 0.5f, 0.9f });
+            sparkles->setStartColorVar({ 0.f, 0.1f, 0.1f, 0.1f });
+            sparkles->setEndColor({ 1.f, 0.8f, 0.3f, 0.f });
+            sparkles->setEndColorVar({ 0.f, 0.f, 0.f, 0.f });
+            sparkles->setBlendAdditive(true);
+            sparkles->setPositionType(kCCPositionTypeGrouped);
+            cell->addChild(sparkles, 1);
+            #endif
+        }
+
         m_listNode->addCell(cell);
         index++;
     }
@@ -590,6 +681,7 @@ void SuggestionsLayer::performFetchLevels() {
     this->startLoading();
 
     auto req = web::WebRequest();
+    req.timeout(std::chrono::seconds{20});
     WeakRef<SuggestionsLayer> weakSelf = this;
 
     auto url = fmt::format("https://api.delivel.tech/v2/get_suggestions?mode={}", m_suggestionsMode);
@@ -601,7 +693,7 @@ void SuggestionsLayer::performFetchLevels() {
             if (!self->getParent() || !self->isRunning()) return;
 
             if (!res.ok()) {
-                Notification::create("Failed to fetch levels", NotificationIcon::Error)->show();
+                Notification::create(res.code() <= 0 ? "Server took too long, try Refresh" : "Failed to fetch levels", NotificationIcon::Error)->show();
                 self->stopLoading();
                 return;
             }
@@ -615,7 +707,7 @@ void SuggestionsLayer::performFetchLevels() {
 
             auto json = jsonRes.unwrap();
 
-            if (json["ok"].asBool().unwrapOrDefault() == false) {
+            if (!json["ok"].asBool().unwrapOrDefault()) {
                 Notification::create("Invalid response from server", NotificationIcon::Error)->show();
                 self->stopLoading();
                 return;
@@ -633,10 +725,23 @@ void SuggestionsLayer::performFetchLevels() {
 
             self->m_allLevelSuggestions.clear();
 
+            self->m_bounties.clear();
+            self->m_bountyGp = static_cast<int>(json["bountyGp"].asInt().unwrapOr(20));
+            if (DataManager::getInstance().getUserPosition() != GrindPosition::User) {
+                if (auto bounties = json["bounties"].asArray()) {
+                    for (auto const& b : bounties.unwrap()) {
+                        int id = static_cast<int>(b["levelID"].asInt().unwrapOr(0));
+                        if (id > 0) self->m_bounties[id] = static_cast<int>(b["waitingDays"].asInt().unwrapOr(0));
+                    }
+                }
+            }
+
             for (auto const& val : suggestionsArr) {
                 LevelSuggestion suggestion;
                 suggestion.id = val["levelID"].asInt().unwrapOrDefault();
                 suggestion.points = val["points"].asInt().unwrapOrDefault();
+                suggestion.difficulty = static_cast<int>(val["difficulty"].asInt().unwrapOr(0));
+                suggestion.demonDifficulty = static_cast<int>(val["demonDifficulty"].asInt().unwrapOr(0));
                 self->m_allLevelSuggestions.push_back(suggestion);
             }
 

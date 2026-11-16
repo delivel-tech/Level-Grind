@@ -45,7 +45,7 @@ private:
     void stopLoading();
     void hideUIElements();
     void showUIElements();
-    void populateFromArray(CCArray* levels);
+    void populateFromArray(CCArray* levels, bool keepScroll = false);
     void performFetchLevels();
     void loadPageFromStoredIDs();
 
@@ -70,7 +70,12 @@ private:
     bool m_loading = false;
     bool m_needsLayout = false;
 
-    GJSearchObject* m_searchObject = nullptr;
+    Ref<GJSearchObject> m_searchObject;
+
+    std::string m_searchKey;
+    void markDownloadedCells();
+    bool m_entered = false;
+    void requestPage(std::string const& levelIDs);
 
     cue::ListNode* m_listNode = nullptr;
     ScrollLayer* m_scrollLayer = nullptr;

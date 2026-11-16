@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <unordered_map>
 #include "../BaseLayer.hpp"
 #include "../../utils/globals.hpp"
 
@@ -26,6 +27,13 @@ public:
     PointsFilterOp getPointsFilterOp() const;
     int getPointsFilterValue() const;
     void applyPointsFilter();
+    int countPointsFilter(PointsFilterOp op, int value, int difficulty = 0) const;
+    int getSuggestionsCount() const;
+    int getSuggestionsMode() const;
+    void setSuggestionsMode(int mode);
+    int getDifficultyFilter() const { return m_difficultyFilter; }
+    void setDifficultyFilter(int difficulty) { m_difficultyFilter = difficulty; }
+    static int difficultyOf(LevelSuggestion const& s);
 
     ~SuggestionsLayer() {
         m_searchTask.cancel();
@@ -67,6 +75,8 @@ private:
 
     std::vector<int> m_allLevelIDs;
     std::vector<LevelSuggestion> m_allLevelSuggestions;
+    std::unordered_map<int, int> m_bounties;
+    int m_bountyGp = 20;
     std::vector<matjson::Value> m_initialSuggestions;
     int m_totalLevels = 0;
     int m_totalPages = 1;
@@ -93,6 +103,7 @@ private:
 
     PointsFilterOp m_pointsFilterOp = PointsFilterOp::More;
     int m_pointsFilterValue = 0;
+    int m_difficultyFilter = 0;
 
     TaskHolder<web::WebResponse> m_searchTask;
 };

@@ -20,6 +20,7 @@
 #include "Geode/utils/web.hpp"
 
 #include "../popups/GuidePopup.hpp"
+#include "../popups/ReportPopups.hpp"
 
 using namespace geode::prelude;
 
@@ -92,6 +93,7 @@ bool PetLayer::init() {
         .parent(infoBtnMenu)
         .collect();
 
+
     auto mainPanel = Build(NineSlice::create("GJ_square02.png"))
         .contentSize({460.f, 280.f})
         .parent(this)
@@ -100,6 +102,20 @@ bool PetLayer::init() {
         .collect();
 
     CCSize mainPanelCS = mainPanel->getContentSize();
+
+    auto leaderboardMenu = Build<CCMenu>::create()
+        .id("leaderboard-btn-menu")
+        .pos(mainPanelCS.width - 26.f, mainPanelCS.height / 2.f)
+        .parent(mainPanel)
+        .zOrder(5)
+        .collect();
+    Build<CCSprite>::createSpriteName("GJ_levelLeaderboardBtn_001.png")
+        .scale(0.6f)
+        .intoMenuItem([] {
+            PetLeaderboardPopup::create()->show();
+        })
+        .id("leaderboard-btn")
+        .parent(leaderboardMenu);
 
     auto loading = LoadingSpinner::create(50.f);
     mainPanel->addChild(loading);
@@ -254,10 +270,10 @@ void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
 
     downBtnMenu->updateLayout();
 
-    auto progressBar = Build(ProgressBar::create(ProgressBarStyle::Slider))
+    auto progressBar = Build(ProgressBar::create(ProgressBar::Style::Slider))
         .id("progress-bar")
         .pos(
-            {mainPanelCS.width / 2.f - 105.f, mainPanelCS.height / 2.f - 80.f}
+            {mainPanelCS.width / 2.f, mainPanelCS.height / 2.f - 80.f}
         )
         .parent(mainPanel)
         .collect();

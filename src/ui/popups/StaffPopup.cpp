@@ -1,3 +1,4 @@
+#include "ClanPopups.hpp"
 #include "StaffPopup.hpp"
 #include "../../managers/DataManager.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
@@ -7,6 +8,8 @@
 #include "Geode/ui/BasedButtonSprite.hpp"
 #include "SyncLevelsPopup.hpp"
 #include "EventsManagePopup.hpp"
+#include "StaffActivityPopup.hpp"
+#include "ReportPopups.hpp"
 
 namespace levelgrind {
 
@@ -25,7 +28,9 @@ bool StaffPopup::init() {
 
     GrindPosition pos = DataManager::getInstance().getUserPosition();
 
-    if (pos == GrindPosition::Admin) {
+    if (pos == GrindPosition::Helper) {
+        this->setTitle("Grind Helper: Staff Panel");
+    } else if (pos == GrindPosition::Admin) {
         this->setTitle("Grind Admin: Staff Panel");
     } else if (pos == GrindPosition::Owner) {
         this->setTitle("Grind Coordinator: Staff Panel");
@@ -33,7 +38,7 @@ bool StaffPopup::init() {
         this->setTitle("Unknown Role: Staff Panel");
     }
 
-    if (pos != GrindPosition::Admin && pos != GrindPosition::Owner) {
+    if (pos != GrindPosition::Helper && pos != GrindPosition::Admin && pos != GrindPosition::Owner) {
         Notification::create("You cannot use staff panel!", NotificationIcon::Error)->show();
         return false;
     }
@@ -59,16 +64,36 @@ bool StaffPopup::init() {
         .parent(m_mainLayer)
         .pos(centerX(), centerY() - 20)
         .id("buttons-menu")
-        .scale(0.9f)
+        .scale(0.75f)
         .contentSize(m_mainLayer->getContentWidth() - 50.f, 80)
         .layout(
             RowLayout::create()
                     ->setGap(7)
                     ->setGrowCrossAxis(true)
-                    ->setCrossAxisReverse(true)
         )
         .zOrder(1)
         .collect();
+
+    Build<CCSprite>::createSpriteName("GJ_levelLeaderboardBtn_001.png")
+        .intoMenuItem([] {
+            StaffActivityPopup::create()->show();
+        })
+        .id("activity-btn")
+        .parent(buttonsMenu);
+
+    Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+        .intoMenuItem([] {
+            StaffReportsPopup::create()->show();
+        })
+        .id("reports-btn")
+        .parent(buttonsMenu);
+
+    Build(CircleButtonSprite::createWithSpriteFrameName("GJ_sFriendsIcon_001.png", 0.8f))
+        .intoMenuItem([] {
+            StaffLogosPopup::create()->show();
+        })
+        .id("clan-logos-btn")
+        .parent(buttonsMenu);
 
     if (pos == GrindPosition::Owner) {
         auto syncBtn = Build(CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png"))
@@ -80,13 +105,14 @@ bool StaffPopup::init() {
             .collect();
     }
 
-    auto eventsBtn = Build(CircleButtonSprite::createWithSpriteFrameName("gj_dailyCrown_001.png"))
-        .intoMenuItem([] {
-            EventsManagePopup::create()->show();
-        })
-        .id("events-btn")
-        .parent(buttonsMenu)
-        .collect();
+    if (pos == GrindPosition::Admin || pos == GrindPosition::Owner) {
+        Build(CircleButtonSprite::createWithSpriteFrameName("gj_dailyCrown_001.png"))
+            .intoMenuItem([] {
+                EventsManagePopup::create()->show();
+            })
+            .id("events-btn")
+            .parent(buttonsMenu);
+    }
 
     buttonsMenu->updateLayout();
 

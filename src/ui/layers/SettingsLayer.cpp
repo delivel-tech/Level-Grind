@@ -30,7 +30,7 @@
 #include "../../managers/APIClient.hpp"
 #include "../../managers/DataManager.hpp"
 
-#include <argon/argon.hpp>
+#include <dankmeme.argon/argon.hpp>
 
 using namespace geode::prelude;
 
@@ -217,22 +217,6 @@ CCMenu* SettingsLayer::makeToggleCell(
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
         [this, settingKey](CCMenuItemToggler* toggler) {
             setBoolSetting(settingKey, getNewTogglerState(toggler));
-            if (std::string(settingKey) == "only-uncompleted" && getNewTogglerState(toggler)) {
-                setBoolSetting("only-completed", false);
-                m_onlyCompletedToggler->toggle(false);
-            }
-            if (std::string(settingKey) == "only-completed" && getNewTogglerState(toggler)) {
-                setBoolSetting("only-uncompleted", false);
-                m_onlyUncompletedToggler->toggle(false);
-            }
-            if (std::string(settingKey) == "newer-first" && getNewTogglerState(toggler)) {
-                setBoolSetting("recently-added", false);
-                m_recentlyAddedToggler->toggle(false);
-            }
-            if (std::string(settingKey) == "recently-added" && getNewTogglerState(toggler)) {
-                setBoolSetting("newer-first", false);
-                m_newerFirstToggler->toggle(false);
-            }
         }
     )
         .pos({ CELL_SIZE.width - 18, CELL_SIZE.height / 2 })
@@ -241,11 +225,6 @@ CCMenu* SettingsLayer::makeToggleCell(
         .id(fmt::format("{}-toggler", settingKey))
         .parent(cell)
         .collect();
-
-    if (std::string(settingKey) == "only-uncompleted") m_onlyUncompletedToggler = toggler;
-    if (std::string(settingKey) == "only-completed") m_onlyCompletedToggler = toggler;
-    if (std::string(settingKey) == "newer-first") m_newerFirstToggler = toggler;
-    if (std::string(settingKey) == "recently-added") m_recentlyAddedToggler = toggler;
 
     return cell;
 }
@@ -262,7 +241,6 @@ void SettingsLayer::applyDefaultSettings() {
     Mod::get()->setSavedValue("enable-indicators", true);
     Mod::get()->setSavedValue("enable-completion-info", false);
     Mod::get()->setSavedValue("enable-progress-bar", false);
-    Mod::get()->setSavedValue("hide-badges-for-mods", true);
     Mod::get()->setSavedValue("auto-notes", false);
 }
 
@@ -469,34 +447,6 @@ void SettingsLayer::createGrindList() {
     list->addCell(this->makeHeaderCell("Grind Settings"));
 
     list->addCell(makeToggleCell(
-        "Only Uncompleted",
-        "If enabled, only uncompleted levels will be shown.",
-        "only-uncompleted",
-        this
-    ));
-
-    list->addCell(makeToggleCell(
-        "Only Completed",
-        "If enabled, only completed levels will be shown.",
-        "only-completed",
-        this
-    ));
-
-    list->addCell(makeToggleCell(
-        "Newer First",
-        "If enabled, newly created levels will be shown first.",
-        "newer-first",
-        this
-    ));
-
-    list->addCell(makeToggleCell(
-        "Recently Added",
-        "If enabled, recently added levels into the database will be shown first.",
-        "recently-added",
-        this
-    ));
-
-    list->addCell(makeToggleCell(
         "Enable Indicators",
         "Shows an info button next to level name that shows information about the level in Grind Database.",
         "enable-indicators",
@@ -562,13 +512,6 @@ void SettingsLayer::createAppearanceList() {
         "Disable Badges",
         "Hides all badges added by the mod",
         "disable-badges",
-        this
-    ));
-
-    list->addCell(makeToggleCell(
-        "Hide Grind badges for GD Mods",
-        "Hides badges added by Level Grind for any kind of GD Moderators",
-        "hide-badges-for-mods",
         this
     ));
 
@@ -778,9 +721,7 @@ void SettingsLayer::createOtherList() {
                         return;
                     } else {
                         auto token = std::move(res).unwrap();
-                        Mod::get()->setSavedValue("argon_token", token);
                         DataManager::getInstance().setUserToken(token);
-                        log::info("token = {}", token);
 
                         uPopupRef->showSuccessMessage("Success! Argon token saved.");
                         return;

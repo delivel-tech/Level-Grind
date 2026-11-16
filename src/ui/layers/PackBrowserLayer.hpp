@@ -1,4 +1,3 @@
-#include "Geode/c++stl/string.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/LevelBrowserLayer.hpp>
 
@@ -57,9 +56,9 @@ private:
 
 class $modify(GrindPackBrowserLayer, LevelBrowserLayer) {
 public:
-    gd::string getSearchTitle() {
+    std::string getSearchTitle() {
         if (auto it = typeinfo_cast<PackBrowserLayer*>(this)) {
-            return gd::string(it->m_name);
+            return std::string(it->m_name);
         }
         return LevelBrowserLayer::getSearchTitle();
     }

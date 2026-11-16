@@ -1,3 +1,4 @@
+#include "../../managers/BadgesManager.hpp"
 #include "CreatorLayer.hpp"
 #include "Geode/cocos/actions/CCActionEase.h"
 #include "Geode/cocos/actions/CCActionInterval.h"
@@ -8,6 +9,9 @@
 #include "Geode/ui/BasedButtonSprite.hpp"
 #include "Geode/ui/General.hpp"
 #include "Geode/ui/Layout.hpp"
+#include "Geode/ui/NineSlice.hpp"
+#include <Geode/binding/FLAlertLayer.hpp>
+#include <optional>
 
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <UIBuilder.hpp>
@@ -28,6 +32,7 @@
 #include "SuggestionsLayer.hpp"
 #include "SettingsLayer.hpp"
 #include "PetLayer.hpp"
+#include "ClansLayer.hpp"
 #include "../../managers/PetManager.hpp"
 
 namespace levelgrind {
@@ -90,6 +95,7 @@ bool CreatorLayer::init() {
 
     auto packsCat = Build(CCSprite::createWithSpriteFrameName("packs_cat.png"_spr))
         .intoMenuItem([] {
+            badges::markSeen(badges::Kind::Packs);
             GrindPacksLayer::create()->open();
         })
         .parent(catMenu)
@@ -98,6 +104,7 @@ bool CreatorLayer::init() {
 
     auto weeklyAchCat = Build(CCSprite::createWithSpriteFrameName("weekly_ach_cat.png"_spr))
         .intoMenuItem([] {
+            badges::markSeen(badges::Kind::WeeklyAch);
             WeeklyAchievementPopup::create()->show();
         })
         .parent(catMenu)
@@ -154,6 +161,7 @@ bool CreatorLayer::init() {
 
     auto dailyCat = Build(CCSprite::createWithSpriteFrameName("daily_cat.png"_spr))
         .intoMenuItem([] {
+            badges::markSeen(badges::Kind::Daily);
             EventPopup::create(EventType::Daily)->show();
         })
         .parent(catMenu)
@@ -162,6 +170,7 @@ bool CreatorLayer::init() {
 
     auto weeklyCat = Build(CCSprite::createWithSpriteFrameName("weekly_cat.png"_spr))
         .intoMenuItem([] {
+            badges::markSeen(badges::Kind::Weekly);
             EventPopup::create(EventType::Weekly)->show();
         })
         .parent(catMenu)
@@ -170,12 +179,22 @@ bool CreatorLayer::init() {
 
     auto monthlyCat = Build(CCSprite::createWithSpriteFrameName("monthly_cat.png"_spr))
         .intoMenuItem([] {
+            badges::markSeen(badges::Kind::Monthly);
             EventPopup::create(EventType::Monthly)->show();
         })
         .parent(catMenu)
         .id("monthly-cat")
         .collect();
 
+    auto clansCat = Build(CCSprite::createWithSpriteFrameName("clans_cat.png"_spr))
+        .intoMenuItem([] {
+            ClansLayer::create()->open();
+        })
+        .parent(catMenu)
+        .id("clans-cat")
+        .collect();
+
+    // page 2
     auto helperSuggestionsCat = Build(CCSprite::createWithSpriteFrameName("helper_suggestions_cat.png"_spr))
         .intoMenuItem([] {
             SuggestionsLayer::create()->open();
@@ -184,16 +203,108 @@ bool CreatorLayer::init() {
         .id("helper-suggestions-cat")
         .collect();
 
-    // making scale mult for all category buttons smaller
-
     for (const auto& obj : CCArrayExt(catMenu->m_pChildren)) {
         CCMenuItemSpriteExtra* currentCat = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
+        if (!currentCat) continue;
         currentCat->m_scaleMultiplier = 1.1f;
+        m_cats.push_back(currentCat);
     }
+    m_catMenu = catMenu;
 
-    catMenu->updateLayout();
+    auto arrowMenu = Build<CCMenu>::create()
+        .pos({ 0.f, 0.f })
+        .contentSize(winSize)
+        .zOrder(2)
+        .id("cat-page-menu")
+        .parent(this)
+        .collect();
+
+    auto makeArrow = [&](bool next) {
+        auto spr = CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png");
+        spr->setFlipX(next);
+        spr->setScale(0.8f);
+        auto btn = CCMenuItemExt::createSpriteExtra(spr, [this, next](CCObject*) {
+            this->showCatPage(m_catPage + (next ? 1 : -1));
+        });
+        float half = catMenu->getScaledContentWidth() / 2.f + 18.f;
+        btn->setPosition({ catMenu->getPositionX() + (next ? half : -half), catMenu->getPositionY() });
+        btn->setID(next ? "next-cat-page" : "prev-cat-page");
+        arrowMenu->addChild(btn);
+        return btn;
+    };
+    m_prevPageBtn = makeArrow(false);
+    m_nextPageBtn = makeArrow(true);
+
+    this->showCatPage(0);
+
+    Ref<CreatorLayer> badgeSelf = this;
+    badges::refresh([badgeSelf] {
+        if (badgeSelf) badgeSelf->updateBadges();
+    });
+    m_badgesAsked = true;
+    this->schedule(schedule_selector(CreatorLayer::tickBadges), 0.5f);
 
     return true;
+}
+
+void CreatorLayer::onEnter() {
+    BaseLayer::onEnter();
+    if (m_badgesAsked) {
+        Ref<CreatorLayer> self = this;
+        badges::refresh([self] {
+            if (self) self->updateBadges();
+        });
+    }
+}
+
+void CreatorLayer::tickBadges(float) {
+    this->updateBadges();
+}
+
+void CreatorLayer::updateBadges() {
+    if (!m_catMenu) return;
+    struct { const char* id; badges::Kind kind; } const buttons[] = {
+        { "daily-cat", badges::Kind::Daily },
+        { "weekly-cat", badges::Kind::Weekly },
+        { "monthly-cat", badges::Kind::Monthly },
+        { "weekly-ach-cat", badges::Kind::WeeklyAch },
+        { "packs-cat", badges::Kind::Packs },
+        { "clans-cat", badges::Kind::Clans },
+    };
+    for (auto const& b : buttons) {
+        if (auto item = typeinfo_cast<CCMenuItemSpriteExtra*>(m_catMenu->getChildByID(b.id))) {
+            badges::setMark(item->getNormalImage(), badges::isNew(b.kind));
+        }
+    }
+}
+
+int CreatorLayer::catPageCount() const {
+    return std::max<int>(1, static_cast<int>((m_cats.size() + kCatsPerPage - 1) / kCatsPerPage));
+}
+
+void CreatorLayer::showCatPage(int page) {
+    int pages = this->catPageCount();
+    page = std::clamp(page, 0, pages - 1);
+    m_catPage = page;
+
+    m_catMenu->removeAllChildrenWithCleanup(false);
+    size_t first = static_cast<size_t>(page) * kCatsPerPage;
+    size_t last = std::min(first + kCatsPerPage, m_cats.size());
+    for (size_t i = first; i < last; i++) {
+        m_catMenu->addChild(m_cats[i]);
+    }
+    m_catMenu->updateLayout();
+
+    auto setArrow = [](CCMenuItemSpriteExtra* btn, bool active) {
+        if (!btn) return;
+        btn->setEnabled(active);
+        if (auto spr = typeinfo_cast<CCSprite*>(btn->getNormalImage())) {
+            spr->setColor(active ? ccColor3B{ 255, 255, 255 } : ccColor3B{ 90, 90, 90 });
+            spr->setOpacity(active ? 255 : 150);
+        }
+    };
+    setArrow(m_prevPageBtn, page > 0);
+    setArrow(m_nextPageBtn, page < pages - 1);
 }
 
 bool CreatorLayer::initFarMenus() {
@@ -238,12 +349,14 @@ bool CreatorLayer::initFarMenus() {
 
     auto getBadge = [] {
         GrindPosition pos = DataManager::getInstance().getUserPosition();
-        if (pos == GrindPosition::Admin) return "badge_admin.png"_spr;
+        if (pos == GrindPosition::Helper) return "badge_helper.png"_spr;
+        else if (pos == GrindPosition::Admin) return "badge_admin.png"_spr;
         else if (pos == GrindPosition::Owner) return "badge_owner.png"_spr;
         else return "";
     };
 
-    if (DataManager::getInstance().getUserPosition() == GrindPosition::Admin
+    if (DataManager::getInstance().getUserPosition() == GrindPosition::Helper
+    || DataManager::getInstance().getUserPosition() == GrindPosition::Admin
     || DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
         auto staffBtn = Build(CircleButtonSprite::createWithSpriteFrameName(getBadge(), 0.8f, CircleBaseColor::Blue))
             .scale(1.2f)
@@ -303,40 +416,84 @@ bool CreatorLayer::initFarMenus() {
 }
 
 bool CreatorLayer::initMd() {
-    auto versionLabel = Build(CCLabelBMFont::create(fmt::format("{}", Mod::get()->getVersion()).c_str(), "chatFont.fnt"))
-        .opacity(128)
-        .anchorPoint({ 1.f, 1.f })
-        .pos(fromTopRight({ 5, 5 }))
-        .scale(0.6f)
-        .id("version-label")
+    auto winSize = CCDirector::sharedDirector()->getWinSize();
+    CCSize const boxSize { 170.f, 64.f };
+
+    auto statusBox = Build(NineSlice::create("square02_small.png"))
+        .contentSize(boxSize)
+        .anchorPoint({ 0.5f, 0.f })
+        .pos({ winSize.width / 2.f, -boxSize.height / 2.f + 2.f })
+        .opacity(110)
+        .id("status-box")
+        .zOrder(3)
         .parent(this)
         .collect();
 
-    if (!versionLabel) return false;
+    auto makeLine = [&](const char* key, float y) {
+        auto row = CCNode::create();
+        row->setLayout(RowLayout::create()->setGap(3.f)->setAutoScale(false));
+        row->setContentSize({ boxSize.width - 10.f, 14.f });
+        row->setAnchorPoint({ 0.5f, 0.5f });
+        row->setPosition({ boxSize.width / 2.f, y });
+        auto k = CCLabelBMFont::create(key, "bigFont.fnt");
+        k->setScale(0.32f);
+        row->addChild(k);
+        auto v = CCLabelBMFont::create("Checking...", "bigFont.fnt");
+        v->setScale(0.32f);
+        v->setColor({ 200, 200, 200 });
+        row->addChild(v);
+        row->updateLayout();
+        statusBox->addChild(row);
+        return std::make_pair(Ref<CCNode>(row), Ref<CCLabelBMFont>(v));
+    };
 
-    auto serverLabel = Build(CCLabelBMFont::create("Server: Loading...", "chatFont.fnt"))
-        .opacity(128)
-        .anchorPoint({ 1.f, 1.f })
-        .pos(fromTopRight({ 5, 18 }))
-        .scale(0.6f)
-        .id("server-label")
-        .parent(this)
-        .collect();
-
-    auto serverLabelRef = Ref(serverLabel);
+    auto [statusRow, statusValue] = makeLine("Status:", boxSize.height - 12.f);
+    auto [versionRow, versionValue] = makeLine("Version:", boxSize.height - 26.f);
 
     m_listener.spawn(
         APIClient::getInstance().health(),
-        [serverLabelRef](web::WebResponse res) {
-            if (!serverLabelRef) return;
-            bool ok = APIClient::getInstance().healthParse(res);
+        [self = Ref(this), statusRow, statusValue, versionRow, versionValue](web::WebResponse res) {
+            if (!statusValue || !versionValue) return;
+            bool online = APIClient::getInstance().healthParse(res);
 
-            if (ok) {
-                serverLabelRef->setString("Server: Online");
-                return;
-            } else {
-                serverLabelRef->setString("Server: Offline");
+            statusValue->setString(online ? "Online" : "Offline");
+            statusValue->setColor(online ? ccColor3B{ 100, 255, 100 } : ccColor3B{ 255, 90, 90 });
+            statusRow->updateLayout();
+
+            std::string latest;
+            if (auto json = res.json()) latest = json.unwrap()["latestModVersion"].asString().unwrapOrDefault();
+            auto current = Mod::get()->getVersion();
+            std::optional<geode::VersionInfo> latestVer;
+            if (!latest.empty()) {
+                if (auto parsed = geode::VersionInfo::parse(latest)) latestVer = parsed.unwrap();
             }
+
+            if (!latestVer) {
+                versionValue->setString(current.toVString().c_str());
+                versionValue->setColor({ 200, 200, 200 });
+            } else if (current < *latestVer) {
+                versionValue->setString("Outdated");
+                versionValue->setColor({ 255, 90, 90 });
+                static bool warned = false;
+                if (!warned && self) {
+                    warned = true;
+                    std::string text = fmt::format(
+                        "Your <cp>Level Grind</c> version is <cr>outdated</c> ({}).\nPlease <cg>update the mod</c> to {}.",
+                        current.toVString(), latestVer->toVString()
+                    );
+                    self->runAction(CCSequence::create(
+                        CCDelayTime::create(0.5f),
+                        CallFuncExt::create([text] {
+                            FLAlertLayer::create("Update available", text, "OK")->show();
+                        }),
+                        nullptr
+                    ));
+                }
+            } else {
+                versionValue->setString("Up to date");
+                versionValue->setColor({ 100, 255, 100 });
+            }
+            versionRow->updateLayout();
         }
     );
 

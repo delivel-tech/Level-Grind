@@ -1,7 +1,7 @@
 #include "managers/APIClient.hpp"
 #include "managers/DataManager.hpp"
 #include "ui/layers/SettingsLayer.hpp"
-#include <dasshu.badgified/include/Badgified.hpp>
+#include <dasshu.badgified/Badgified.hpp>
 
 using namespace geode::prelude;
 using namespace levelgrind;

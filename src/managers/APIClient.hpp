@@ -4,13 +4,12 @@
 
 #include "Geode/utils/web.hpp"
 #include <Geode/Geode.hpp>
+#include <Geode/binding/GJGameLevel.hpp>
 #include <string>
 
 using namespace geode::prelude;
 
 namespace levelgrind {
-
-// singleton class for web requests to api
 
 class APIClient : public Singleton<APIClient> {
     friend class Singleton<APIClient>;
@@ -19,8 +18,6 @@ private:
     APIClient() = default;
 
 public:
-
-    // get_levels methods
     web::WebFuture getLevels(GetLevelsBody& body);
     GetLevelsBody makeGetLevelsBody(
         std::vector<int> difficulties,
@@ -32,13 +29,12 @@ public:
         bool isRecentlyAdded
     );
     GetLevelsResponse getLevelsParse(web::WebResponse res);
+    matjson::Value getLevelsJson(GetLevelsBody& body);
 
-    // bootup_get methods
     web::WebFuture bootupGet();
     BootupGetResponse bootupGetParse(web::WebResponse res);
-    void performBootupGet(); // for $on_mod(Loaded)
+    void performBootupGet();
 
-    // handlers for usermanagepanel
     web::WebFuture getUserRoles(int accountID);
     GetUserRolesResponse getUserRolesParse(web::WebResponse res);
 
@@ -100,6 +96,9 @@ public:
     web::WebFuture setEvents(int mode, int classicID, int platID);
     bool setEventsParse(web::WebResponse res);
 
+    web::WebFuture moveEvents(int mode, int days, int hours, int sinceDays, bool dryRun);
+    MoveEventsResponse moveEventsParse(web::WebResponse res);
+
     web::WebFuture getEvents(int mode);
     Events getEventsParse(web::WebResponse res);
 
@@ -131,7 +130,13 @@ public:
     web::WebFuture cancelVote(int levelID);
     CancelVoteResponse cancelVoteParse(web::WebResponse res);
 
-    // argon
+    web::WebFuture updateCreditsProfile();
+    UpdateCreditsProfileResponse updateCreditsProfileParse(web::WebResponse res);
+
+    static std::string errorMessage(web::WebResponse& res, std::string fallback);
+    static int ratingFromLevel(GJGameLevel* level);
+    static int coinsFromLevel(GJGameLevel* level);
+
     void performGetToken();
 
     std::string baseUrl = "https://api.delivel.tech/v2";

@@ -39,7 +39,6 @@ class $modify(GrindProfilePage, ProfilePage) {
         auto mod = Mod::get();
 
         bool hideBadges = mod->getSavedValue<bool>("disable-badges");
-        bool hideBadgesForMods = mod->getSavedValue<bool>("hide-badges-for-mods");
 
         auto usernameMenu = this->m_mainLayer->getChildByID("username-menu");
 
@@ -47,13 +46,8 @@ class $modify(GrindProfilePage, ProfilePage) {
 
         bool hasModBadge = usernameMenu->getChildByID("mod-badge");
 
-        bool showBadge = [hideBadges, hideBadgesForMods, hasModBadge] {
-            if (hideBadges || (hideBadgesForMods && hasModBadge)) {
-                return false;
-            } else {
-                return true;
-            }
-        }();
+        bool showBadge = !hideBadges; // the "hide for GD mods" option was removed
+        (void)hasModBadge;
 
         struct badgeInfo {
             std::string spriteName = "";
@@ -162,22 +156,25 @@ class $modify(GrindProfilePage, ProfilePage) {
 
         */
 
-        auto leftMenu = getChildByIDRecursive("left-menu");
-		if (!leftMenu) return;
+        auto bottomMenu = getChildByIDRecursive("bottom-menu");
+		if (!bottomMenu) return;
 
-        if (auto id = leftMenu->getChildByID("manage-user-btn"_spr)) id->removeFromParent();
+        if (auto id = bottomMenu->getChildByID("manage-user-btn"_spr)) id->removeFromParent();
 
         GrindPosition pos = dm.getUserPosition();
 
         if (pos == GrindPosition::Admin || pos == GrindPosition::Owner) {
             CCSprite* topSpr = CCSprite::create("user_config_spr.png"_spr);
-            auto manageUserBtn = Build(CircleButtonSprite::create(topSpr, CircleBaseColor::Blue))
-                .with([](CircleButtonSprite* spr) {spr->getTopNode()->setPosition({25, 23.5});
-                spr->getTopNode()->setScale(1.025f);})
-                .scale(0.625f)
+            auto manageUserBtn = Build(AccountButtonSprite::create(topSpr, AccountBaseColor::Blue))
+                .with([](AccountButtonSprite* spr) {
+                    spr->getTopNode()->setScale(0.95f);
+                    spr->getTopNode()->setPosition(
+                        spr->getTopNode()->getPositionX() + 1.5f, spr->getTopNode()->getPositionY() - 1);
+                })
+                .scale(this->m_ownProfile ? 1.f : 0.75f)
                 .intoMenuItem([score] { UserManagePopup::create(score)->show(); })
                 .id("manage-user-btn"_spr)
-                .parent(leftMenu)
+                .parent(bottomMenu)
                 .intoParent()
                 .updateLayout();
         }

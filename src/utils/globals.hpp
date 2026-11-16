@@ -5,8 +5,6 @@
 #include <Geode/binding/GJDifficultySprite.hpp>
 #include <string>
 namespace levelgrind {
-
-    // Filters body for get_levels request
     struct GetLevelsBody {
         std::vector<int> difficulties;
         std::vector<int> lengths;
@@ -15,18 +13,32 @@ namespace levelgrind {
         std::vector<int> versions;
         bool isNewerFirst = true;
         bool isRecentlyAdded = false;
+        std::vector<int> coins;
+        std::vector<int> ratings;
     };
 
-    // Body that is returned from get_levels
+    enum LevelRating {
+        NotRated = 0,
+        Rate = 1,
+        Featured = 2,
+        Epic = 3,
+        Legendary = 4,
+        Mythic = 5
+    };
+
     struct GetLevelsResponse {
         bool ok;
         int count;
         std::vector<int> ids;
+        std::vector<int> stars;
+        std::vector<bool> moon;
     };
 
     struct LevelSuggestion {
         int id;
         int points;
+        int difficulty = 0;
+        int demonDifficulty = 0;
     };
 
     struct NoteInfo {
@@ -35,7 +47,6 @@ namespace levelgrind {
         std::string senderUsername;
     };
     
-    // Body returned from bootup_get
     struct BootupGetResponse {
         bool ok;
         std::vector<int> owners;
@@ -97,6 +108,7 @@ namespace levelgrind {
 
     struct ChangePointResponse {
         bool ok;
+        int bountyGp = 0;
     };
 
     struct SyncLevelsResponse {
@@ -105,6 +117,7 @@ namespace levelgrind {
         int inserted;
         int coinUpdates;
         int lockUpdates;
+        int filterUpdates = 0;
     };
 
     struct ManageLevelBody {
@@ -117,10 +130,35 @@ namespace levelgrind {
         bool moon = false;
         int coin = 0;
         bool demon = false;
+        int coins = 0;
+        int rating = 0;
     };
 
     struct CancelVoteResponse {
         bool ok;
+    };
+
+    struct MovedEvents {
+        int mode = 0;
+        int count = 0;
+        std::string newStart;
+        std::string newEnd;
+    };
+
+    struct MoveEventsResponse {
+        bool ok = false;
+        std::string error;
+        std::vector<MovedEvents> events;
+    };
+
+    struct UpdateCreditsProfileResponse {
+        bool ok = false;
+        std::string error;
+        std::string username;
+        int iconID = 0;
+        int color1 = 0;
+        int color2 = 0;
+        int color3 = 0;
     };
 
     enum GuidePage {
@@ -140,7 +178,8 @@ namespace levelgrind {
         HelperSuggestionsGuide = 14,
         LevelIndicatorsGuide = 15,
         CreditsInfo = 16,
-        DeveloperRoleGuide = 17
+        DeveloperRoleGuide = 17,
+        ClansGuide = 18
     };
 
     struct Indicators {

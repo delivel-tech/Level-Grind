@@ -24,8 +24,6 @@ const int kButtonWidth = 250.f;
 
 namespace levelgrind {
 
-// Ban Pet Popup class is here because it's only used in this file and it's easier to manage it here
-
 class BanPetPopup : public BasePopup {
 public:
     static BanPetPopup* create(int accountID) {

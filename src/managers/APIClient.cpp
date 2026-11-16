@@ -5,17 +5,20 @@
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
+#include <Geode/binding/GameManager.hpp>
 #include <arc/future/Future.hpp>
+#include <arc/time/Sleep.hpp>
 #include <fmt/format.h>
 #include <matjson.hpp>
 #include <string>
 #include <unordered_set>
 
-#include <argon/argon.hpp>
+#include <dankmeme.argon/argon.hpp>
 #include <vector>
 
 #include "DataManager.hpp"
 #include "PetManager.hpp"
+#include "GrindClansManager.hpp"
 
 using namespace geode::prelude;
 
@@ -211,7 +214,7 @@ web::WebFuture APIClient::setEvents(int mode, int classicID, int platID) {
 
 web::WebFuture APIClient::getEvents(int mode) {
     auto req = web::WebRequest();
-    req.param("mode", fmt::format("{}", mode));
+    req.param("mode", numToString(mode));
     return req.get(fmt::format("{}{}", baseUrl, "/get_events_new"));
 }
 
@@ -262,6 +265,65 @@ Events APIClient::getEventsParse(web::WebResponse res) {
             ret.platEvent.levelId = event["levelId"].asInt().unwrapOrDefault();
             platAdded = true;
             ret.platEvent.secondsLeft = event["secondsLeft"].asDouble().unwrapOrDefault();
+        }
+    }
+
+    return ret;
+}
+
+web::WebFuture APIClient::moveEvents(int mode, int days, int hours, int sinceDays, bool dryRun) {
+    auto req = web::WebRequest();
+    matjson::Value body;
+
+    body["accountID"] = GJAccountManager::get()->m_accountID;
+    body["token"] = DataManager::getInstance().getUserToken();
+    body["mode"] = mode;
+    body["days"] = days;
+    body["hours"] = hours;
+    body["sinceDays"] = sinceDays;
+    body["dryRun"] = dryRun;
+
+    req.bodyJSON(body);
+    return req.post(fmt::format("{}{}", baseUrl, "/move_events"));
+}
+
+MoveEventsResponse APIClient::moveEventsParse(web::WebResponse res) {
+    MoveEventsResponse ret;
+
+    auto jsonRes = res.json();
+    if (!res.ok() || !jsonRes) {
+        log::error("move_events failed, code: {}", res.code());
+        if (res.code() == 404) {
+            ret.error = "The server doesn't have move_events yet (404).";
+        } else {
+            ret.error = errorMessage(res, fmt::format("Try again later (code {}).", res.code()));
+        }
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOr(false);
+    if (!ret.ok) {
+        ret.error = errorMessage(res, "Try again later.");
+        return ret;
+    }
+
+    auto shortDate = [](std::string s) {
+        if (s.size() >= 16) {
+            s = s.substr(0, 16);
+            if (s[10] == 'T') s[10] = ' ';
+        }
+        return s;
+    };
+
+    if (auto events = json["events"].asArray()) {
+        for (auto const& e : events.unwrap()) {
+            MovedEvents moved;
+            moved.mode = e["mode"].asInt().unwrapOr(0);
+            moved.count = e["count"].asInt().unwrapOr(0);
+            moved.newStart = shortDate(e["newStart"].asString().unwrapOrDefault());
+            moved.newEnd = shortDate(e["newEnd"].asString().unwrapOrDefault());
+            ret.events.push_back(moved);
         }
     }
 
@@ -328,6 +390,9 @@ web::WebFuture APIClient::newlevel(ManageLevelBody body) {
     if (body.moon) reqBody["moon"] = body.moon;
     if (body.coin && body.coin >= 0) reqBody["coin"] = body.coin;
     if (body.demon) reqBody["demon"] = body.demon;
+
+    reqBody["coins"] = body.coins;
+    reqBody["rating"] = body.rating;
 
     reqBody["added_by"] = GJAccountManager::get()->m_username.c_str();
 
@@ -448,7 +513,11 @@ bool APIClient::newGrindPackParse(web::WebResponse res) {
 
 web::WebFuture APIClient::getLevels(levelgrind::GetLevelsBody& body) {
     auto req = web::WebRequest();
+    req.bodyJSON(this->getLevelsJson(body));
+    return req.post(fmt::format("{}{}", baseUrl, "/get_levels"));
+}
 
+matjson::Value APIClient::getLevelsJson(levelgrind::GetLevelsBody& body) {
     matjson::Value reqBody;
 
     if (!body.difficulties.empty()) reqBody["difficulties"] = body.difficulties;
@@ -456,12 +525,11 @@ web::WebFuture APIClient::getLevels(levelgrind::GetLevelsBody& body) {
     if (!body.demonDifficulties.empty()) reqBody["demonDifficulties"] = body.demonDifficulties;
     if (!body.grindTypes.empty()) reqBody["grindTypes"] = body.grindTypes;
     if (!body.versions.empty()) reqBody["versions"] = body.versions;
+    if (!body.coins.empty()) reqBody["coins"] = body.coins;
+    if (!body.ratings.empty()) reqBody["ratings"] = body.ratings;
     reqBody["newerFirst"] = body.isNewerFirst;
     reqBody["recentlyAdded"] = body.isRecentlyAdded;
-
-    req.bodyJSON(reqBody);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/get_levels"));
+    return reqBody;
 }
 
 GetLevelsResponse APIClient::getLevelsParse(web::WebResponse res) {
@@ -503,6 +571,14 @@ GetLevelsResponse APIClient::getLevelsParse(web::WebResponse res) {
 
     ret.count = totalCount;
     ret.ids = allIDs;
+
+    auto starsArr = json["stars"].asArray();
+    auto moonArr = json["moon"].asArray();
+    if (starsArr && moonArr && starsArr.unwrap().size() == allIDs.size() && moonArr.unwrap().size() == allIDs.size()) {
+        for (auto const& v : starsArr.unwrap()) ret.stars.push_back(static_cast<int>(v.asInt().unwrapOr(0)));
+        for (auto const& v : moonArr.unwrap()) ret.moon.push_back(v.asInt().unwrapOr(0) != 0);
+    }
+
     ret.ok = true;
 
     return ret;
@@ -828,6 +904,8 @@ web::WebFuture APIClient::changePoint(PointType type, int coinType, ManageLevelB
     reqBody["star"] = levelBody.star;
     reqBody["moon"] = levelBody.moon;
     reqBody["demon"] = levelBody.demon;
+    reqBody["coins"] = levelBody.coins;
+    reqBody["rating"] = levelBody.rating;
 
     req.bodyJSON(reqBody);
     return req.post(fmt::format("{}{}", baseUrl, "/change_point"));
@@ -859,6 +937,54 @@ CancelVoteResponse APIClient::cancelVoteParse(web::WebResponse res) {
     return ret;
 }
 
+web::WebFuture APIClient::updateCreditsProfile() {
+    auto req = web::WebRequest();
+    matjson::Value reqBody;
+
+    auto gm = GameManager::get();
+
+    reqBody["accountId"] = GJAccountManager::get()->m_accountID;
+    reqBody["token"] = DataManager::getInstance().getUserToken();
+    reqBody["icon"] = gm->getPlayerFrame();
+    reqBody["color1"] = gm->getPlayerColor();
+    reqBody["color2"] = gm->getPlayerColor2();
+
+    reqBody["color3"] = gm->getPlayerGlow() ? gm->getPlayerGlowColor() : 0;
+
+    req.bodyJSON(reqBody);
+    return req.post(fmt::format("{}{}", baseUrl, "/update_credits_profile"));
+}
+
+UpdateCreditsProfileResponse APIClient::updateCreditsProfileParse(web::WebResponse res) {
+    UpdateCreditsProfileResponse ret;
+
+    if (!res.ok()) {
+        log::error("update_credits_profile failed, code: {}", res.code());
+        ret.error = errorMessage(res, "Failed to update your profile. Try again later.");
+        return ret;
+    }
+
+    auto jsonRes = res.json();
+    if (!jsonRes) {
+        ret.error = "Invalid server response.";
+        return ret;
+    }
+
+    auto json = jsonRes.unwrap();
+    ret.ok = json["ok"].asBool().unwrapOr(false);
+    if (!ret.ok) {
+        ret.error = errorMessage(res, "Failed to update your profile. Try again later.");
+        return ret;
+    }
+
+    ret.username = json["username"].asString().unwrapOrDefault();
+    ret.iconID = json["iconid"].asInt().unwrapOrDefault();
+    ret.color1 = json["color1"].asInt().unwrapOrDefault();
+    ret.color2 = json["color2"].asInt().unwrapOrDefault();
+    ret.color3 = json["color3"].asInt().unwrapOrDefault();
+    return ret;
+}
+
 web::WebFuture APIClient::deleteNotes(int levelId, std::string levelName) {
     auto req = web::WebRequest();
     matjson::Value reqBody;
@@ -876,7 +1002,7 @@ web::WebFuture APIClient::deleteNotes(int levelId, std::string levelName) {
 web::WebFuture APIClient::getIndicators(int levelID) {
     auto req = web::WebRequest();
 
-    req.param("id", fmt::format("{}", levelID));
+    req.param("id", numToString(levelID));
 
     return req.get(fmt::format("{}{}", baseUrl, "/get_indicators"));
 }
@@ -945,6 +1071,7 @@ ChangePointResponse APIClient::changePointParse(web::WebResponse res) {
     auto json = jsonRes.unwrap();
 
     ret.ok = json["ok"].asBool().unwrapOrDefault();
+    ret.bountyGp = static_cast<int>(json["bountyGp"].asInt().unwrapOr(0));
 
     return ret;
 }
@@ -989,6 +1116,7 @@ SyncLevelsResponse APIClient::syncLevelsParse(web::WebResponse res) {
     ret.inserted = json["inserted"].asInt().unwrapOrDefault();
     ret.coinUpdates = json["coinUpdates"].asInt().unwrapOrDefault();
     ret.lockUpdates = json["lockUpdates"].asInt().unwrapOrDefault();
+    ret.filterUpdates = json["filterUpdates"].asInt().unwrapOrDefault();
 
     return ret;
 }
@@ -1034,7 +1162,7 @@ GetLevelInfoResponse APIClient::getLevelInfoParse(web::WebResponse res) {
     ret.isDailyPlat = GET_JSON_BOOL("isDailyPlat");
     ret.isWeekly = GET_JSON_BOOL("isWeekly");
     ret.isWeeklyPlat = GET_JSON_BOOL("isWeeklyPlat");
-    ret.demon = GET_JSON_BOOL("hasPoints");
+    ret.hasPoints = GET_JSON_BOOL("hasPoints");
 
     #undef GET_JSON_BOOL
 
@@ -1373,7 +1501,9 @@ void APIClient::performGetToken() {
         auto accountData = argon::getGameAccountData();
 
         async::spawn([data = std::move(accountData)] -> arc::Future<> {
-                auto res = co_await argon::startAuth(data);
+                argon::_overrides overrides = argon::g_overrides;
+                overrides.account = data;
+                auto res = co_await argon::startAuth({ ._overrides = overrides });
 
                 if (!res.ok()) {
                     geode::queueInMainThread([] {
@@ -1383,13 +1513,45 @@ void APIClient::performGetToken() {
                 }
 
                 auto token = std::move(res).unwrap();
-                Mod::get()->setSavedValue("argon_token", token);
                 DataManager::getInstance().setUserToken(token);
+
+                geode::queueInMainThread([] {
+                    GrindClansManager::getInstance().flushClaims();
+                });
+
+                co_await arc::sleep(asp::Duration::fromSecs(10 * 60));
+                geode::queueInMainThread([] {
+                    APIClient::getInstance().performGetToken();
+                });
 
                 co_return;
             }
         );
     });
+}
+
+std::string APIClient::errorMessage(web::WebResponse& res, std::string fallback) {
+    auto json = res.json();
+    if (!json) return fallback;
+    auto err = json.unwrap()["error"].asString();
+    if (!err || err.unwrap().empty()) return fallback;
+    return err.unwrap();
+}
+
+int APIClient::ratingFromLevel(GJGameLevel* level) {
+    if (!level) return LevelRating::NotRated;
+
+    if (level->m_isEpic >= 3) return LevelRating::Mythic;
+    if (level->m_isEpic == 2) return LevelRating::Legendary;
+    if (level->m_isEpic == 1) return LevelRating::Epic;
+    if (level->m_featured > 0) return LevelRating::Featured;
+    if (level->m_stars.value() > 0) return LevelRating::Rate;
+    return LevelRating::NotRated;
+}
+
+int APIClient::coinsFromLevel(GJGameLevel* level) {
+    if (!level) return 0;
+    return std::clamp(static_cast<int>(level->m_coins), 0, 3);
 }
 
 }
