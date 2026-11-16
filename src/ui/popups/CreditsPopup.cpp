@@ -1,3 +1,4 @@
+#include "../../managers/Auth.hpp"
 #include "CreditsPopup.hpp"
 #include "Geode/cocos/base_nodes/CCNode.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
@@ -381,10 +382,6 @@ void CreditsPopup::onUpdateProfile(CCObject*) {
     uPopup->show();
     Ref<UploadActionPopup> uPopupRef = uPopup;
 
-    if (DataManager::getInstance().getUserToken().empty()) {
-        uPopup->showFailMessage("Failed! Try again later\nStill logging you in.");
-        return;
-    }
 
     m_updating = true;
 

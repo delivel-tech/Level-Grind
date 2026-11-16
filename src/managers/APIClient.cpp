@@ -1,3 +1,4 @@
+#include "Auth.hpp"
 #include "APIClient.hpp"
 #include "Geode/loader/Loader.hpp"
 #include "Geode/loader/Log.hpp"
@@ -46,13 +47,11 @@ GetLevelsBody APIClient::makeGetLevelsBody(
     return ret;
 }
 
-web::WebFuture APIClient::syncPet() {
-    auto req = web::WebRequest();
+auth::Future APIClient::syncPet() {
     matjson::Value body;
 
     body["accountId"] = GJAccountManager::get()->m_accountID;
     body["username"] = GJAccountManager::get()->m_username.c_str();
-    body["token"] = DataManager::getInstance().getUserToken();
 
     if (PetManager::getInstance().shouldUpdatePetStars()) {
         body["shouldUpdateStars"] = PetManager::getInstance().shouldUpdatePetStars();
@@ -63,21 +62,17 @@ web::WebFuture APIClient::syncPet() {
 		body["shouldUpdateMoons"] = PetManager::getInstance().shouldUpdatePetMoons();
 		body["moonsDelta"] = PetManager::getInstance().getPetMoonsDelta();
 	}
-	req.bodyJSON(body);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/sync_pet"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/sync_pet"), std::move(body));
 }
 
 web::WebFuture APIClient::health() {
     return web::WebRequest().get(fmt::format("{}{}", baseUrl, "/health"));
 }
 
-web::WebFuture APIClient::newWeeklyAch(AchievementCellInfo info1, AchievementCellInfo info2, AchievementCellInfo info3) {
-    auto req = web::WebRequest();
+auth::Future APIClient::newWeeklyAch(AchievementCellInfo info1, AchievementCellInfo info2, AchievementCellInfo info3) {
     matjson::Value body;
 
     body["addedByID"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     body["addedBy"] = GJAccountManager::get()->m_username.c_str();
 
     body["username1"] = info1.username;
@@ -116,9 +111,7 @@ web::WebFuture APIClient::newWeeklyAch(AchievementCellInfo info1, AchievementCel
     body["info2"] = info2.info;
     body["info3"] = info3.info;
 
-    req.bodyJSON(body);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/new_weekly_achievements"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/new_weekly_achievements"), std::move(body));
 }
 
 bool APIClient::newWeeklyAchParse(web::WebResponse res) {
@@ -196,20 +189,16 @@ WeeklyAchResponse APIClient::getWeeklyAchParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::setEvents(int mode, int classicID, int platID) {
-    auto req = web::WebRequest();
+auth::Future APIClient::setEvents(int mode, int classicID, int platID) {
     matjson::Value body;
 
     body["accountID"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     body["mode"] = mode;
     body["classicId"] = classicID;
     body["platformerId"] = platID;
     body["addedBy"] = GJAccountManager::get()->m_username.c_str();
 
-    req.bodyJSON(body);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/set_events"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/set_events"), std::move(body));
 }
 
 web::WebFuture APIClient::getEvents(int mode) {
@@ -271,20 +260,17 @@ Events APIClient::getEventsParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::moveEvents(int mode, int days, int hours, int sinceDays, bool dryRun) {
-    auto req = web::WebRequest();
+auth::Future APIClient::moveEvents(int mode, int days, int hours, int sinceDays, bool dryRun) {
     matjson::Value body;
 
     body["accountID"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     body["mode"] = mode;
     body["days"] = days;
     body["hours"] = hours;
     body["sinceDays"] = sinceDays;
     body["dryRun"] = dryRun;
 
-    req.bodyJSON(body);
-    return req.post(fmt::format("{}{}", baseUrl, "/move_events"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/move_events"), std::move(body));
 }
 
 MoveEventsResponse APIClient::moveEventsParse(web::WebResponse res) {
@@ -370,8 +356,7 @@ bool APIClient::healthParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::newlevel(ManageLevelBody body) {
-    auto req = web::WebRequest();
+auth::Future APIClient::newlevel(ManageLevelBody body) {
     matjson::Value reqBody;
 
     reqBody["id"] = body.id;
@@ -379,7 +364,6 @@ web::WebFuture APIClient::newlevel(ManageLevelBody body) {
     reqBody["difficulty"] = body.difficulty;
     reqBody["length"] = body.length;
 
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["account_id"] = GJAccountManager::get()->m_accountID;
 
     if (body.difficulty == 10) {
@@ -396,9 +380,7 @@ web::WebFuture APIClient::newlevel(ManageLevelBody body) {
 
     reqBody["added_by"] = GJAccountManager::get()->m_username.c_str();
 
-    req.bodyJSON(reqBody);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/new_level"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/new_level"), std::move(reqBody));
 }
 
 bool APIClient::newLevelParse(web::WebResponse res) {
@@ -479,12 +461,10 @@ GetGrindPacksResponse APIClient::getGrindPacksParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::newGrindPack(NewGrindPackBody body) {
-    auto req = web::WebRequest();
+auth::Future APIClient::newGrindPack(NewGrindPackBody body) {
     matjson::Value reqBody;
 
     reqBody["accountID"] = GJAccountManager::get()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["title"] = body.title;
     reqBody["isStar"] = body.star;
     reqBody["levelId1"] = body.levelId1;
@@ -496,8 +476,7 @@ web::WebFuture APIClient::newGrindPack(NewGrindPackBody body) {
     reqBody["difficulty"] = body.difficulty;
     reqBody["username"] = GJAccountManager::get()->m_username.c_str();
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/new_grind_pack"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/new_grind_pack"), std::move(reqBody));
 }
 
 bool APIClient::newGrindPackParse(web::WebResponse res) {
@@ -748,50 +727,38 @@ BootupGetResponse APIClient::bootupGetParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::deleteLevel(int levelId) {
-    auto req = web::WebRequest();
+auth::Future APIClient::deleteLevel(int levelId) {
 
     matjson::Value body;
 
-    body["token"] = DataManager::getInstance().getUserToken();
     body["account_id"] = GJAccountManager::get()->m_accountID;
     body["id"] = levelId;
 
-    req.bodyJSON(body);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/delete_level"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/delete_level"), std::move(body));
 }
 
-web::WebFuture APIClient::unlockLevel(int levelId, std::string levelName) {
-    auto req = web::WebRequest();
+auth::Future APIClient::unlockLevel(int levelId, std::string levelName) {
 
     matjson::Value body;
 
-    body["token"] = DataManager::getInstance().getUserToken();
     body["accountId"] = GJAccountManager::get()->m_accountID;
     body["levelId"] = levelId;
     body["levelName"] = levelName;
     body["unbannedBy"] = GJAccountManager::get()->m_username.c_str();
 
-    req.bodyJSON(body);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/unban_level"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/unban_level"), std::move(body));
 }
 
-web::WebFuture APIClient::lockLevel(int levelId, std::string levelName) {
-    auto req = web::WebRequest();
+auth::Future APIClient::lockLevel(int levelId, std::string levelName) {
 
     matjson::Value body;
 
-    body["token"] = DataManager::getInstance().getUserToken();
     body["accountId"] = GJAccountManager::get()->m_accountID;
     body["levelId"] = levelId;
     body["levelName"] = levelName;
     body["bannedBy"] = GJAccountManager::get()->m_username.c_str();
 
-    req.bodyJSON(body);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/ban_level"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/ban_level"), std::move(body));
 }
 
 web::WebFuture APIClient::getAnnouncements() {
@@ -861,39 +828,31 @@ void APIClient::performBootupGet() {
     );
 }
 
-web::WebFuture APIClient::addAnnouncement(std::string title, std::string content) {
-    auto req = web::WebRequest();
+auth::Future APIClient::addAnnouncement(std::string title, std::string content) {
     matjson::Value reqBody;
 
     reqBody["account_id"] = GJAccountManager::sharedState()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["title"] = title;
     reqBody["content"] = content;
     reqBody["added_by"] = std::string(GJAccountManager::sharedState()->m_username);
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/new_announcement"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/new_announcement"), std::move(reqBody));
 }
 
-web::WebFuture APIClient::getLevelInfo(int levelID) {
-    web::WebRequest req = web::WebRequest();
+auth::Future APIClient::getLevelInfo(int levelID) {
     matjson::Value reqBody;
 
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["accountId"] = GJAccountManager::sharedState()->m_accountID;
     reqBody["levelId"] = levelID;
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/get_level_info_staff"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/get_level_info_staff"), std::move(reqBody));
 }
 
-web::WebFuture APIClient::changePoint(PointType type, int coinType, ManageLevelBody levelBody) {
-    auto req = web::WebRequest();
+auth::Future APIClient::changePoint(PointType type, int coinType, ManageLevelBody levelBody) {
     matjson::Value reqBody;
 
     reqBody["point"] = static_cast<int>(type);
     reqBody["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["username"] = GJAccountManager::sharedState()->m_username.c_str();
     reqBody["levelID"] = levelBody.id;
     reqBody["levelName"] = levelBody.name;
@@ -907,20 +866,16 @@ web::WebFuture APIClient::changePoint(PointType type, int coinType, ManageLevelB
     reqBody["coins"] = levelBody.coins;
     reqBody["rating"] = levelBody.rating;
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/change_point"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/change_point"), std::move(reqBody));
 }
 
-web::WebFuture APIClient::cancelVote(int levelID) {
-    auto req = web::WebRequest();
+auth::Future APIClient::cancelVote(int levelID) {
     matjson::Value reqBody;
 
     reqBody["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["levelID"] = levelID;
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/cancel_vote"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/cancel_vote"), std::move(reqBody));
 }
 
 CancelVoteResponse APIClient::cancelVoteParse(web::WebResponse res) {
@@ -937,22 +892,19 @@ CancelVoteResponse APIClient::cancelVoteParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::updateCreditsProfile() {
-    auto req = web::WebRequest();
+auth::Future APIClient::updateCreditsProfile() {
     matjson::Value reqBody;
 
     auto gm = GameManager::get();
 
     reqBody["accountId"] = GJAccountManager::get()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["icon"] = gm->getPlayerFrame();
     reqBody["color1"] = gm->getPlayerColor();
     reqBody["color2"] = gm->getPlayerColor2();
 
     reqBody["color3"] = gm->getPlayerGlow() ? gm->getPlayerGlowColor() : 0;
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/update_credits_profile"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/update_credits_profile"), std::move(reqBody));
 }
 
 UpdateCreditsProfileResponse APIClient::updateCreditsProfileParse(web::WebResponse res) {
@@ -985,18 +937,15 @@ UpdateCreditsProfileResponse APIClient::updateCreditsProfileParse(web::WebRespon
     return ret;
 }
 
-web::WebFuture APIClient::deleteNotes(int levelId, std::string levelName) {
-    auto req = web::WebRequest();
+auth::Future APIClient::deleteNotes(int levelId, std::string levelName) {
     matjson::Value reqBody;
 
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["accountID"] = GJAccountManager::sharedState()->m_accountID;
     reqBody["levelID"] = levelId;
     reqBody["levelName"] = levelName;
     reqBody["deletedBy"] = GJAccountManager::get()->m_username.c_str();
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/delete_note"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/delete_note"), std::move(reqBody));
 }
 
 web::WebFuture APIClient::getIndicators(int levelID) {
@@ -1038,18 +987,14 @@ Indicators APIClient::getIndicatorsParse(web::WebResponse res) {
     return indicators;
 }
 
-web::WebFuture APIClient::deleteGrindPack(int ID) {
-    auto req = web::WebRequest();
+auth::Future APIClient::deleteGrindPack(int ID) {
 
     matjson::Value body;
 
     body["accountID"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     body["id"] = ID;
 
-    req.bodyJSON(body);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/delete_grind_pack"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/delete_grind_pack"), std::move(body));
 }
 
 ChangePointResponse APIClient::changePointParse(web::WebResponse res) {
@@ -1076,21 +1021,17 @@ ChangePointResponse APIClient::changePointParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold, int lockThreshold) {
-    auto req = web::WebRequest();
-    req.timeout(std::chrono::seconds{30});
+auth::Future APIClient::syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold, int lockThreshold) {
     matjson::Value reqBody;
 
     reqBody["accountID"] = GJAccountManager::get()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["addThreshold"] = addThreshold;
     reqBody["deleteThreshold"] = deleteThreshold;
     reqBody["coinAddThreshold"] = coinAddThreshold;
     reqBody["coinDeleteThreshold"] = coinDeleteThreshold;
     reqBody["lockThreshold"] = lockThreshold;
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/sync_levels"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/sync_levels"), std::move(reqBody), std::chrono::seconds{30});
 }
 
 SyncLevelsResponse APIClient::syncLevelsParse(web::WebResponse res) {
@@ -1220,16 +1161,13 @@ AddAnnouncementResponse APIClient::addAnnouncementParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::deleteAnnouncement(int announcementId) {
-    auto req = web::WebRequest();
+auth::Future APIClient::deleteAnnouncement(int announcementId) {
     matjson::Value reqBody;
 
     reqBody["account_id"] = GJAccountManager::sharedState()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["announcement_id"] = announcementId;
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/delete_announcement"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/delete_announcement"), std::move(reqBody));
 }
 
 DeleteAnnouncementResponse APIClient::deleteAnnouncementParse(web::WebResponse res) {
@@ -1326,12 +1264,10 @@ SetRolesBody APIClient::makeSetRolesBody(
     return ret;
 }
 
-web::WebFuture APIClient::setRoles(const SetRolesBody& body) {
-    auto req = web::WebRequest();
+auth::Future APIClient::setRoles(const SetRolesBody& body) {
     matjson::Value reqBody;
 
     reqBody["account_id"] = body.accountID;
-    reqBody["token"] = body.token;
     reqBody["target_account_id"] = body.targetAccountID;
     reqBody["targetUsername"] = body.targetUsername;
     reqBody["targetIcon"] = body.targetIcon;
@@ -1344,8 +1280,7 @@ web::WebFuture APIClient::setRoles(const SetRolesBody& body) {
     reqBody["is_contributor"] = body.isContributor;
     reqBody["is_booster"] = body.isBooster;
 
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/set_roles"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/set_roles"), std::move(reqBody));
 }
 
 SetRolesResponse APIClient::setRolesParse(web::WebResponse res) {
@@ -1369,14 +1304,11 @@ SetRolesResponse APIClient::setRolesParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::wipePet(int accountID) {
-    auto req = web::WebRequest();
+auth::Future APIClient::wipePet(int accountID) {
     matjson::Value reqBody;
     reqBody["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["targetAccountID"] = accountID;
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/wipe_pet_data"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/wipe_pet_data"), std::move(reqBody));
 }
 
 WipePetResponse APIClient::wipePetParse(web::WebResponse res) {
@@ -1400,15 +1332,12 @@ WipePetResponse APIClient::wipePetParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::banPet(int accountID, std::string reason) {
-    auto req = web::WebRequest();
+auth::Future APIClient::banPet(int accountID, std::string reason) {
     matjson::Value reqBody;
     reqBody["accountId"] = GJAccountManager::sharedState()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["targetAccountId"] = accountID;
     reqBody["banReason"] = reason;
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/ban_pet"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/ban_pet"), std::move(reqBody));
 }
 
 BanPetResponse APIClient::banPetParse(web::WebResponse res) {
@@ -1432,14 +1361,11 @@ BanPetResponse APIClient::banPetParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::unbanPet(int accountID) {
-    auto req = web::WebRequest();
+auth::Future APIClient::unbanPet(int accountID) {
     matjson::Value reqBody;
     reqBody["accountId"] = GJAccountManager::sharedState()->m_accountID;
-    reqBody["token"] = DataManager::getInstance().getUserToken();
     reqBody["targetAccountId"] = accountID;
-    req.bodyJSON(reqBody);
-    return req.post(fmt::format("{}{}", baseUrl, "/unban_pet"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/unban_pet"), std::move(reqBody));
 }
 
 UnbanPetResponse APIClient::unbanPetParse(web::WebResponse res) {
@@ -1463,15 +1389,11 @@ UnbanPetResponse APIClient::unbanPetParse(web::WebResponse res) {
     return ret;
 }
 
-web::WebFuture APIClient::requestStaffAccess() {
+auth::Future APIClient::requestStaffAccess() {
     matjson::Value body;
     body["account_id"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
 
-    web::WebRequest req;
-    req.bodyJSON(body);
-
-    return req.post(fmt::format("{}{}", baseUrl, "/check_helper_new"));
+    return auth::post(fmt::format("{}{}", baseUrl, "/check_helper_new"), std::move(body));
 }
 
 ReqAccessResponse APIClient::requestStaffAccessParse(web::WebResponse res) {
@@ -1498,35 +1420,15 @@ ReqAccessResponse APIClient::requestStaffAccessParse(web::WebResponse res) {
 
 void APIClient::performGetToken() {
     geode::queueInMainThread([] {
-        auto accountData = argon::getGameAccountData();
-
-        async::spawn([data = std::move(accountData)] -> arc::Future<> {
-                argon::_overrides overrides = argon::g_overrides;
-                overrides.account = data;
-                auto res = co_await argon::startAuth({ ._overrides = overrides });
-
-                if (!res.ok()) {
-                    geode::queueInMainThread([] {
-                        Notification::create("[Level Grind] Failed to get Argon token!")->show();
-                    });
-                    co_return;
+        async::spawn(auth::token(), [](std::string token) {
+            geode::queueInMainThread([token = std::move(token)] {
+                if (token.empty()) {
+                    Notification::create("[Level Grind] Failed to log in with Argon!")->show();
+                    return;
                 }
-
-                auto token = std::move(res).unwrap();
-                DataManager::getInstance().setUserToken(token);
-
-                geode::queueInMainThread([] {
-                    GrindClansManager::getInstance().flushClaims();
-                });
-
-                co_await arc::sleep(asp::Duration::fromSecs(10 * 60));
-                geode::queueInMainThread([] {
-                    APIClient::getInstance().performGetToken();
-                });
-
-                co_return;
-            }
-        );
+                GrindClansManager::getInstance().flushClaims();
+            });
+        });
     });
 }
 

@@ -1,3 +1,5 @@
+#include "../../managers/Auth.hpp"
+#include "../popups/AchievementsPopup.hpp"
 #include "SettingsLayer.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
@@ -720,10 +722,7 @@ void SettingsLayer::createOtherList() {
                         uPopupRef->showFailMessage("Failed! Try again later.");
                         return;
                     } else {
-                        auto token = std::move(res).unwrap();
-                        DataManager::getInstance().setUserToken(token);
-
-                        uPopupRef->showSuccessMessage("Success! Argon token saved.");
+                        uPopupRef->showSuccessMessage("Success! Logged in with Argon.");
                         return;
                     }
                 }
@@ -734,6 +733,45 @@ void SettingsLayer::createOtherList() {
         .collect();
 
     list->addCell(argonCell);
+
+    list->addCell(makeHeaderCell("Notifications"));
+
+    list->addCell(makeToggleCell(
+        "Disable Achievement Popups",
+        "Achievements still unlock, but no banner shows at the top of the screen.",
+        "disable-achievement-popups",
+        this
+    ));
+
+    auto notifCell = Build(CCMenu::create())
+        .ignoreAnchorPointForPos(false)
+        .contentSize(CELL_SIZE)
+        .id("customize-notifications-cell")
+        .collect();
+    auto notifLabel = Build(CCLabelBMFont::create("Customize Notifications", "bigFont.fnt"))
+        .limitLabelWidth(CELL_SIZE.width * 0.62f, 0.5f, 0.1f)
+        .anchorPoint({ 0, 0.5f })
+        .pos({ 8, CELL_SIZE.height / 2 })
+        .parent(notifCell)
+        .collect();
+    Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+        .scale(0.5f)
+        .intoMenuItem([] {
+            FLAlertLayer::create("Notifications",
+                "Small cards at the bottom right for clan messages, new events, new levels and more. Pick which ones you want.",
+                "OK")->show();
+        })
+        .pos({ 8 + notifLabel->getScaledContentWidth() + 10, CELL_SIZE.height / 2 })
+        .parent(notifCell);
+    Build(ButtonSprite::create("Open", "bigFont.fnt", "GJ_button_04.png", 0.8f))
+        .scale(0.55f)
+        .intoMenuItem([] {
+            NotificationsPopup::create()->show();
+        })
+        .pos({ CELL_SIZE.width - 29, CELL_SIZE.height / 2 })
+        .parent(notifCell);
+    list->addCell(notifCell);
+
 
     list->addCell(makeHeaderCell("Pet Settings"));
 

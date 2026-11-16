@@ -35,20 +35,6 @@ std::vector<DiscordPopup::DiscordPageInfo> DataManager::getDiscordPages() {
     return discordPages;
 }
 
-void DataManager::setUserToken(const std::string& token) {
-    userToken = token;
-    return;
-}
-
-std::string DataManager::getUserToken() {
-    return userToken;
-}
-
-std::string DataManager::getUserTokenFromSaved() {
-    auto token = Mod::get()->getSavedValue<std::string>("user-token");
-    return token;
-}
-
 void DataManager::initPermsOnBootup() {
     GrindPosition savedPos = getUserPosFromSaved();
     setUserPosition(savedPos);

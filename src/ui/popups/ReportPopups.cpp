@@ -1,3 +1,4 @@
+#include "../../managers/Auth.hpp"
 #include "ReportPopups.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/DataManager.hpp"
@@ -138,7 +139,6 @@ void ReportPopup::refreshCategories() {
 void ReportPopup::onSend() {
     matjson::Value body;
     body["accountId"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     body["targetType"] = static_cast<int>(m_type);
     body["targetId"] = m_targetId;
     body["category"] = m_category;
@@ -348,7 +348,6 @@ private:
         auto act = [self, id, owner](std::string action, std::string note, std::string done) {
             matjson::Value body;
             body["accountId"] = GJAccountManager::get()->m_accountID;
-            body["token"] = DataManager::getInstance().getUserToken();
             body["reportId"] = static_cast<int64_t>(id);
             body["action"] = action;
             body["note"] = note;
@@ -464,7 +463,6 @@ void StaffReportsPopup::load() {
 
     matjson::Value body;
     body["accountId"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     body["status"] = m_status;
     body["page"] = m_page;
 

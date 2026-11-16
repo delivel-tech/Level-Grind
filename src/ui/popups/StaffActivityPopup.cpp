@@ -1,3 +1,4 @@
+#include "../../managers/Auth.hpp"
 #include "StaffActivityPopup.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/DataManager.hpp"
@@ -94,13 +95,10 @@ void StaffActivityPopup::load(int mode) {
     Ref<StaffActivityPopup> self = this;
     matjson::Value body;
     body["accountId"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     body["mode"] = mode;
-    auto req = web::WebRequest();
-    req.bodyJSON(body);
     m_listener.spawn(
-        req.post(fmt::format("{}/{}", APIClient::getInstance().baseUrl,
-            m_notes ? "get_staff_notes_activity" : "get_staff_activity")),
+        auth::post(fmt::format("{}/{}", APIClient::getInstance().baseUrl,
+            m_notes ? "get_staff_notes_activity" : "get_staff_activity"), body),
         [self, mode, notes = m_notes](web::WebResponse res) {
             if (!self || self->m_mode != mode || self->m_notes != notes) return;
             if (self->m_status) {

@@ -1,3 +1,4 @@
+#include "AchievementsManager.hpp"
 #include "GrindClansManager.hpp"
 #include "APIClient.hpp"
 #include "DataManager.hpp"
@@ -24,14 +25,11 @@ matjson::Value GrindClansManager::playerLook() {
 matjson::Value GrindClansManager::authBody() {
     matjson::Value body = playerLook();
     body["accountId"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     return body;
 }
 
-web::WebFuture GrindClansManager::post(std::string const& endpoint, matjson::Value body) {
-    auto req = web::WebRequest();
-    req.bodyJSON(body);
-    return req.post(fmt::format("{}/{}", APIClient::getInstance().baseUrl, endpoint));
+auth::Future GrindClansManager::post(std::string const& endpoint, matjson::Value body) {
+    return auth::post(fmt::format("{}/{}", APIClient::getInstance().baseUrl, endpoint), std::move(body));
 }
 
 static long long asLL(matjson::Value const& v) {
@@ -384,7 +382,7 @@ void GrindClansManager::queueLevelClaim(int levelId, int stars, bool platformer)
 }
 
 void GrindClansManager::flushClaims() {
-    if (DataManager::getInstance().getUserToken().empty()) return;
+    if (GJAccountManager::get()->m_accountID <= 0) return;
     if (GJAccountManager::get()->m_accountID <= 0) return;
     if (!m_packClaiming) this->sendNextPackClaim();
     if (!m_claiming) this->sendNextClaim();
@@ -483,6 +481,7 @@ void GrindClansManager::sendNextPackClaim() {
         m_lastWallet = parseWallet(data["wallet"]);
         m_hasWallet = true;
         drop(true);
+        achievements::check();
         this->sendNextPackClaim();
     });
 }
@@ -539,6 +538,7 @@ void GrindClansManager::sendNextClaim() {
                 Mod::get()->setSavedValue(kQueueKey, matjson::Value(arr));
             }
 
+            achievements::check();
             this->sendNextClaim();
         }
     );

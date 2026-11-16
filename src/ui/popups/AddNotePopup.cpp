@@ -1,3 +1,4 @@
+#include "../../managers/Auth.hpp"
 #include "AddNotePopup.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "../../managers/DataManager.hpp"
@@ -84,7 +85,6 @@ void AddNotePopup::onAddBtn(CCObject* sender) {
     matjson::Value body;
 
     body["accountID"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     body["levelID"] = m_levelId;
     body["levelName"] = m_levelName;
     body["note"] = m_input->getString().c_str();
@@ -98,7 +98,7 @@ void AddNotePopup::onAddBtn(CCObject* sender) {
     auto uPopupRef = Ref(uPopup);
 
     m_listener.spawn(
-        req.post("https://api.delivel.tech/v2/new_note"),
+        auth::post("https://api.delivel.tech/v2/new_note", body),
         [uPopupRef](web::WebResponse res) {
             if (!uPopupRef) return;
             if (!res.ok()) {

@@ -1,3 +1,4 @@
+#include "../../managers/Auth.hpp"
 #include <Geode/Geode.hpp>
 #include "RoleSelectorPopup.hpp"
 #include "../../managers/DataManager.hpp"
@@ -166,7 +167,7 @@ bool RoleSelectorPopup::init(UserRoles roles, GJUserScore* targetUser) {
                 APIClient::getInstance().setRoles(
                     APIClient::getInstance().makeSetRolesBody(
                         GJAccountManager::sharedState()->m_accountID,
-                        DataManager::getInstance().getUserToken(),
+                        "",
                         m_targetUser->m_accountID,
                         std::string(m_targetUser->m_userName),
                         m_targetUser->m_playerCube,

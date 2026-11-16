@@ -1,3 +1,4 @@
+#include "../popups/AchievementsPopup.hpp"
 #include "../../managers/BadgesManager.hpp"
 #include "CreatorLayer.hpp"
 #include "Geode/cocos/actions/CCActionEase.h"
@@ -237,6 +238,8 @@ bool CreatorLayer::init() {
 
     this->showCatPage(0);
 
+    achievements::check();
+
     Ref<CreatorLayer> badgeSelf = this;
     badges::refresh([badgeSelf] {
         if (badgeSelf) badgeSelf->updateBadges();
@@ -346,6 +349,15 @@ bool CreatorLayer::initFarMenus() {
         .id("announcement-btn")
         .parent(leftSideMenu)
         .collect();
+
+    Build(CircleButtonSprite::createWithSpriteFrameName("rankIcon_1_001.png", 1.f, CircleBaseColor::Blue))
+        .scale(1.2f)
+        .intoMenuItem([] {
+            AchievementsPopup::create()->show();
+        })
+        .scaleMult(1.1f)
+        .id("achievements-btn")
+        .parent(leftSideMenu);
 
     auto getBadge = [] {
         GrindPosition pos = DataManager::getInstance().getUserPosition();

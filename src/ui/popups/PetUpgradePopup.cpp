@@ -1,3 +1,4 @@
+#include "../../managers/Auth.hpp"
 #include "PetUpgradePopup.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include <Geode/binding/ButtonSprite.hpp>
@@ -89,7 +90,6 @@ void PetUpgradePopup::onUpgradeRarity(CCObject* sender) {
 
     matjson::Value body;
     body["accountId"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
 
     body["newRarity"] = m_petData.petRarity + 1;
     body["upgradeCost"] = upgCost;
@@ -102,7 +102,7 @@ void PetUpgradePopup::onUpgradeRarity(CCObject* sender) {
     auto uPopupRef = Ref(upopup);
 
     m_listener.spawn(
-        req.post("https://api.delivel.tech/v2/upgrade_pet_rarity"),
+        auth::post("https://api.delivel.tech/v2/upgrade_pet_rarity", body),
         [uPopupRef](web::WebResponse res) {
             if (!uPopupRef) return;
             if (!res.ok()) {
@@ -160,7 +160,6 @@ void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
 
     matjson::Value body;
     body["accountId"] = GJAccountManager::sharedState()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
 
     body["newLevel"] = m_petData.petLevel + 1;
     body["upgradeCost"] = upgCost;
@@ -173,7 +172,7 @@ void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
     auto uPopupRef = Ref(upopup);
 
     m_listener.spawn(
-        req.post("https://api.delivel.tech/v2/upgrade_pet_level"),
+        auth::post("https://api.delivel.tech/v2/upgrade_pet_level", body),
         [uPopupRef](web::WebResponse res) {
             if (!uPopupRef) return;
             if (!res.ok()) {

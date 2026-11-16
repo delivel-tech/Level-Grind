@@ -1,3 +1,4 @@
+#include "../../managers/Auth.hpp"
 #include "PetRenamePopup.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
@@ -64,7 +65,6 @@ void PetRenamePopup::onOKBtn(CCObject* sender) {
     auto upopup = UploadActionPopup::create(nullptr, "Updating pet name...");
     upopup->show();
 
-    body["token"] = DataManager::getInstance().getUserToken();
     body["accountId"] = GJAccountManager::get()->m_accountID;
     body["petName"] = m_input->getString().c_str();
 
@@ -74,7 +74,7 @@ void PetRenamePopup::onOKBtn(CCObject* sender) {
     auto self = Ref(this);
 
     m_listener.spawn(
-        req.post("https://api.delivel.tech/v2/update_pet_name"),
+        auth::post("https://api.delivel.tech/v2/update_pet_name", body),
         [uPopupRef, self](web::WebResponse res) {
             if (!uPopupRef || !self) return;
             if (!res.ok()) {

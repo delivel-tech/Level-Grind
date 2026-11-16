@@ -1,4 +1,5 @@
 #pragma once
+#include "Auth.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/utils/web.hpp>
 #include <matjson.hpp>
@@ -138,7 +139,8 @@ class GrindClansManager : public Singleton<GrindClansManager> {
 public:
     static matjson::Value playerLook();
     static matjson::Value authBody();
-    static web::WebFuture post(std::string const& endpoint, matjson::Value body);
+
+    static auth::Future post(std::string const& endpoint, matjson::Value body);
 
     static ClanInfo parseClan(matjson::Value const& v);
     static ClanDetails parseDetails(matjson::Value const& v);

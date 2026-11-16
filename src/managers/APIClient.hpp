@@ -1,4 +1,5 @@
 #pragma once
+#include "Auth.hpp"
 #include "../utils/singleton.hpp"
 #include "../utils/globals.hpp"
 
@@ -38,7 +39,7 @@ public:
     web::WebFuture getUserRoles(int accountID);
     GetUserRolesResponse getUserRolesParse(web::WebResponse res);
 
-    web::WebFuture setRoles(const SetRolesBody& body);
+    auth::Future setRoles(const SetRolesBody& body);
     SetRolesResponse setRolesParse(web::WebResponse res);
 
     SetRolesBody makeSetRolesBody(
@@ -57,80 +58,80 @@ public:
         bool isBooster
     );
 
-    web::WebFuture wipePet(int accountID);
+    auth::Future wipePet(int accountID);
     WipePetResponse wipePetParse(web::WebResponse res);
 
-    web::WebFuture banPet(int accountID, std::string reason);
+    auth::Future banPet(int accountID, std::string reason);
     BanPetResponse banPetParse(web::WebResponse res);
 
-    web::WebFuture unbanPet(int accountID);
+    auth::Future unbanPet(int accountID);
     UnbanPetResponse unbanPetParse(web::WebResponse res);
 
     web::WebFuture getAnnouncements();
     AnnouncementsResponse getAnnouncementsParse(web::WebResponse res);
 
-    web::WebFuture addAnnouncement(std::string title, std::string content);
+    auth::Future addAnnouncement(std::string title, std::string content);
     AddAnnouncementResponse addAnnouncementParse(web::WebResponse res);
 
-    web::WebFuture deleteAnnouncement(int announcementId);
+    auth::Future deleteAnnouncement(int announcementId);
     DeleteAnnouncementResponse deleteAnnouncementParse(web::WebResponse res);
 
-    web::WebFuture requestStaffAccess();
+    auth::Future requestStaffAccess();
     ReqAccessResponse requestStaffAccessParse(web::WebResponse res);
 
-    web::WebFuture getLevelInfo(int levelID);
+    auth::Future getLevelInfo(int levelID);
     GetLevelInfoResponse getLevelInfoParse(web::WebResponse res);
 
-    web::WebFuture changePoint(PointType type, int coinType, ManageLevelBody levelBody);
+    auth::Future changePoint(PointType type, int coinType, ManageLevelBody levelBody);
     ChangePointResponse changePointParse(web::WebResponse res);
 
-    web::WebFuture syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold, int lockThreshold);
+    auth::Future syncLevels(int addThreshold, int deleteThreshold, int coinAddThreshold, int coinDeleteThreshold, int lockThreshold);
     SyncLevelsResponse syncLevelsParse(web::WebResponse res);
 
-    web::WebFuture newlevel(ManageLevelBody body);
+    auth::Future newlevel(ManageLevelBody body);
     bool newLevelParse(web::WebResponse res);
 
     web::WebFuture getGrindPacks();
     GetGrindPacksResponse getGrindPacksParse(web::WebResponse res);
 
-    web::WebFuture setEvents(int mode, int classicID, int platID);
+    auth::Future setEvents(int mode, int classicID, int platID);
     bool setEventsParse(web::WebResponse res);
 
-    web::WebFuture moveEvents(int mode, int days, int hours, int sinceDays, bool dryRun);
+    auth::Future moveEvents(int mode, int days, int hours, int sinceDays, bool dryRun);
     MoveEventsResponse moveEventsParse(web::WebResponse res);
 
     web::WebFuture getEvents(int mode);
     Events getEventsParse(web::WebResponse res);
 
-    web::WebFuture syncPet();
+    auth::Future syncPet();
 
     web::WebFuture health();
     bool healthParse(web::WebResponse res);
 
-    web::WebFuture newGrindPack(NewGrindPackBody body);
+    auth::Future newGrindPack(NewGrindPackBody body);
     bool newGrindPackParse(web::WebResponse res);
 
-    web::WebFuture newWeeklyAch(AchievementCellInfo info1, AchievementCellInfo info2, AchievementCellInfo info3);
+    auth::Future newWeeklyAch(AchievementCellInfo info1, AchievementCellInfo info2, AchievementCellInfo info3);
     bool newWeeklyAchParse(web::WebResponse res);
 
     web::WebFuture getWeeklyAch();
     WeeklyAchResponse getWeeklyAchParse(web::WebResponse res);
 
-    web::WebFuture deleteLevel(int levelId);
+    auth::Future deleteLevel(int levelId);
 
-    web::WebFuture lockLevel(int levelId, std::string levelName);
-    web::WebFuture unlockLevel(int levelId, std::string levelName);
-    web::WebFuture deleteNotes(int levelId, std::string levelName);
+    auth::Future lockLevel(int levelId, std::string levelName);
+    auth::Future unlockLevel(int levelId, std::string levelName);
+    auth::Future deleteNotes(int levelId, std::string levelName);
 
     web::WebFuture getIndicators(int levelID);
     Indicators getIndicatorsParse(web::WebResponse res);
 
-    web::WebFuture deleteGrindPack(int ID);
+    auth::Future deleteGrindPack(int ID);
 
-    web::WebFuture cancelVote(int levelID);
+    auth::Future cancelVote(int levelID);
     CancelVoteResponse cancelVoteParse(web::WebResponse res);
 
-    web::WebFuture updateCreditsProfile();
+    auth::Future updateCreditsProfile();
     UpdateCreditsProfileResponse updateCreditsProfileParse(web::WebResponse res);
 
     static std::string errorMessage(web::WebResponse& res, std::string fallback);

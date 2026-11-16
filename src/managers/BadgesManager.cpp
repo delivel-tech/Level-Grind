@@ -1,3 +1,4 @@
+#include "Auth.hpp"
 #include "BadgesManager.hpp"
 #include "APIClient.hpp"
 #include "GrindClansManager.hpp"
@@ -56,11 +57,8 @@ T seen(const char* k, T current) {
 
 void refresh(geode::Function<void()> onDone) {
     auto body = GrindClansManager::authBody();
-    auto req = web::WebRequest();
-    req.bodyJSON(body);
-    req.timeout(std::chrono::seconds{ 15 });
     auto done = std::make_shared<geode::Function<void()>>(std::move(onDone));
-    task().spawn(req.post(fmt::format("{}/badges", APIClient::getInstance().baseUrl)), [done](web::WebResponse res) {
+    task().spawn(auth::post(fmt::format("{}/badges", APIClient::getInstance().baseUrl), std::move(body), std::chrono::seconds{ 15 }), [done](web::WebResponse res) {
         auto json = res.json();
         if (res.ok() && json) {
             auto v = json.unwrap();

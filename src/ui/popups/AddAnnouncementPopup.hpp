@@ -1,4 +1,3 @@
-// admins / owners only popup
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include "../BasePopup.hpp"

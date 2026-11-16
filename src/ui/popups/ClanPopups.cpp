@@ -1,3 +1,4 @@
+#include "../../managers/Auth.hpp"
 #include "ClanPopups.hpp"
 #include "ReportPopups.hpp"
 #include "../ClanUI.hpp"
@@ -1388,7 +1389,6 @@ bool StaffLogosPopup::init() {
 static matjson::Value staffBody() {
     matjson::Value body;
     body["accountId"] = GJAccountManager::get()->m_accountID;
-    body["token"] = DataManager::getInstance().getUserToken();
     return body;
 }
 

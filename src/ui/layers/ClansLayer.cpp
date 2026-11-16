@@ -663,7 +663,7 @@ void ClansLayer::buildClanView() {
     m_chatInput->hideBG();
     m_chatInput->setDelegate(this);
     m_chatInput->setPosition({ 6.f + 260.f * 0.72f / 2.f + 4.f, 17.f });
-    m_chatInput->getInputNode()->setParseEmotes(1);
+    m_chatInput->getInputNode()->setParseEmotes(EmoteSprite::maxEmotesMessage());
     m_left->addChild(m_chatInput, 6);
 
     auto menu = overlayMenu(m_left);
