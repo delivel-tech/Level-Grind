@@ -19,6 +19,7 @@ public:
         std::string petName;
         int petStars;
         int petMoons;
+        long long gp = 0;
         int petLevel;
         int petRarity;
         bool isBanned;

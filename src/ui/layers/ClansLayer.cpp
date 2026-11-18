@@ -18,6 +18,7 @@
 #include <UIBuilder.hpp>
 #include <ctime>
 #include <fmt/format.h>
+#include "../popups/GrindProfilePopup.hpp"
 
 namespace levelgrind {
 
@@ -313,6 +314,7 @@ void ClansLayer::reload() {
         }
         self->m_serverNow = self->m_home.now;
         self->updateWallet(self->m_home.wallet);
+        self->m_browsingInClan = false;
         if (self->m_home.hasClan) self->buildClanView();
         else self->buildBrowse();
         self->buildTasks();
@@ -398,6 +400,7 @@ void ClansLayer::buildBrowse() {
     menu->addChild(m_nextBtn);
 
     m_pageLabel = lbl(m_left, "", { w / 2.f, 14.f }, 0.28f, "bigFont.fnt", { 0.5f, 0.5f });
+
 
     this->loadBrowse();
 }
@@ -552,7 +555,7 @@ CCNode* ClansLayer::makeClanCell(ClanInfo const& c, float width, bool ranked) {
         self->onJoin(c);
     });
     joinBtn->setPosition({ width - 24.f, 17.f });
-    menu->addChild(joinBtn);
+    if (!m_home.hasClan) menu->addChild(joinBtn);
 
     return row;
 }
@@ -1109,8 +1112,19 @@ void ClansLayer::buildActions() {
     };
     std::vector<Act> acts;
 
-    acts.push_back({ accountTop("rankIcon_1_001.png", 0.9f, AccountBaseColor::Blue), "Top Clans", [self] {
-        if (self) ClanLeaderboardPopup::create(self->m_home.clan.info.id)->show();
+    acts.push_back({ accountTop("rankIcon_1_001.png", 0.9f, AccountBaseColor::Blue), m_browsingInClan ? "My Clan" : "All Clans", [self] {
+        if (!self) return;
+        self->m_browsingInClan = !self->m_browsingInClan;
+        if (self->m_browsingInClan) {
+            self->closeEmotePicker();
+            self->unschedule(schedule_selector(ClansLayer::pollChat));
+        }
+        Loader::get()->queueInMainThread([self] {
+            if (!self) return;
+            if (self->m_browsingInClan) self->buildBrowse();
+            else self->buildClanView();
+            self->buildActions();
+        });
     }, 0 });
     acts.push_back({ frameTop("accountBtn_friends_001.png"), "Members", [self] {
         if (self) ClanMembersPopup::create(self->m_home.clan, [self] { if (self) self->reload(); })->show();
@@ -1229,7 +1243,7 @@ void ClansLayer::openMention(std::string const& name) {
     auto lower = string::toLower(name);
     for (auto const& m : m_home.clan.members) {
         if (string::toLower(m.username) == lower) {
-            ProfilePage::create(m.accountId, false)->show();
+            GrindProfilePopup::create(m.accountId)->show();
             return;
         }
     }

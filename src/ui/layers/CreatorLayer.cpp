@@ -1,3 +1,4 @@
+#include "GrindCalendarLayer.hpp"
 #include "../popups/AchievementsPopup.hpp"
 #include "../../managers/BadgesManager.hpp"
 #include "CreatorLayer.hpp"
@@ -35,6 +36,11 @@
 #include "PetLayer.hpp"
 #include "ClansLayer.hpp"
 #include "../../managers/PetManager.hpp"
+#include "GrindLeaderboardsLayer.hpp"
+#include "../popups/GrindProfilePopup.hpp"
+#include <cue/PlayerIcon.hpp>
+#include <Geode/binding/GJAccountManager.hpp>
+#include <Geode/binding/GameManager.hpp>
 
 namespace levelgrind {
 
@@ -204,6 +210,22 @@ bool CreatorLayer::init() {
         .id("helper-suggestions-cat")
         .collect();
 
+    auto calendarCat = Build(CCSprite::createWithSpriteFrameName("clans_cat.png"_spr))
+        .intoMenuItem([] {
+            GrindCalendarLayer::create()->open();
+        })
+        .parent(catMenu)
+        .id("calendar-cat")
+        .collect();
+
+    auto leaderboardsCat = Build(CCSprite::createWithSpriteFrameName("clans_cat.png"_spr))
+        .intoMenuItem([] {
+            GrindLeaderboardsLayer::create()->open();
+        })
+        .parent(catMenu)
+        .id("leaderboards-cat")
+        .collect();
+
     for (const auto& obj : CCArrayExt(catMenu->m_pChildren)) {
         CCMenuItemSpriteExtra* currentCat = typeinfo_cast<CCMenuItemSpriteExtra*>(obj);
         if (!currentCat) continue;
@@ -325,6 +347,28 @@ bool CreatorLayer::initFarMenus() {
         .collect();
 
     if (!leftSideMenu) return false;
+
+    auto gm = GameManager::get();
+    auto ownIcon = cue::PlayerIcon::create(cue::Icons{
+        IconType::Cube, gm->getPlayerFrame(), gm->getPlayerColor(), gm->getPlayerColor2(),
+        gm->getPlayerGlow() ? gm->getPlayerGlowColor() : -1
+    });
+    Build(CircleButtonSprite::create(ownIcon, CircleBaseColor::Blue))
+        .with([](CircleButtonSprite* spr) {
+            spr->setTopRelativeScale(0.8f);
+        })
+        .scale(1.2f)
+        .intoMenuItem([] {
+            int id = GJAccountManager::get()->m_accountID;
+            if (id <= 0) {
+                Notification::create("Log in to your GD account to see your Grind Profile", NotificationIcon::Info)->show();
+                return;
+            }
+            GrindProfilePopup::create(id, GJAccountManager::get()->m_username)->show();
+        })
+        .scaleMult(1.1f)
+        .id("grind-profile-btn")
+        .parent(leftSideMenu);
 
     auto settingsBtn = Build(CircleButtonSprite::createWithSprite("settings_gear.png"_spr, 1.f, CircleBaseColor::Blue))
         .with([](CircleButtonSprite* spr) {

@@ -25,6 +25,7 @@
 #include "../../utils/utils.hpp"
 #include "AddNotePopup.hpp"
 #include <cue/ListNode.hpp>
+#include "GrindProfilePopup.hpp"
 
 using namespace geode::prelude;
 
@@ -616,7 +617,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 auto staffUsernameBtn = Build(CCLabelBMFont::create(fmt::format("{}", pointInfo.staffUsername).c_str(), "goldFont.fnt"))
                     .limitLabelWidth(100, 1.f, 0.2f)
                     .intoMenuItem([pointInfo] {
-                        ProfilePage::create(pointInfo.staffId, false)->show();
+                        GrindProfilePopup::create(pointInfo.staffId)->show();
                     })
                     .parent(cellMenu)
                     .collect();

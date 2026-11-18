@@ -78,9 +78,9 @@ void PetUpgradePopup::onUpgradeRarity(CCObject* sender) {
     }
     int upgCost = getUpgradeRarityCostByCurrRarity(m_petData.petRarity);
 
-    if (m_petData.petMoons < upgCost) {
+    if (m_petData.gp < upgCost) {
         Notification::create(
-            fmt::format("Not enough moons. Required for upgrade: {}", upgCost),
+            fmt::format("Not enough Grind Points. Required for upgrade: {}", upgCost),
             NotificationIcon::Error
         )->show();
         return;
@@ -148,9 +148,9 @@ void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
 
     int upgCost = getUpgradeLvlCostByLevel(m_petData.petLevel);
 
-    if (m_petData.petStars < upgCost) {
+    if (m_petData.gp < upgCost) {
         Notification::create(
-            fmt::format("Not enough stars. Required for upgrade: {}", upgCost),
+            fmt::format("Not enough Grind Points. Required for upgrade: {}", upgCost),
             NotificationIcon::Error
         )->show();
         return;
@@ -207,16 +207,16 @@ void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
 
 int PetUpgradePopup::getUpgradeRarityCostByCurrRarity(int rarity) {
     switch (rarity) {
-        case 1: return 500; break;
-        case 2: return 2000; break;
-        case 3: return 4000; break;
+        case 1: return 1500; break;
+        case 2: return 4000; break;
+        case 3: return 8000; break;
         default: return 999999; break;
     }
 }
 
 int PetUpgradePopup::getUpgradeLvlCostByLevel(int petLevel) {
     const int MAX_LEVEL = 30;
-    const int TOTAL_COST = 100000;
+    const int TOTAL_COST = 20000; // Grind Points for all 30 levels
     
     auto baseCost = [&](int level) -> double {
         return pow(level, 2);

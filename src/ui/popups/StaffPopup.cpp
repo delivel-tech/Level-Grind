@@ -10,6 +10,7 @@
 #include "EventsManagePopup.hpp"
 #include "StaffActivityPopup.hpp"
 #include "ReportPopups.hpp"
+#include "FindPlayerPopup.hpp"
 
 namespace levelgrind {
 
@@ -93,6 +94,13 @@ bool StaffPopup::init() {
             StaffLogosPopup::create()->show();
         })
         .id("clan-logos-btn")
+        .parent(buttonsMenu);
+
+    Build(CircleButtonSprite::createWithSpriteFrameName("gj_findBtn_001.png", 0.9f))
+        .intoMenuItem([] {
+            FindPlayerPopup::create()->show();
+        })
+        .id("find-player-btn")
         .parent(buttonsMenu);
 
     if (pos == GrindPosition::Owner) {

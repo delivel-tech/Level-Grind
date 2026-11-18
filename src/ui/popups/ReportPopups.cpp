@@ -13,6 +13,7 @@
 #include <UIBuilder.hpp>
 #include <ctime>
 #include <fmt/format.h>
+#include "GrindProfilePopup.hpp"
 
 namespace levelgrind {
 
@@ -262,7 +263,7 @@ void PetLeaderboardPopup::load() {
                     if (profile) {
                         profile->setScale(0.45f);
                         auto pBtn = CCMenuItemExt::createSpriteExtra(profile, [accountId](CCObject*) {
-                            ProfilePage::create(accountId, false)->show();
+                            GrindProfilePopup::create(accountId)->show();
                         });
                         pBtn->setPosition({ w - 48.f, 15.f });
                         menu->addChild(pBtn);
@@ -363,7 +364,7 @@ private:
         };
 
         if (type != 0 && targetId > 0) {
-            add("View Profile", "GJ_button_04.png", [targetId] { ProfilePage::create(targetId, false)->show(); });
+            add("View Profile", "GJ_button_04.png", [targetId] { GrindProfilePopup::create(targetId)->show(); });
         }
         add("Dismiss (nothing wrong)", "GJ_button_04.png", [act] { act("dismiss", "", "Report dismissed."); });
         add("Mark as handled", "GJ_button_01.png", [act] { act("resolve", "", "Marked as handled."); });

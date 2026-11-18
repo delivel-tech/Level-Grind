@@ -192,7 +192,7 @@ void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
 
     auto statsPanelCS = statsPanel->getContentSize();
 
-    auto createStatRow = [&](float y, char const* iconFrame, int value) {
+    auto createStatRow = [&](float y, char const* iconFrame, long long value) {
         auto row = CCNode::create();
         row->setContentSize({statsPanelCS.width - 15.f, 20.f});
         row->setAnchorPoint({0.f, 0.5f});
@@ -201,7 +201,7 @@ void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
 
         auto icon = CCSprite::create(iconFrame);
         icon->setAnchorPoint({0.f, 0.5f});
-        icon->setScale(1.2f);
+        icon->setScale(0.9f);
         icon->setPosition({0.f, row->getContentSize().height / 2.f});
         row->addChild(icon);
 
@@ -219,8 +219,7 @@ void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
         limitNodeWidth(valueLabel, maxLabelWidth, 0.5f, 0.2f);
     };
 
-    createStatRow(statsPanelCS.height - 27.f, "star_spr.png"_spr, data.petStars);
-    createStatRow(27.f, "moon_spr.png"_spr, data.petMoons);
+    createStatRow(statsPanelCS.height / 2.f, "grind_point_icon.png"_spr, data.gp);
 
     auto downBtnMenu = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(15))
@@ -294,7 +293,7 @@ void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
         .collect();
 
     int nextLvlCost = PetManager::getInstance().getUpgradeLvlCostByLevel(data.petLevel);
-    float nextLvlCostPercentage = PetManager::getInstance().getNextLevelPercentage(data.petStars, nextLvlCost);
+    float nextLvlCostPercentage = PetManager::getInstance().getNextLevelPercentage(static_cast<int>(std::min<long long>(data.gp, INT_MAX)), nextLvlCost);
 
     progressBar->updateProgress(nextLvlCostPercentage);
 
@@ -341,7 +340,7 @@ void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
         return;
     }
 
-    auto currStarsLabel = CCLabelBMFont::create(numToString(data.petStars).c_str(), "bigFont.fnt");
+    auto currStarsLabel = CCLabelBMFont::create(numToString(data.gp).c_str(), "bigFont.fnt");
     auto upgStarsLabel = CCLabelBMFont::create(numToString(nextLvlCost).c_str(), "bigFont.fnt");
 
     currStarsLabel->setAnchorPoint({ 1.f, 0.5f });

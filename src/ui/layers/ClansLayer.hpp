@@ -60,6 +60,7 @@ private:
     void showPinned(bool has, ClanChatMessage const& msg);
     CCNode* m_pinnedBar = nullptr;
     int m_taskTier = 0;
+    bool m_browsingInClan = false;
     long long m_pinnedId = 0;
     EmotePickerPopup* m_emotePicker = nullptr;
 

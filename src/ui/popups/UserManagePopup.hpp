@@ -20,7 +20,7 @@ public:
 private:
     bool init(GJUserScore* targetUser);
 
-    GJUserScore* m_targetUser;
+    Ref<GJUserScore> m_targetUser;
     LoadingSpinner* m_spinner;
     CCMenu* m_optionsMenu;
     CCLabelBMFont* m_targetLabel;

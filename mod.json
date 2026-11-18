@@ -13,7 +13,6 @@
 	"description": "A big database of levels for grinding!",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
-		"dasshu.badgified": ">=v1.0.4",
 		"dankmeme.argon": ">=2.0.0-alpha.2"
 	},
 	"resources": {

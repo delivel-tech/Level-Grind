@@ -19,19 +19,10 @@ private:
 
     std::vector<achievements::Achievement> m_all;
     std::string m_category = "levels";
-    CCMenu* m_tabs = nullptr;
+    cue::ListNode* m_tabs = nullptr;
     cue::ListNode* m_list = nullptr;
     CCLabelBMFont* m_summary = nullptr;
     CCNode* m_spinner = nullptr;
-};
-
-class NotificationsPopup : public BasePopup {
-public:
-    static NotificationsPopup* create();
-private:
-    bool init() override;
-    void build();
-    cue::ListNode* m_list = nullptr;
 };
 
 }

@@ -24,7 +24,7 @@ class $modify(LevelGrind, LevelSearchLayer) {
 		        }
                 levelgrind::CreatorLayer::create()->open();
             })
-            .id("level-grind-btn")
+            .id("level-grind-btn"_spr)
             .parent(menu)
             .intoParent()
             .updateLayout();

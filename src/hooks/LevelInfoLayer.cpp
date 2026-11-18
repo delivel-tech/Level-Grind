@@ -53,7 +53,6 @@ class $modify(LevelGrind, LevelInfoLayer) {
         if (!LevelInfoLayer::init(level, challenge)) return false;
 
         auto leftSideMenu = this->getChildByIDRecursive("left-side-menu");
-        log::warn("left side menu not found");
         if (!leftSideMenu) return true;
 
         auto range = DataManager::getInstance().getSharedData().notes.equal_range(level->m_levelID);
@@ -75,10 +74,6 @@ class $modify(LevelGrind, LevelInfoLayer) {
         }
 
         auto titleLabel = this->getChildByID("title-label");
-
-        int intvar = 8;
-
-        intvar > 6 ? [&]{log::info("what am i doing here??");}() : [&]{log::info("its weird af");}();
 
         if (titleLabel && Mod::get()->getSavedValue<bool>("enable-indicators")) {
             auto infoBtnMenu = Build(CCMenu::create())

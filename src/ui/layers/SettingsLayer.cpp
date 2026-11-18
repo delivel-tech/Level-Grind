@@ -1,3 +1,4 @@
+#include "../../managers/NotifyManager.hpp"
 #include "../../managers/Auth.hpp"
 #include "../popups/AchievementsPopup.hpp"
 #include "SettingsLayer.hpp"
@@ -58,7 +59,7 @@ bool SettingsLayer::init() {
 
     setBoolSetting("settings-were-opened", true);
 
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         auto list = Build(cue::ListNode::create(
             { 356.f, 220.f },
             cue::Brown,
@@ -77,6 +78,7 @@ bool SettingsLayer::init() {
     m_grindList = m_listNodes[0];
     m_appearanceList = m_listNodes[1];
     m_otherList = m_listNodes[2];
+    m_notificationsList = m_listNodes[3];
 
     m_grindList->setVisible(true);
     m_currentList = m_grindList;
@@ -95,6 +97,7 @@ bool SettingsLayer::init() {
     createGrindList();
     createAppearanceList();
     createOtherList();
+    createNotificationsList();
 
     m_resetBtnMenu = Build(CCMenu::create())
         .pos({ 0, 0 })
@@ -131,8 +134,8 @@ void SettingsLayer::makeTabs() {
     float tabsY = m_winSize.height / 2 + m_grindList->getContentHeight() / 2 + 30.f;
 
     auto tabsMenu = Build(CCMenu::create())
-        .layout(RowLayout::create()->setGap(25))
-        .scale(0.85f)
+        .layout(RowLayout::create()->setGap(12))
+        .scale(0.8f)
         .pos({ centerX(), tabsY - 2 })
         .zOrder(5)
         .parent(this)
@@ -166,17 +169,29 @@ void SettingsLayer::makeTabs() {
     );
     otherTab->setID("other-tab");
 
+    auto notificationsTab = TabButton::create(
+        TabBaseColor::Unselected,
+        TabBaseColor::UnselectedDark,
+        "Notifications",
+        this,
+        makeCb(SettingsLayer::onTab)
+    );
+    notificationsTab->setID("notifications-tab");
+
     m_tabs.push_back(grindTab);
     m_tabs.push_back(appearanceTab);
     m_tabs.push_back(otherTab);
+    m_tabs.push_back(notificationsTab);
 
     m_grindTab = m_tabs[0];
     m_appearanceTab = m_tabs[1];
     m_otherTab = m_tabs[2];
+    m_notificationsTab = m_tabs[3];
 
     tabsMenu->addChild(grindTab);
     tabsMenu->addChild(appearanceTab);
     tabsMenu->addChild(otherTab);
+    tabsMenu->addChild(notificationsTab);
 
     tabsMenu->updateLayout();
 
@@ -238,7 +253,6 @@ void SettingsLayer::applyDefaultSettings() {
     Mod::get()->setSavedValue("recently-added", false);
     Mod::get()->setSavedValue("rgbBackground", cocos2d::ccColor3B { 37, 50, 167 });
     Mod::get()->setSavedValue("background-speed", 1.f);
-    Mod::get()->setSavedValue("disable-badges", false);
     Mod::get()->setSavedValue("disable-pet", false);
     Mod::get()->setSavedValue("enable-indicators", true);
     Mod::get()->setSavedValue("enable-completion-info", false);
@@ -508,15 +522,6 @@ void SettingsLayer::createAppearanceList() {
         this
     ));
 
-    list->addCell(makeHeaderCell("Badge Settings"));
-
-    list->addCell(makeToggleCell(
-        "Disable Badges",
-        "Hides all badges added by the mod",
-        "disable-badges",
-        this
-    ));
-
     refreshBackgroundColorUI();
     list->updateLayout();
     list->getScrollLayer()->m_contentLayer->updateLayout();
@@ -714,9 +719,6 @@ void SettingsLayer::createOtherList() {
                 [uPopupRef](Result<std::string> res) {
                     if (!uPopupRef) return;
 
-                    log::info("callback");
-                    log::info("ok = {}", res.ok());
-
                     if (!res.ok()) {
                         log::error("{}", res.unwrapErr());
                         uPopupRef->showFailMessage("Failed! Try again later.");
@@ -734,43 +736,6 @@ void SettingsLayer::createOtherList() {
 
     list->addCell(argonCell);
 
-    list->addCell(makeHeaderCell("Notifications"));
-
-    list->addCell(makeToggleCell(
-        "Disable Achievement Popups",
-        "Achievements still unlock, but no banner shows at the top of the screen.",
-        "disable-achievement-popups",
-        this
-    ));
-
-    auto notifCell = Build(CCMenu::create())
-        .ignoreAnchorPointForPos(false)
-        .contentSize(CELL_SIZE)
-        .id("customize-notifications-cell")
-        .collect();
-    auto notifLabel = Build(CCLabelBMFont::create("Customize Notifications", "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.62f, 0.5f, 0.1f)
-        .anchorPoint({ 0, 0.5f })
-        .pos({ 8, CELL_SIZE.height / 2 })
-        .parent(notifCell)
-        .collect();
-    Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
-        .scale(0.5f)
-        .intoMenuItem([] {
-            FLAlertLayer::create("Notifications",
-                "Small cards at the bottom right for clan messages, new events, new levels and more. Pick which ones you want.",
-                "OK")->show();
-        })
-        .pos({ 8 + notifLabel->getScaledContentWidth() + 10, CELL_SIZE.height / 2 })
-        .parent(notifCell);
-    Build(ButtonSprite::create("Open", "bigFont.fnt", "GJ_button_04.png", 0.8f))
-        .scale(0.55f)
-        .intoMenuItem([] {
-            NotificationsPopup::create()->show();
-        })
-        .pos({ CELL_SIZE.width - 29, CELL_SIZE.height / 2 })
-        .parent(notifCell);
-    list->addCell(notifCell);
 
 
     list->addCell(makeHeaderCell("Pet Settings"));
@@ -813,6 +778,72 @@ void SettingsLayer::onTab(CCObject* sender) {
             }
         }
     }
+}
+
+void SettingsLayer::createNotificationsList() {
+    cue::ListNode* list = m_notificationsList;
+    auto content = list->getScrollLayer()->m_contentLayer;
+    bool const redraw = list->size() > 0;
+    float const scrollY = content->getPositionY();
+    list->clear();
+
+    list->addCell(makeHeaderCell("Achievements"));
+    list->addCell(makeToggleCell(
+        "Disable Achievement Popups",
+        "Achievements still unlock, but no banner shows at the top of the screen.",
+        "disable-achievement-popups",
+        this
+    ));
+
+    list->addCell(makeHeaderCell("Notifications"));
+
+    Ref<SettingsLayer> self = this;
+    auto row = [&](std::string const& title, std::string const& desc, bool on, geode::Function<void(bool)> set) {
+        auto cell = Build(CCMenu::create())
+            .ignoreAnchorPointForPos(false)
+            .contentSize(CELL_SIZE)
+            .collect();
+        auto label = Build(CCLabelBMFont::create(title.c_str(), "bigFont.fnt"))
+            .limitLabelWidth(CELL_SIZE.width * 0.62f, 0.5f, 0.1f)
+            .anchorPoint({ 0, 0.5f })
+            .pos({ 8, CELL_SIZE.height / 2 })
+            .parent(cell)
+            .collect();
+        Build(CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"))
+            .scale(0.5f)
+            .intoMenuItem([title, desc] {
+                FLAlertLayer::create(title.c_str(), desc, "OK")->show();
+            })
+            .pos({ 8 + label->getScaledContentWidth() + 10, CELL_SIZE.height / 2 })
+            .parent(cell);
+        auto toggler = CCMenuItemExt::createTogglerWithStandardSprites(0.7f, [set = std::move(set)](CCMenuItemToggler* t) mutable {
+            set(!t->isToggled());
+        });
+        toggler->toggle(on);
+        toggler->setPosition({ CELL_SIZE.width - 18, CELL_SIZE.height / 2 });
+        cell->addChild(toggler);
+        list->addCell(cell);
+    };
+
+    bool allOn = true;
+    for (auto const& t : notify::types()) allOn = allOn && notify::enabled(t.type);
+    row("All Notifications", "Small cards at the bottom right for clan messages, new events, new levels and more. Turns every kind below on or off.",
+        allOn, [self](bool on) {
+            for (auto const& t : notify::types()) notify::setEnabled(t.type, on);
+            Loader::get()->queueInMainThread([self] { if (self) self->createNotificationsList(); });
+        });
+    for (auto const& t : notify::types()) {
+        auto type = t.type;
+        row(t.name, t.desc, notify::enabled(type), [self, type](bool on) {
+            notify::setEnabled(type, on);
+            Loader::get()->queueInMainThread([self] { if (self) self->createNotificationsList(); });
+        });
+    }
+
+    list->updateLayout();
+    content->updateLayout();
+    if (redraw) content->setPositionY(scrollY);
+    else list->scrollToTop();
 }
 
 }

@@ -34,6 +34,7 @@ private:
     void createGrindList();
     void createAppearanceList();
     void createOtherList();
+    void createNotificationsList();
 
     void setBoolSetting(const char* key, bool value);
 
@@ -68,10 +69,12 @@ private:
     cue::ListNode* m_grindList = nullptr;
     cue::ListNode* m_appearanceList = nullptr;
     cue::ListNode* m_otherList = nullptr;
+    cue::ListNode* m_notificationsList = nullptr;
 
     TabButton* m_grindTab = nullptr;
     TabButton* m_appearanceTab = nullptr;
     TabButton* m_otherTab = nullptr;
+    TabButton* m_notificationsTab = nullptr;
 
     CCMenuItemSpriteExtra* m_resetBtn = nullptr;
     CCMenu* m_resetBtnMenu = nullptr;

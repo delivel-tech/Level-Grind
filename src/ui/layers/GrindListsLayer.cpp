@@ -24,6 +24,7 @@ GrindListsLayer* GrindListsLayer::create() {
 bool GrindListsLayer::init() {
     if (!BaseLayer::init()) return false;
     replaceBgToClassic();
+    addSideArt(this, SideArt::Bottom, SideArtStyle::LayerGray, false);
     m_filters = lists::Filters::load();
     auto winSize = m_winSize;
 

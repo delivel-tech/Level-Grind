@@ -19,6 +19,7 @@
 #include <UIBuilder.hpp>
 #include <ctime>
 #include <fmt/format.h>
+#include "GrindProfilePopup.hpp"
 
 namespace levelgrind {
 
@@ -634,7 +635,7 @@ private:
             menu->addChild(btn);
         };
 
-        add("View Profile", "GJ_button_04.png", [m] { ProfilePage::create(m.accountId, false)->show(); });
+        add("View Profile", "GJ_button_04.png", [m] { GrindProfilePopup::create(m.accountId)->show(); });
 
         if (myRole == 2) {
             if (m.role == 0) {
@@ -733,7 +734,7 @@ bool ClanMembersPopup::init(ClanDetails const& d, ClanChanged onChanged) {
                     if (cb) cb();
                 })->show();
             } else {
-                ProfilePage::create(m.accountId, false)->show();
+                GrindProfilePopup::create(m.accountId)->show();
             }
         });
         (void)btn;
@@ -1110,7 +1111,7 @@ bool ClanMessagePopup::init(ClanChatMessage const& msg, bool canDelete, bool can
         menu->addChild(CCMenuItemExt::createSpriteExtra(spr, [cb = std::move(cb)](CCObject*) mutable { cb(); }));
     };
 
-    add("View Profile", "GJ_button_04.png", [id = msg.accountId] { ProfilePage::create(id, false)->show(); });
+    add("View Profile", "GJ_button_04.png", [id = msg.accountId] { GrindProfilePopup::create(id)->show(); });
     if (!mine) {
         add("Report", "GJ_button_05.png", [self] {
             if (!self) return;

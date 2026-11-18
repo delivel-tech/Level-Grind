@@ -19,6 +19,7 @@
 #include <Geode/binding/ProfilePage.hpp>
 #include <Geode/binding/SimplePlayer.hpp>
 #include <UIBuilder.hpp>
+#include "../popups/GrindProfilePopup.hpp"
 
 namespace levelgrind {
 
@@ -245,10 +246,7 @@ void WeeklyAchievementCell::buildAfterPodium() {
     ))
         .scale(0.6f)
         .intoMenuItem([this] {
-            ProfilePage::create(
-                m_cellInfo.accountID,
-                false
-            )->show();
+            GrindProfilePopup::create(m_cellInfo.accountID)->show();
         })
         .id("username-btn")
         .parent(usernameMenu)

@@ -8,9 +8,9 @@ namespace levelgrind {
 
 int PetManager::getUpgradeRarityCostByCurrRarity(int rarity) {
     switch (rarity) {
-        case 1: return 500; break;
-        case 2: return 2000; break;
-        case 3: return 4000; break;
+        case 1: return 1500; break;
+        case 2: return 4000; break;
+        case 3: return 8000; break;
         default: return 999999; break;
     }
 }
@@ -179,7 +179,7 @@ std::string PetManager::getPetAgeFromLevel(int petLevel) {
 
 int PetManager::getUpgradeLvlCostByLevel(int petLevel) {
     const int MAX_LEVEL = 30;
-    const int TOTAL_COST = 100000;
+    const int TOTAL_COST = 20000;
     
     auto baseCost = [&](int level) -> double {
         return pow(level, 2);
@@ -235,6 +235,7 @@ PetManager::PetData PetManager::parsePetData(web::WebResponse res, LoadingSpinne
     data.petName = json["petName"].asString().unwrapOrDefault();
     data.petStars = json["petStars"].asInt().unwrapOrDefault();
     data.petMoons = json["petMoons"].asInt().unwrapOrDefault();
+    data.gp = json["gp"].asInt().unwrapOr(0);
     data.petLevel = json["petLevel"].asInt().unwrapOrDefault();
     Mod::get()->setSavedValue("last-pet-lvl", data.petLevel);
     data.petRarity = json["petRarity"].asInt().unwrapOrDefault();

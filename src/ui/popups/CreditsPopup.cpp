@@ -26,6 +26,7 @@
 #include "../../managers/DataManager.hpp"
 #include "../../utils/globals.hpp"
 #include "GuidePopup.hpp"
+#include "GrindProfilePopup.hpp"
 
 using namespace geode::prelude;
 
@@ -118,8 +119,7 @@ private:
             .limitLabelWidth(52.f, 0.45f, 0.05f)
             .store(m_nameLabel)
             .intoMenuItem([accountId = user.accountId, name = user.username] {
-                auto pp = ProfilePage::create(accountId, false);
-                pp->show();
+                GrindProfilePopup::create(accountId, name)->show();
             })
             .pos(0.f, 24.f)
             .store(nameLabel)
