@@ -19,7 +19,7 @@ constexpr float kRowH = 34.f;
 
 constexpr const char* kPeriods[] = { "daily", "weekly", "monthly" };
 constexpr const char* kPeriodNames[] = { "Daily", "Weekly", "Monthly" };
-constexpr const char* kTypes[] = { "stars", "moons", "demons", "gp" };
+constexpr const char* kTypes[] = { "stars", "moons", "demons", "coins", "gp" };
 
 long long nowSec() {
     return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -39,6 +39,7 @@ CCSprite* typeIcon(int type, float size) {
         case 0: spr = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png"); break;
         case 1: spr = CCSprite::createWithSpriteFrameName("GJ_moonsIcon_001.png"); break;
         case 2: spr = CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png"); break;
+        case 3: spr = CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png"); break;
         default: spr = CCSprite::create("grind_point_icon.png"_spr); break;
     }
     if (!spr) spr = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
@@ -75,7 +76,7 @@ bool GrindLeaderboardsLayer::init() {
     if (!BaseLayer::init()) return false;
 
     m_period = std::clamp(Mod::get()->getSavedValue<int>("leaderboards-period", 0), 0, 2);
-    m_type = std::clamp(Mod::get()->getSavedValue<int>("leaderboards-type", 0), 0, 3);
+    m_type = std::clamp(Mod::get()->getSavedValue<int>("leaderboards-type", 0), 0, 4);
 
     float const cx = m_winSize.width / 2.f;
     float const cy = m_winSize.height / 2.f - 6.f;
@@ -102,7 +103,7 @@ bool GrindLeaderboardsLayer::init() {
 
     m_typeMenu = CCMenu::create();
     m_typeMenu->setLayout(ColumnLayout::create()->setGap(8.f)->setAxisReverse(true)->setAutoScale(false));
-    m_typeMenu->setContentSize({ 40.f, 200.f });
+    m_typeMenu->setContentSize({ 40.f, 250.f });
     m_typeMenu->setScale(0.7f);
     m_typeMenu->setPosition({ cx + kListSize.width / 2.f + 42.f, cy });
     this->addChild(m_typeMenu, 6);
@@ -143,7 +144,7 @@ void GrindLeaderboardsLayer::onTab(CCObject* sender) {
 void GrindLeaderboardsLayer::buildTypeButtons() {
     m_typeMenu->removeAllChildren();
     WeakRef<GrindLeaderboardsLayer> weak = this;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         bool on = i == m_type;
         auto bg = NineSlice::create(on ? "GJ_button_02.png" : "GJ_button_01.png");
         bg->setContentSize({ 40.f, 40.f });

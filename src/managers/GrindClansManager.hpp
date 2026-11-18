@@ -168,6 +168,8 @@ public:
 
     void queueLevelClaim(int levelId, int stars, bool platformer);
     void flushClaims();
+    void queueCoinClaim(int levelId, std::vector<int> const& coins);
+    void flushCoinClaims();
 
     void checkPacks(std::vector<GrindPack> const& packs);
     void checkAllPacks();
@@ -193,6 +195,8 @@ private:
     bool m_claiming = false;
     async::TaskHolder<web::WebResponse> m_claimTask;
     async::TaskHolder<web::WebResponse> m_actionTask;
+    async::TaskHolder<web::WebResponse> m_coinTask;
+    bool m_coinClaiming = false;
 };
 
 }

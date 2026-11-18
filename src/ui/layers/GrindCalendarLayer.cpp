@@ -18,7 +18,7 @@ using Metric = GrindCalendarLayer::Metric;
 
 namespace {
 
-constexpr Metric kMetrics[] = { Metric::Stars, Metric::Moons, Metric::Levels, Metric::Demons, Metric::GP };
+constexpr Metric kMetrics[] = { Metric::Stars, Metric::Moons, Metric::Levels, Metric::Demons, Metric::Coins, Metric::GP };
 constexpr const char* kPeriodNames[] = { "Daily", "Weekly", "Monthly" };
 constexpr const char* kMonthNames[] = { "January", "February", "March", "April", "May", "June", "July",
     "August", "September", "October", "November", "December" };
@@ -31,6 +31,7 @@ ccColor3B metricColor(Metric m) {
         case Metric::Levels: return { 110, 230, 110 };
         case Metric::Demons: return { 255, 90, 90 };
         case Metric::GP: return { 255, 165, 60 };
+        case Metric::Coins: return { 200, 215, 230 };
     }
     return { 255, 255, 255 };
 }
@@ -42,6 +43,7 @@ CCSprite* metricIcon(Metric m) {
         case Metric::Levels: return CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png");
         case Metric::Demons: return CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png");
         case Metric::GP: return CCSprite::create("grind_point_icon.png"_spr);
+        case Metric::Coins: return CCSprite::createWithSpriteFrameName("GJ_coinsIcon2_001.png");
     }
     return nullptr;
 }
@@ -176,6 +178,7 @@ const char* GrindCalendarLayer::metricName(Metric m) {
         case Metric::Levels: return "Levels";
         case Metric::Demons: return "Demons";
         case Metric::GP: return "Grind Points";
+        case Metric::Coins: return "Coins";
     }
     return "";
 }
@@ -200,7 +203,7 @@ GrindCalendarLayer* GrindCalendarLayer::create() {
 
 bool GrindCalendarLayer::init() {
     if (!BaseLayer::init()) return false;
-    m_metric = static_cast<Metric>(std::clamp(Mod::get()->getSavedValue<int>("calendar-metric", 0), 0, 4));
+    m_metric = static_cast<Metric>(std::clamp(Mod::get()->getSavedValue<int>("calendar-metric", 0), 0, 5));
 
     auto win = m_winSize;
     label(this, "Grind Calendar", { win.width / 2.f, win.height - 18.f }, 0.75f, "goldFont.fnt");
@@ -267,6 +270,7 @@ void GrindCalendarLayer::load() {
                     day.demons = static_cast<int>(d["demons"].asInt().unwrapOr(0));
                     day.gp = static_cast<int>(d["gp"].asInt().unwrapOr(0));
                     day.packs = static_cast<int>(d["packs"].asInt().unwrapOr(0));
+                    day.coins = static_cast<int>(d["coins"].asInt().unwrapOr(0));
                     self->m_days[d["day"].asInt().unwrapOr(0)] = day;
                 }
             }
@@ -285,6 +289,7 @@ int GrindCalendarLayer::value(long long day) const {
         case Metric::Levels: return d.levels;
         case Metric::Demons: return d.demons;
         case Metric::GP: return d.gp;
+        case Metric::Coins: return d.coins;
     }
     return 0;
 }
@@ -329,7 +334,7 @@ void GrindCalendarLayer::buildGrid() {
     }
 
     auto tabs = CCMenu::create();
-    tabs->setLayout(RowLayout::create()->setGap(3.f)->setAutoScale(false));
+    tabs->setLayout(RowLayout::create()->setGap(3.f));
     tabs->setContentSize({ size.width - 10.f, 20.f });
     tabs->setPosition({ size.width / 2.f, size.height - 34.f });
     m_left->addChild(tabs, 5);
@@ -436,7 +441,7 @@ void GrindCalendarLayer::buildSide() {
         if (auto it = m_days.find(m_selected); it != m_days.end()) d = it->second;
         struct { Metric m; int v; } stats[] = {
             { Metric::Stars, d.stars }, { Metric::Moons, d.moons }, { Metric::Levels, d.levels },
-            { Metric::Demons, d.demons }, { Metric::GP, d.gp },
+            { Metric::Demons, d.demons }, { Metric::Coins, d.coins }, { Metric::GP, d.gp },
         };
         auto row = CCNode::create();
         row->setLayout(RowLayout::create()->setGap(6.f));

@@ -12,9 +12,9 @@ class GrindCalendarLayer : public BaseLayer {
 public:
     static GrindCalendarLayer* create();
 
-    enum class Metric { Stars = 0, Moons, Levels, Demons, GP };
+    enum class Metric { Stars = 0, Moons, Levels, Demons, GP, Coins };
     struct Day {
-        int levels = 0, stars = 0, moons = 0, demons = 0, gp = 0, packs = 0;
+        int levels = 0, stars = 0, moons = 0, demons = 0, gp = 0, packs = 0, coins = 0;
     };
 
     static int goal(Metric metric, int period);

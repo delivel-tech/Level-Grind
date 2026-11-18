@@ -369,6 +369,7 @@ void GrindClansManager::queueLevelClaim(int levelId, int stars, bool platformer)
     item["levelId"] = levelId;
     item["stars"] = stars;
     item["platformer"] = platformer;
+    item["at"] = static_cast<long long>(std::time(nullptr));
     queue.push(item);
 
     while (queue.size() > 200) {
@@ -486,6 +487,51 @@ void GrindClansManager::sendNextPackClaim() {
     });
 }
 
+static constexpr auto kCoinQueueKey = "gp-coin-queue";
+
+void GrindClansManager::queueCoinClaim(int levelId, std::vector<int> const& coins) {
+    if (levelId <= 0 || coins.empty()) return;
+    auto queue = Mod::get()->getSavedValue<matjson::Value>(kCoinQueueKey, matjson::Value::array());
+    if (!queue.isArray()) queue = matjson::Value::array();
+    auto arr = queue.asArray().unwrap();
+    std::erase_if(arr, [levelId](matjson::Value const& v) { return asI(v["levelId"]) == levelId; });
+    matjson::Value item;
+    item["levelId"] = levelId;
+    std::vector<matjson::Value> list;
+    for (int c : coins) list.push_back(c);
+    item["coins"] = matjson::Value(list);
+    arr.push_back(item);
+    while (arr.size() > 200) arr.erase(arr.begin());
+    Mod::get()->setSavedValue(kCoinQueueKey, matjson::Value(arr));
+    this->flushCoinClaims();
+}
+
+void GrindClansManager::flushCoinClaims() {
+    if (m_coinClaiming) return;
+    auto queue = Mod::get()->getSavedValue<matjson::Value>(kCoinQueueKey, matjson::Value::array());
+    if (!queue.isArray() || queue.size() == 0) return;
+    if (GJAccountManager::get()->m_accountID <= 0) return;
+    m_coinClaiming = true;
+
+    auto item = queue.asArray().unwrap().front();
+    int levelId = asI(item["levelId"]);
+    auto body = authBody();
+    body["levelId"] = levelId;
+    body["coins"] = item["coins"];
+
+    m_coinTask.spawn(post("gp_claim_coins", body), [this, levelId](web::WebResponse res) {
+        m_coinClaiming = false;
+        bool drop = res.ok() || res.code() == 400;
+        if (!drop) return;
+        auto q = Mod::get()->getSavedValue<matjson::Value>(kCoinQueueKey, matjson::Value::array());
+        if (!q.isArray()) return;
+        auto arr = q.asArray().unwrap();
+        std::erase_if(arr, [levelId](matjson::Value const& v) { return asI(v["levelId"]) == levelId; });
+        Mod::get()->setSavedValue(kCoinQueueKey, matjson::Value(arr));
+        if (!arr.empty()) this->flushCoinClaims();
+    });
+}
+
 void GrindClansManager::sendNextClaim() {
     auto queue = Mod::get()->getSavedValue<matjson::Value>(kQueueKey, matjson::Value::array());
     if (!queue.isArray() || queue.size() == 0) {
@@ -501,6 +547,7 @@ void GrindClansManager::sendNextClaim() {
     body["levelId"] = levelId;
     body["stars"] = asI(item["stars"]);
     body["platformer"] = item["platformer"].asBool().unwrapOr(false);
+    if (auto at = item["at"].asInt(); at && at.unwrap() > 0) body["completedAt"] = at.unwrap();
 
     m_claimTask.spawn(
         post("gp_claim_level", body),
