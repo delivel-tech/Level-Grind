@@ -1,3 +1,36 @@
+# 3.0.0
+### Grind Points
+- New currency: <cy>Grind Points (GP)</c>. Earn them by beating levels, finishing Grind Packs, achievements and clan tasks.
+- Old Pet Stars and Pet Moons were turned into GP automatically.
+
+### Grind Clans
+- Create or join a clan, chat with members, pin messages and upload a clan logo.
+- Weekly clan tasks, clan levels and a clan leaderboard.
+- <cr>Clan Wars</c>: every week your clan is paired with another one. The clan that earns more GP wins a GP reward for every member.
+- <cy>Treasury</c>: members donate GP, the leader spends it on a GP Boost or a Golden Name.
+- Invites, join requests and three join modes: Open, By request, Invite only.
+
+### Grinding Pet
+- New Pet Layer.
+- Feed your pet once a day to keep it happy. Feeding streaks give bonus GP at 7 and 30 days.
+- Pets are upgraded with GP. Levels have no cap anymore.
+- Your pet's look is saved online and shown in your Grind Profile.
+
+### Profiles & Stats
+- <cg>Grind Profile</c>: your GP, clan, pet, badges and achievements in one place.
+- <cl>Level Grind Leaderboards</c>: GP, stars, moons, demons, coins and more.
+- <cj>Stat Tracker</c>: see what you grinded every day on a month grid, with goals and notifications.
+- <cp>Achievements</c> with GP rewards.
+
+### Other
+- Grind Lists: level lists picked by our staff.
+- Reports for clans, chat messages and players.
+- New staff tools: Find Player, User Manage, Notes Manager, logo review, bans.
+- Data & Privacy: online features now ask for your consent first. You can review it any time in Settings.
+- Clear Saved Data option in Settings.
+- Lots of UI improvements and bug fixes.
+- iOS is not supported in this version.
+
 # 2.0.4
 - Tweaked some discord pop-up and guidebook descriptions. 
 

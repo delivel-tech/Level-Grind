@@ -463,10 +463,19 @@ void GrindClansManager::checkPacks(std::vector<GrindPack> const& packs) {
     auto gsm = GameStatsManager::get();
     auto claimed = savedIntArray(kPacksClaimedKey);
     auto queue = savedIntArray(kPackQueueKey);
+    auto levelQueue = Mod::get()->getSavedValue<matjson::Value>(kQueueKey, matjson::Value::array());
+    auto levelPending = [&](int id) {
+        if (!levelQueue.isArray()) return false;
+        for (auto const& v : levelQueue.asArray().unwrap()) {
+            if (asI(v["levelId"]) == id) return true;
+        }
+        return false;
+    };
     bool added = false;
 
     for (auto const& p : packs) {
         if (p.id <= 0 || arrayHas(claimed, p.id) || arrayHas(queue, p.id)) continue;
+        if (levelPending(p.levels.id1) || levelPending(p.levels.id2) || levelPending(p.levels.id3)) continue;
         if (gsm->hasCompletedOnlineLevel(p.levels.id1)
             && gsm->hasCompletedOnlineLevel(p.levels.id2)
             && gsm->hasCompletedOnlineLevel(p.levels.id3)) {

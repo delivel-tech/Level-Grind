@@ -413,14 +413,7 @@ void PetLayer::feed() {
 
 void PetLayer::reload() {
     if (!m_mainPanel) return;
-    for (auto child : CCArrayExt<CCNode*>(m_mainPanel->getChildren())) {
-        if (child->getID() != "leaderboard-btn-menu") child->setVisible(false);
-    }
-    std::vector<CCNode*> old;
-    for (auto child : CCArrayExt<CCNode*>(m_mainPanel->getChildren())) {
-        if (child->getID() != "leaderboard-btn-menu") old.push_back(child);
-    }
-    for (auto child : old) child->removeFromParent();
+    m_mainPanel->removeAllChildren();
     m_petLabel = nullptr;
 
     auto size = m_mainPanel->getContentSize();

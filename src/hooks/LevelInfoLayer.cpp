@@ -22,6 +22,7 @@ class $modify(LevelGrind, LevelInfoLayer) {
     struct Fields {
         bool shownAutoNote = false;
     };
+    
     void onPlay(CCObject* sender) {
         bool autoNote = Mod::get()->getSavedValue<bool>("auto-notes");
 

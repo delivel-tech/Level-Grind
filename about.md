@@ -22,16 +22,16 @@ The <cl>database</c> is actively filled by our <cc>Admins</c> and <cg>Helpers</c
 - <cs>**Event Levels**</c>: These include daily, weekly, and monthly levels that are regularly selected by <cc>Admins</c>.
 - <ca>**Level Notes**</c>: Our staff team can add notes to levels, pointing out details like coin locations, tricky timings, difficult sections, or anything else that the player should know. When a level has a note attached, you can read it by clicking the button on the left side of the level's page.
 - <cf>**Grind Packs**</c>: Similar to RobTop's "Map Packs" but with actually fun and readable levels! Featuring both <cy>Classic</c> and <cb>Platformer</c> packs, with new ones being added regularly.
-- <cd>**Grinding Pet**</c>: Your own companion that evolves when you grind stats!
+- <cd>**Grinding Pet**</c>: Your own companion! Feed it every day, upgrade it with GP and customize its look.
 - <cy>**Weekly Achievements**</c>: Each week, the best achievements from the grinding community are chosen for display.
 - <cg>**Helper Suggestions Tab**</c>: In here, you can find levels suggested by our <cg>Helpers</c>! These may eventually be added to the main <cl>Database</c>.
+- <cy>**Grind Points**</c>: Earn GP by beating levels, finishing Grind Packs and completing achievements.
+- <cr>**Grind Clans**</c>: Team up with other grinders, complete weekly clan tasks, fight in weekly <cr>Clan Wars</c> and fill your clan's <cy>Treasury</c>.
+- <cg>**Grind Profile & Leaderboards**</c>: Show off your stats, clan, pet and achievements, and compete on the <cl>Level Grind Leaderboards</c>.
+- <cj>**Stat Tracker**</c>: See what you grinded every day and set your own goals.
+- <cp>**Achievements**</c>: Unlock achievements for your grinding and get GP for them.
+- <cl>**Grind Lists**</c>: Level lists picked by our staff.
 - <cs>**QOL Features**</c>: Various quality of life improvements!
-
----
-
-### ![Upcoming](delivel.level-grind/button_edit_note.png?scale=0.3) Upcoming Features
-- <cy>**New Filters**</c>: We're planning to add filtering levels based on <cp>amount of coins</c> and <cg>level rating</c>! However, it is delayed. We're working on getting our server whitelisted by RobTop hard in order to implement this.
-- <cp>**Grinding Lists**</c>: This feature has been requested a lot. Unfortunately, due to RobTop API's restrictions, it's hard to implement to make it safe. However, we're working on it!
 
 ---
 
@@ -43,4 +43,5 @@ The <cl>database</c> is actively filled by our <cc>Admins</c> and <cg>Helpers</c
 ### ![Credits](delivel.level-grind/badge_contributor.png?scale=0.7) Credits
 - <cl>**Texture Designs**</c>: [iDust](user:20851829) & [Dasshu](user:1975253)
 - <cl>**Making Argon and cue**</c>: [dankmeme01](user:9735891) :3
+- <cl>**Gradient label and base layer / popup code**</c>: based on [Globed](https://github.com/GlobedGD/globed2) by dankmeme01 (MIT License)
 - <cl>**A lot of levels in the database**</c>: our <cg>Helpers</c> <3

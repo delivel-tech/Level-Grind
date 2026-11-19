@@ -758,6 +758,41 @@ void SettingsLayer::createOtherList() {
 
     list->addCell(argonCell);
 
+    auto clearCell = Build(CCMenu::create())
+        .ignoreAnchorPointForPos(false)
+        .contentSize(CELL_SIZE)
+        .collect();
+
+    Build(CCLabelBMFont::create("Clear Saved Data (Local)", "bigFont.fnt"))
+        .limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f)
+        .anchorPoint({ 0, 0.5f })
+        .pos({ 8, CELL_SIZE.height / 2 })
+        .parent(clearCell);
+
+    Build(ButtonSprite::create("Clear", "bigFont.fnt", "GJ_button_06.png", 0.8f))
+        .scale(0.55f)
+        .intoMenuItem([] {
+            createQuickPopup(
+                "Clear Saved Data",
+                "This will <cr>erase</c> all <cy>Level Grind</c> data saved on this device. This can't be undone.",
+                "Cancel", "Clear",
+                [](auto, bool yes) {
+                    if (!yes) return;
+                    Mod::get()->getSaveContainer() = matjson::Value::object();
+                    SettingsLayer::applyDefaultSettings();
+                    (void)Mod::get()->saveData();
+                    Notification::create("Saved data cleared", NotificationIcon::Success)->show();
+                    auto scene = CCScene::create();
+                    scene->addChild(SettingsLayer::create());
+                    CCDirector::sharedDirector()->replaceScene(CCTransitionFade::create(0.5f, scene));
+                }
+            );
+        })
+        .pos({ CELL_SIZE.width - 33, CELL_SIZE.height / 2 })
+        .parent(clearCell);
+
+    list->addCell(clearCell);
+
 
 
     list->addCell(makeHeaderCell("Pet Settings"));
