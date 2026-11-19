@@ -1,4 +1,5 @@
 #include "ManageListPopup.hpp"
+#include "NotesManagerPopup.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/GrindClansManager.hpp"
 #include "../../managers/DataManager.hpp"
@@ -103,7 +104,7 @@ bool ManageListPopup::init(GJLevelList* list, CCArray* levels) {
     this->buildTags();
 
     m_actions = CCMenu::create();
-    m_actions->setLayout(RowLayout::create()->setGap(10.f)->setAutoScale(false));
+    m_actions->setLayout(RowLayout::create()->setGap(8.f));
     m_actions->setContentSize({ boxSize.width - 12.f, 36.f });
     m_actions->setPosition({ centerX(), 48.f });
     m_mainLayer->addChild(m_actions);
@@ -155,6 +156,12 @@ void ManageListPopup::setAdded(bool added, std::string const&, long long) {
             ButtonSprite::create("Delete", "goldFont.fnt", "GJ_button_06.png", 0.75f),
             [this](CCObject*) { this->onRemove(); }));
     }
+    Ref<GJLevelList> list = m_list;
+    m_actions->addChild(CCMenuItemExt::createSpriteExtra(
+        ButtonSprite::create("Notes", "goldFont.fnt", "GJ_button_03.png", 0.75f),
+        [list](CCObject*) {
+            if (list) NotesManagerPopup::create(NotesManagerPopup::Target::List, list->m_listID, list->m_listName)->show();
+        }));
     m_actions->updateLayout();
 }
 

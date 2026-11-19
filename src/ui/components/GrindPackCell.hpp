@@ -164,8 +164,7 @@ private:
             .parent(viewBtnMenu)
             .collect();
 
-        if (DataManager::getInstance().getUserPosition() == GrindPosition::Owner || 
-        DataManager::getInstance().getUserPosition() == GrindPosition::Admin) {
+        if ((DataManager::getInstance().getUserPosition() == GrindPosition::Owner || DataManager::getInstance().getUserPosition() == GrindPosition::Admin)) {
             auto deleteBtn = Build(CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png"))
                 .scale(0.5f)
                 .intoMenuItem([this, packInfo] {

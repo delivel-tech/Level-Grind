@@ -34,6 +34,7 @@
 #include "../../managers/DataManager.hpp"
 
 #include <dankmeme.argon/argon.hpp>
+#include "../../managers/Consent.hpp"
 
 using namespace geode::prelude;
 
@@ -677,6 +678,27 @@ void SettingsLayer::createOtherList() {
 
     list->addCell(syncCell);
 
+    auto privacyCell = Build(CCMenu::create())
+        .ignoreAnchorPointForPos(false)
+        .contentSize(CELL_SIZE)
+        .collect();
+
+    Build(CCLabelBMFont::create("Data & Privacy", "bigFont.fnt"))
+        .limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f)
+        .anchorPoint({ 0, 0.5f })
+        .pos({ 8, CELL_SIZE.height / 2 })
+        .parent(privacyCell);
+
+    Build(ButtonSprite::create("Review", "bigFont.fnt", "GJ_button_04.png", 0.8f))
+        .scale(0.55f)
+        .intoMenuItem([] {
+            consent::showPopup();
+        })
+        .pos({ CELL_SIZE.width - 36, CELL_SIZE.height / 2 })
+        .parent(privacyCell);
+
+    list->addCell(privacyCell);
+
     // argon cell
 
     auto argonCell = Build(CCMenu::create())
@@ -744,6 +766,13 @@ void SettingsLayer::createOtherList() {
         "Disable Pet",
         "Removes Grinding Pet from the mod entirely.",
         "disable-pet",
+        this
+    ));
+
+    list->addCell(makeToggleCell(
+        "Disable Pet Animations",
+        "Stops the pet from moving.",
+        "disable-pet-animations",
         this
     ));
 

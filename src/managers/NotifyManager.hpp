@@ -5,7 +5,7 @@ using namespace geode::prelude;
 
 namespace levelgrind::notify {
 
-enum class Type { ClanMessage, ClanTask, ClanRequest, Events, WeeklyAch, NewLevels, NewPacks };
+enum class Type { ClanMessage, ClanTask, ClanRequest, Events, WeeklyAch, NewLevels, NewPacks, CalendarGoals };
 
 struct TypeInfo {
     Type type;

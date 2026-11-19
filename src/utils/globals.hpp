@@ -47,6 +47,13 @@ namespace levelgrind {
         std::string senderUsername;
     };
     
+    struct ListNoteInfo {
+        long long id = 0;
+        int listID = 0;
+        std::string note;
+        std::string senderUsername;
+    };
+
     struct BootupGetResponse {
         bool ok;
         std::vector<int> owners;
@@ -57,6 +64,7 @@ namespace levelgrind {
         std::vector<int> boosters;
         std::vector<int> contributors;
         std::unordered_multimap<int, NoteInfo> notes;
+        std::unordered_multimap<int, ListNoteInfo> listNotes;
         std::unordered_set<int> levelsWithCoins;
         std::unordered_set<int> levelsWithoutCoins;
     };
@@ -179,7 +187,10 @@ namespace levelgrind {
         LevelIndicatorsGuide = 15,
         CreditsInfo = 16,
         DeveloperRoleGuide = 17,
-        ClansGuide = 18
+        ClansGuide = 18,
+        CalendarGuide = 19,
+        LeaderboardsGuide = 20,
+        GrindListsGuide = 21
     };
 
     struct Indicators {
@@ -188,6 +199,7 @@ namespace levelgrind {
         bool coin;
         bool event;
         bool pack;
+        bool locked = false;
     };
 
     enum GuidePopupState {

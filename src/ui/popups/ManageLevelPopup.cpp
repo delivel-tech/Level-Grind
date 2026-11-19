@@ -24,6 +24,7 @@
 
 #include "../../utils/utils.hpp"
 #include "AddNotePopup.hpp"
+#include "NotesManagerPopup.hpp"
 #include <cue/ListNode.hpp>
 #include "GrindProfilePopup.hpp"
 
@@ -52,7 +53,7 @@ private:
             .parent(m_buttonMenu)
             .collect();
 
-        Build(ButtonSprite::create("Lock", "bigFont.fnt", "GJ_button_01.png"))
+        Build(ButtonSprite::create("Lock", 80, true, "bigFont.fnt", "GJ_button_01.png", 30.f, 0.6f))
             .intoMenuItem([] {
 
             })
@@ -258,7 +259,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
             // making helper menu
 
-            Build(ButtonSprite::create("Accept", "bigFont.fnt", "GJ_button_01.png"))
+            Build(ButtonSprite::create("Accept", 80, true, "bigFont.fnt", "GJ_button_01.png", 30.f, 0.6f))
                 .intoMenuItem([self] {
                     auto uPopup = UploadActionPopup::create(nullptr, "Adding point...");
                     uPopup->show();
@@ -286,7 +287,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 .parent(self->m_helperButtonsMenu)
                 .collect();
             
-            Build(ButtonSprite::create("Reject", "bigFont.fnt", "GJ_button_06.png"))
+            Build(ButtonSprite::create("Reject", 80, true, "bigFont.fnt", "GJ_button_06.png", 30.f, 0.6f))
                 .intoMenuItem([self] {
                     auto uPopup = UploadActionPopup::create(nullptr, "Removing point...");
                     uPopup->show();
@@ -354,46 +355,11 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
             notesSprTop->setPosition({20, 20});
             notesSprTop->setScale(0.6f);
 
-            // notes btn
             Build(notesSpr)
                 .intoMenuItem([self] {
-                    AddNotePopup::create(self->m_level->m_levelID, self->m_level->m_levelName.c_str())->show();
+                    NotesManagerPopup::create(NotesManagerPopup::Target::Level, self->m_level->m_levelID, self->m_level->m_levelName)->show();
                 })
                 .parent(rightButtonsMenu);
-
-            if (parsed.noteExists) {
-                auto deleteNotesSpr = CCSprite::create("GJ_button_06.png");
-                auto deleteNotesSprTop = CCSprite::create("button_edit_note.png"_spr);;
-                deleteNotesSpr->addChild(deleteNotesSprTop);
-                deleteNotesSprTop->setPosition({20, 20});
-                deleteNotesSprTop->setScale(0.6f);
-
-                Build(deleteNotesSpr)
-                    .intoMenuItem([self] {
-                        auto uPopup = UploadActionPopup::create(nullptr, "Deleting notes...");
-                        uPopup->show();
-
-                        auto uPopupRef = Ref(uPopup);
-
-                        self->m_listener.spawn(
-                            APIClient::getInstance().deleteNotes(
-                                self->m_level->m_levelID,
-                                self->m_level->m_levelName.empty() ? "blank name" : self->m_level->m_levelName.c_str()
-                            ),
-                            [uPopupRef](web::WebResponse res) {
-                                if (!uPopupRef) return;
-                                if (!res.ok()) {
-                                    log::error("bad web req");
-                                    uPopupRef->showFailMessage(APIClient::errorMessage(res, "Failed! Try again later."));
-                                    return;
-                                } else {
-                                    uPopupRef->showSuccessMessage("Success! Notes deleted.");
-                                }
-                            }
-                        );
-                    })
-                    .parent(rightButtonsMenu);
-            }
 
             enum class CoinManage {
                 Reject = -1,
@@ -461,7 +427,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
 
             // admin menu
             if (parsed.isLocked) {
-                Build(ButtonSprite::create("Unlock", "bigFont.fnt", "GJ_button_06.png"))
+                Build(ButtonSprite::create("Unlock", 80, true, "bigFont.fnt", "GJ_button_06.png", 30.f, 0.6f))
                     .intoMenuItem([self] {
                         auto uPopup = UploadActionPopup::create(nullptr, "Unlocking level...");
                         uPopup->show();
@@ -484,7 +450,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     .parent(self->m_adminButtonsMenu)
                     .collect();
             } else {
-                Build(ButtonSprite::create("Lock", "bigFont.fnt", "GJ_button_01.png"))
+                Build(ButtonSprite::create("Lock", 80, true, "bigFont.fnt", "GJ_button_01.png", 30.f, 0.6f))
                     .intoMenuItem([self] {
                         auto uPopup = UploadActionPopup::create(nullptr, "Locking level...");
                         uPopup->show();
@@ -512,7 +478,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
             }
 
             if (parsed.isAdded) {
-                Build(ButtonSprite::create("Delete", "bigFont.fnt", "GJ_button_06.png"))
+                Build(ButtonSprite::create("Delete", 80, true, "bigFont.fnt", "GJ_button_06.png", 30.f, 0.6f))
                     .intoMenuItem([self] {
                         auto uPopup = UploadActionPopup::create(nullptr, "Deleting level...");
                         uPopup->show();
@@ -535,7 +501,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     .parent(self->m_adminButtonsMenu)
                     .collect();
 
-                Build(ButtonSprite::create("Re-add", "bigFont.fnt", "GJ_button_02.png"))
+                Build(ButtonSprite::create("Re-add", 80, true, "bigFont.fnt", "GJ_button_02.png", 30.f, 0.6f))
                     .intoMenuItem([self] {
                         auto uPopup = UploadActionPopup::create(nullptr, "Re-adding level...");
                         uPopup->show();
@@ -561,7 +527,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     .parent(self->m_adminButtonsMenu)
                     .collect();
             } else {
-                Build(ButtonSprite::create("Add", "bigFont.fnt", "GJ_button_01.png"))
+                Build(ButtonSprite::create("Add", 80, true, "bigFont.fnt", "GJ_button_01.png", 30.f, 0.6f))
                     .intoMenuItem([self] {
                         auto uPopup = UploadActionPopup::create(nullptr, "Adding level...");
                         uPopup->show();

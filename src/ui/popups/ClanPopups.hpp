@@ -173,6 +173,14 @@ private:
     bool init(ClanDetails const& d, long long now);
 };
 
+class ClanInvitesPopup : public BasePopup {
+public:
+    static ClanInvitesPopup* create(std::vector<ClanInviteInfo> const& invites, ClanChanged onChanged);
+private:
+    bool init(std::vector<ClanInviteInfo> const& invites, ClanChanged onChanged);
+    ClanChanged m_onChanged;
+};
+
 class ClanRequestsPopup : public BasePopup {
 public:
     static ClanRequestsPopup* create(ClanDetails const& d, ClanChanged onChanged);

@@ -22,6 +22,9 @@
 			],
 			"buttonSheet": [
 				"resources/layer/*.png"
+			],
+			"staffSheet": [
+				"resources/staff/*.png"
 			]
 		},
 		"sprites": [

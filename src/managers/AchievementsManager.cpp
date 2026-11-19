@@ -6,6 +6,7 @@
 
 #include <Geode/utils/web.hpp>
 #include <fmt/format.h>
+#include "Consent.hpp"
 
 namespace levelgrind::achievements {
 
@@ -44,6 +45,10 @@ static Achievement parse(matjson::Value const& v) {
 }
 
 void check(geode::Function<void(std::vector<Achievement> const&)> onDone) {
+    if (!consent::granted()) {
+        if (onDone) onDone({});
+        return;
+    }
     static TaskHolder<web::WebResponse> task;
     auto body = GrindClansManager::authBody();
     if (body["accountId"].asInt().unwrapOr(0) <= 0) {

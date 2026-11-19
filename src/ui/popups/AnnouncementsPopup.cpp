@@ -154,7 +154,7 @@ bool AnnouncementsPopup::init() {
                     }, announcement.id
                 ));
 
-                if (DataManager::getInstance().getUserPosition() == GrindPosition::Admin || DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
+                if (DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
                     auto announcementId = announcement.id;
 
                     auto deleteButtonsMenu = Build(CCMenu::create())
@@ -205,7 +205,7 @@ bool AnnouncementsPopup::init() {
 
             spinnerRef->removeFromParent();
 
-            if (DataManager::getInstance().getUserPosition() == GrindPosition::Admin || DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
+            if (DataManager::getInstance().getUserPosition() == GrindPosition::Owner) {
                 auto section = Build(CCMenu::create())
                     .id(fmt::format("section-admin"))
                     .contentSize({ 140.f, 30.f })

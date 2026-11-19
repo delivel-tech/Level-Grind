@@ -16,6 +16,8 @@
 #include <Geode/ui/LoadingSpinner.hpp>
 #include <cue/PlayerIcon.hpp>
 #include <fmt/format.h>
+#include <Geode/binding/GameManager.hpp>
+#include "../PetAnim.hpp"
 
 namespace levelgrind {
 
@@ -48,6 +50,7 @@ ccColor3B rarityColor(int rarity) {
         case 2: return { 90, 200, 255 };
         case 3: return { 255, 170, 60 };
         case 4: return { 255, 90, 120 };
+        default: if (rarity > 4) return { 255, 110, 200 };
     }
     return { 210, 210, 210 };
 }
@@ -127,6 +130,7 @@ void GrindProfilePopup::load() {
         d.achUnlocked = asI(v["achievements"]["unlocked"]);
         d.achTotal = asI(v["achievements"]["total"]);
         d.streak = asI(v["streak"]);
+        d.packs = asI(v["packs"]);
         d.last30Levels = asI(v["last30"]["levels"]);
         d.last30Stars = asI(v["last30"]["stars"]);
         d.last30Moons = asI(v["last30"]["moons"]);
@@ -148,6 +152,9 @@ void GrindProfilePopup::load() {
             d.petName = v["pet"]["name"].asString().unwrapOrDefault();
             d.petLevel = asI(v["pet"]["level"], 1);
             d.petRarity = asI(v["pet"]["rarity"], 1);
+            d.hasAppearance = v["pet"]["appearance"].isObject();
+            d.petMood = asI(v["pet"]["mood"], 1);
+            if (d.hasAppearance) d.appearance = v["pet"]["appearance"];
         }
         self->m_loaded = true;
         self->build();
@@ -291,11 +298,13 @@ void GrindProfilePopup::buildStats(CCNode* root, float w, float y) {
         { clanui::gpIcon(1.f, 1.f), M::formatGP(d.gpLifetime), fmt::format("+{} this week", M::formatGP(d.gpWeek)) },
         { CCSprite::createWithSpriteFrameName("rankIcon_1_001.png"), fmt::format("{}/{}", d.achUnlocked, d.achTotal), "Achievements" },
         { CCSprite::createWithSpriteFrameName("GJ_timeIcon_001.png"), d.streak == 1 ? "1 day" : fmt::format("{} days", d.streak), "Streak" },
+        { CCSprite::create("pack_indicator.png"_spr), numToString(d.packs), "Packs" },
         { CCSprite::createWithSpriteFrameName(moons ? "GJ_moonsIcon_001.png" : "GJ_starsIcon_001.png"),
             numToString(moons ? d.last30Moons : d.last30Stars), "Last 30 days" },
     };
-    float const colW = boxW / 4.f;
-    for (int i = 0; i < 4; i++) {
+    int const colCount = static_cast<int>(std::size(cols));
+    float const colW = boxW / colCount;
+    for (int i = 0; i < colCount; i++) {
         float x = 12.f + colW * (i + 0.5f);
         auto icon = fit(cols[i].icon, 15.f);
         icon->setPosition({ x, y + 15.f });
@@ -305,7 +314,7 @@ void GrindProfilePopup::buildStats(CCNode* root, float w, float y) {
         auto cap = text(root, cols[i].caption, { x, y - 15.f }, 0.22f);
         cap->limitLabelWidth(colW - 6.f, 0.22f, 0.1f);
         cap->setOpacity(160);
-        if (i < 3) {
+        if (i < colCount - 1) {
             auto line = CCLayerColor::create({ 255, 255, 255, 25 }, 1.f, 40.f);
             line->setPosition({ 12.f + colW * (i + 1), y - 20.f });
             root->addChild(line);
@@ -373,18 +382,49 @@ void GrindProfilePopup::buildChips(CCNode* root, float w, float y) {
         menu->addChild(btn);
     } else {
         root->addChild(clan);
-        text(clan, "No clan", { chipW / 2.f, chipH / 2.f }, 0.32f)->setOpacity(130);
+        int me = GJAccountManager::get()->m_accountID;
+        if (M::getInstance().m_myClanRole >= 1 && d.accountId > 0 && d.accountId != me) {
+            text(clan, "No clan", { chipW / 2.f - 26.f, chipH / 2.f }, 0.32f)->setOpacity(130);
+            int target = d.accountId;
+            std::string uname = d.username;
+            auto spr = ButtonSprite::create("Invite", "bigFont.fnt", "GJ_button_01.png", 0.6f);
+            spr->setScale(0.5f);
+            auto btn = CCMenuItemExt::createSpriteExtra(spr, [target, uname](CCObject*) {
+                auto body = M::authBody();
+                body["targetAccountId"] = target;
+                body["targetUsername"] = uname;
+                M::getInstance().runAction("clan_invite", body, "Inviting...", fmt::format("Invited {}!", uname), [](matjson::Value const&) {});
+            });
+            btn->setPosition({ 12.f + chipW - 30.f, y });
+            menu->addChild(btn);
+        } else {
+            text(clan, "No clan", { chipW / 2.f, chipH / 2.f }, 0.32f)->setOpacity(130);
+        }
     }
 
     auto pet = chip(rightX);
     root->addChild(pet);
     if (d.hasPet) {
-        auto name = text(pet, d.petName.empty() ? "Pet" : d.petName, { chipW / 2.f, chipH / 2.f + 7.f }, 0.42f, "goldFont.fnt");
-        name->limitLabelWidth(chipW - 14.f, 0.42f, 0.15f);
+        auto appearance = d.hasAppearance ? PetManager::appearanceFromJson(d.appearance) : PetManager::Appearance{};
+        PetManager::OwnerLook owner;
+        auto gm = GameManager::sharedState();
+        owner.frame = std::max(1, d.icon);
+        owner.color1 = gm->colorForIdx(d.color1);
+        owner.color2 = gm->colorForIdx(d.color2);
+        owner.glow = d.color3 > 0;
+        owner.glowColor = gm->colorForIdx(d.color3);
+        auto petSpr = PetManager::createPetSprite(PetManager::getInstance().getStyleByLevel(d.petLevel), appearance, owner);
+        petSpr->setScale(0.72f);
+        petSpr->setPosition({ 20.f, chipH / 2.f });
+        pet->addChild(petSpr);
+        petanim::playMood(petSpr, d.petMood);
+
+        auto name = text(pet, d.petName.empty() ? "Pet" : d.petName, { 38.f, chipH / 2.f + 7.f }, 0.34f, "bigFont.fnt", { 0.f, 0.5f });
+        name->limitLabelWidth(chipW - 44.f, 0.34f, 0.12f);
         auto rarity = PetManager::getInstance().getRarityFromInt(d.petRarity);
-        auto sub = text(pet, fmt::format("Lv {}/30 - {}", d.petLevel, rarity.empty() ? "Common" : rarity), { chipW / 2.f, chipH / 2.f - 8.f }, 0.28f);
+        auto sub = text(pet, fmt::format("Lv {} - {}", d.petLevel, rarity.empty() ? "Common" : rarity), { 38.f, chipH / 2.f - 8.f }, 0.26f, "bigFont.fnt", { 0.f, 0.5f });
         sub->setColor(rarityColor(d.petRarity));
-        sub->limitLabelWidth(chipW - 14.f, 0.28f, 0.1f);
+        sub->limitLabelWidth(chipW - 44.f, 0.26f, 0.1f);
     } else {
         text(pet, "No pet", { chipW / 2.f, chipH / 2.f }, 0.32f)->setOpacity(130);
     }

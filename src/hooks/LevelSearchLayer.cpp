@@ -6,6 +6,7 @@
 using namespace geode::prelude;
 
 #include <UIBuilder.hpp>
+#include "../managers/Consent.hpp"
 
 namespace levelgrind {
 
@@ -22,6 +23,10 @@ class $modify(LevelGrind, LevelSearchLayer) {
 		        if (searchBar) {
 			        searchBar->onClickTrackNode(false);
 		        }
+                if (!consent::decided()) {
+                    consent::showPopup([] { levelgrind::CreatorLayer::create()->open(); });
+                    return;
+                }
                 levelgrind::CreatorLayer::create()->open();
             })
             .id("level-grind-btn"_spr)

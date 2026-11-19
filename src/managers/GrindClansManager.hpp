@@ -42,6 +42,8 @@ struct ClanInfo {
     bool featured = false;
     int rank = 0;
     long long logoId = 0;
+    bool golden = false;
+    int warWins = 0;
 };
 
 struct ClanMemberInfo {
@@ -53,6 +55,15 @@ struct ClanMemberInfo {
     int weekContributed = 0;
     long long lastActive = 0;
     long long joinedAt = 0;
+    bool hasPet = false;
+    int petLevel = 1;
+    matjson::Value petAppearance;
+};
+
+struct ClanInviteInfo {
+    ClanInfo clan;
+    std::string invitedBy;
+    long long at = 0;
 };
 
 struct ClanTaskInfo {
@@ -103,6 +114,19 @@ struct ClanDetails {
     int myRole = 0;
     bool hasPinned = false;
     ClanChatMessage pinned;
+    long long treasury = 0;
+    int warWins = 0;
+    long long boostUntil = 0;
+    long long goldUntil = 0;
+    int boostCost = 1500, boostPct = 10, boostHours = 24, goldCost = 3000, goldDays = 7;
+    bool hasWar = false;
+    ClanInfo warOpponent;
+    long long warMine = 0, warTheirs = 0, warEndsAt = 0;
+    int warReward = 100;
+    bool hasLastWar = false;
+    std::string lastWarOpponent;
+    long long lastWarMine = 0, lastWarTheirs = 0;
+    bool lastWarWon = false, lastWarDraw = false;
 };
 
 struct ClanHome {
@@ -113,6 +137,7 @@ struct ClanHome {
     long long weekEndsAt = 0;
     long long now = 0;
     std::set<int> requested;
+    std::vector<ClanInviteInfo> invites;
     bool hasClan = false;
     ClanDetails clan;
 };
@@ -182,6 +207,7 @@ public:
     );
 
     GPWallet m_lastWallet;
+    int m_myClanRole = -1;
     bool m_hasWallet = false;
 
 private:

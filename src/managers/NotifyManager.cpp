@@ -12,6 +12,7 @@
 #include <Geode/utils/web.hpp>
 #include <deque>
 #include <fmt/format.h>
+#include "Consent.hpp"
 
 namespace levelgrind::notify {
 
@@ -24,6 +25,7 @@ std::vector<TypeInfo> const& types() {
         { Type::WeeklyAch, "weekly-ach", "Weekly achievements", "New weekly achievements were picked." },
         { Type::NewLevels, "new-levels", "New levels", "Staff added levels to the Level Grind database." },
         { Type::NewPacks, "new-packs", "New Grind Packs", "A new Grind Pack is out." },
+        { Type::CalendarGoals, "calendar-goals", "Stat Tracker goals", "You reached a daily, weekly or monthly goal." },
     };
     return list;
 }
@@ -206,6 +208,7 @@ public:
         m_wait -= dt;
         if (m_wait > 0.f || m_busy) return;
         m_wait = 60.f;
+        if (!consent::granted()) return;
         this->poll();
         achievements::check();
     }

@@ -19,6 +19,8 @@
 #include <ctime>
 #include <fmt/format.h>
 #include "../popups/GrindProfilePopup.hpp"
+#include "../popups/ClanWarPopups.hpp"
+#include "../../managers/PetManager.hpp"
 
 namespace levelgrind {
 
@@ -61,28 +63,31 @@ ButtonSprite* segment(const char* text, bool on, int width = 64) {
     return spr;
 }
 
-CCMenuItemSpriteExtra* actionButton(CCMenu* menu, CCNode* top, const char* caption, geode::Function<void()> cb, int badge = 0) {
+CCMenuItemSpriteExtra* actionButton(CCMenu* menu, CCNode* top, const char* caption, geode::Function<void()> cb, int badge = 0, float cellWidth = 46.f) {
+    float const cw = cellWidth;
+    float const icon = std::min(24.f, cw - 10.f);
     auto holder = CCNode::create();
-    holder->setContentSize({ 46.f, 36.f });
-    float s = 24.f / std::max(top->getContentWidth(), top->getContentHeight());
+    holder->setContentSize({ cw, 36.f });
+    float s = icon / std::max(top->getContentWidth(), top->getContentHeight());
     top->setScale(s);
-    top->setPosition({ 23.f, 22.f });
+    top->setPosition({ cw / 2.f, 23.f });
     holder->addChild(top);
 
     auto cap = CCLabelBMFont::create(caption, "bigFont.fnt");
-    cap->setPosition({ 23.f, 4.f });
-    cap->limitLabelWidth(44.f, 0.24f, 0.1f);
+    cap->setPosition({ cw / 2.f, 5.f });
+    cap->limitLabelWidth(cw - 2.f, 0.24f, 0.1f);
     holder->addChild(cap);
 
     if (badge > 0) {
+        CCPoint const bp { cw / 2.f + icon / 2.f - 2.f, 23.f + icon / 2.f - 2.f };
         auto bubble = NineSlice::create("square02_small.png");
         bubble->setContentSize({ 14.f, 12.f });
         bubble->setColor({ 230, 50, 50 });
-        bubble->setPosition({ 36.f, 32.f });
+        bubble->setPosition(bp);
         holder->addChild(bubble, 2);
         auto n = CCLabelBMFont::create(fmt::format("{}", std::min(badge, 99)).c_str(), "bigFont.fnt");
         n->setScale(0.26f);
-        n->setPosition({ 36.f, 32.f });
+        n->setPosition(bp);
         holder->addChild(n, 3);
     }
 
@@ -499,6 +504,7 @@ CCNode* ClansLayer::makeClanCell(ClanInfo const& c, float width, bool ranked) {
     auto name = lbl(info, c.name, { 28.f, 21.f }, 0.38f, "bigFont.fnt");
     name->limitLabelWidth(108.f, 0.38f, 0.15f);
     if (ranked && c.rank > 0 && c.rank <= 3) name->setColor(rankColor(c.rank));
+    if (c.golden) name->setColor({ 255, 210, 60 });
     if (c.level >= kRainbowLevel) makeRainbow(name);
     if (c.level >= kPrestigeLevel) addPrestige(row, row->getContentSize(), M::clanColor(c.colorId));
     if (c.featured) {
@@ -507,7 +513,7 @@ CCNode* ClansLayer::makeClanCell(ClanInfo const& c, float width, bool ranked) {
         star->setPosition({ 28.f + name->getScaledContentWidth() + 7.f, 21.f });
         info->addChild(star);
     }
-    lbl(info, fmt::format("Lv {}  -  {}/{}  -  {}", c.level, c.members, c.maxMembers, c.joinType == 0 ? "open" : "request"),
+    lbl(info, fmt::format("Lv {}  -  {}/{}  -  {}", c.level, c.members, c.maxMembers, c.joinType == 0 ? "open" : c.joinType == 1 ? "request" : "invite only"),
         { 28.f, 8.f }, 0.24f, "bigFont.fnt")->setOpacity(175);
 
     Ref<ClansLayer> self = this;
@@ -526,11 +532,12 @@ CCNode* ClansLayer::makeClanCell(ClanInfo const& c, float width, bool ranked) {
     bool requested = m_home.requested.contains(c.id);
     bool full = c.members >= c.maxMembers;
     bool locked = m_home.wallet.lifetime < c.minGp;
-    const char* text = requested ? "Sent" : full ? "Full" : locked ? "Locked" : c.joinType == 0 ? "Join" : "Ask";
-    bool active = !(requested || full || locked);
+    bool closed = c.joinType == 2;
+    const char* text = requested ? "Sent" : full ? "Full" : closed ? "Invite" : locked ? "Locked" : c.joinType == 0 ? "Join" : "Ask";
+    bool active = !(requested || full || locked || closed);
     auto joinSpr = ButtonSprite::create(text, 40, true, "goldFont.fnt", active ? "GJ_button_01.png" : "GJ_button_04.png", 24.f, 0.6f);
     joinSpr->setScale(0.6f);
-    auto joinBtn = CCMenuItemExt::createSpriteExtra(joinSpr, [self, c, requested, full, locked](CCObject*) {
+    auto joinBtn = CCMenuItemExt::createSpriteExtra(joinSpr, [self, c, requested, full, locked, closed](CCObject*) {
         if (!self) return;
         if (requested) {
             createQuickPopup("Request sent", fmt::format("Cancel your request to <cy>{}</c>?", c.name), "Keep", "Cancel it",
@@ -546,6 +553,10 @@ CCNode* ClansLayer::makeClanCell(ClanInfo const& c, float width, bool ranked) {
         }
         if (full) {
             Notification::create("This clan is full", NotificationIcon::Info)->show();
+            return;
+        }
+        if (closed) {
+            Notification::create("This clan is invite only", NotificationIcon::Info)->show();
             return;
         }
         if (locked) {
@@ -860,6 +871,14 @@ CCNode* ClansLayer::makeChatCell(ClanChatMessage const& msg, float width) {
     auto icon = playerIcon(msg.icon, msg.color1, msg.color2, msg.color3, 0.42f);
     icon->setPosition({ mine ? width - 13.f : 13.f, 3.f + 11.f });
     row->addChild(icon);
+    for (auto const& m : m_home.clan.members) {
+        if (m.accountId != msg.accountId || !m.hasPet) continue;
+        auto pet = PetManager::createMiniPet(m.petLevel, m.petAppearance, m.icon, m.color1, m.color2, m.color3);
+        pet->setScale(0.2f);
+        pet->setPosition({ mine ? width - 4.f : 22.f, 3.f + 4.f });
+        row->addChild(pet, 2);
+        break;
+    }
 
     nameLbl->setAnchorPoint({ 0.f, 0.5f });
     nameLbl->setPosition({ bubbleX + pad, 3.f + bubbleH - 8.f });
@@ -1095,6 +1114,14 @@ void ClansLayer::buildActions() {
                 })->show();
             }));
 
+        if (!m_home.invites.empty()) {
+            row->addChild(CCMenuItemExt::createSpriteExtra(
+                textButton(fmt::format("Invites ({})", m_home.invites.size()).c_str(), "GJ_button_02.png", 0.6f),
+                [self](CCObject*) {
+                    if (self) ClanInvitesPopup::create(self->m_home.invites, [self] { if (self) self->reload(); })->show();
+                }));
+        }
+
         auto refresh = CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png");
         refresh->setScale(0.42f);
         row->addChild(CCMenuItemExt::createSpriteExtra(refresh, [self](CCObject*) { if (self) self->reload(); }));
@@ -1131,6 +1158,12 @@ void ClansLayer::buildActions() {
     }, 0 });
     acts.push_back({ frameTop("accountBtn_messages_001.png"), "Activity", [self] {
         if (self) ClanFeedPopup::create(self->m_home.clan, self->m_home.now)->show();
+    }, 0 });
+    acts.push_back({ accountTop("rankIcon_top10_001.png", 0.8f, AccountBaseColor::Purple), "War", [self] {
+        if (self) ClanWarPopup::create(self->m_home.clan, self->m_home.now)->show();
+    }, 0 });
+    acts.push_back({ AccountButtonSprite::create(clanui::gpIcon(1.f, 1.f), AccountBaseColor::Blue), "Treasury", [self] {
+        if (self) ClanTreasuryPopup::create(self->m_home.clan, self->m_home.wallet, self->m_home.now, [self] { if (self) self->reload(); })->show();
     }, 0 });
     if (d.myRole >= 1) {
         acts.push_back({ frameTop("accountBtn_requests_001.png"), "Requests", [self] {
@@ -1175,20 +1208,24 @@ void ClansLayer::buildActions() {
             );
         }, 0 });
 
-    auto grid = CCMenu::create();
-    grid->setLayout(
-        RowLayout::create()
-            ->setGap(2.f)
-            ->setGrowCrossAxis(true)
-            ->setCrossAxisOverflow(false)
-            ->setCrossAxisReverse(true)
-            ->setAutoScale(false)
-    );
-    grid->setContentSize({ 144.f, 74.f });
+    size_t const cols = acts.size() <= 6 ? 3 : 4;
+    float const gap = 2.f;
+    float const cellW = std::floor((w - 8.f - gap * (cols - 1)) / cols);
+    auto grid = CCNode::create();
+    grid->setLayout(ColumnLayout::create()->setGap(2.f)->setAxisReverse(true)->setAutoScale(false));
+    grid->setContentSize({ w - 8.f, kActionsSize.height - 6.f });
+    grid->setAnchorPoint({ 0.5f, 0.5f });
     grid->setPosition({ w / 2.f, kActionsSize.height / 2.f });
     m_actions->addChild(grid, 5);
-    for (auto& a : acts) {
-        actionButton(grid, a.top, a.caption, std::move(a.cb), a.badge);
+    for (size_t i = 0; i < acts.size(); i += cols) {
+        auto row = CCMenu::create();
+        row->setLayout(RowLayout::create()->setGap(gap)->setAutoScale(false));
+        row->setContentSize({ w - 8.f, 36.f });
+        grid->addChild(row);
+        for (size_t j = i; j < std::min(acts.size(), i + cols); ++j) {
+            actionButton(row, acts[j].top, acts[j].caption, std::move(acts[j].cb), acts[j].badge, cellW);
+        }
+        row->updateLayout();
     }
     grid->updateLayout();
 }

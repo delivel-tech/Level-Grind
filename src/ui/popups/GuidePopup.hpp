@@ -32,6 +32,9 @@ private:
     bool initMainGuidePage();
     bool initPetGuidePage();
     bool initClansGuidePage();
+    bool initCalendarGuidePage();
+    bool initLeaderboardsGuidePage();
+    bool initGrindListsGuidePage();
     bool initWeeklyAchievementsGuidePage();
     bool initNotesGuidePage();
     bool initOwnerRoleGuidePage();

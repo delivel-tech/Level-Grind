@@ -3,6 +3,8 @@
 #include "../../managers/APIClient.hpp"
 #include "../../managers/Auth.hpp"
 #include "../../managers/GrindClansManager.hpp"
+#include "../../managers/NotifyManager.hpp"
+#include <Geode/binding/GJAccountManager.hpp>
 
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/ui/LoadingSpinner.hpp>
@@ -11,6 +13,7 @@
 #include <Geode/ui/TextInput.hpp>
 #include <ctime>
 #include <fmt/format.h>
+#include "../../managers/Consent.hpp"
 
 namespace levelgrind {
 
@@ -206,7 +209,7 @@ bool GrindCalendarLayer::init() {
     m_metric = static_cast<Metric>(std::clamp(Mod::get()->getSavedValue<int>("calendar-metric", 0), 0, 5));
 
     auto win = m_winSize;
-    label(this, "Grind Calendar", { win.width / 2.f, win.height - 18.f }, 0.75f, "goldFont.fnt");
+    label(this, "Stat Tracker", { win.width / 2.f, win.height - 18.f }, 0.75f, "goldFont.fnt");
 
     auto frame = NineSlice::create("GJ_square02.png");
     frame->setContentSize({ 546.f, 266.f });
@@ -241,6 +244,95 @@ bool GrindCalendarLayer::init() {
     return true;
 }
 
+namespace {
+
+std::unordered_map<long long, GrindCalendarLayer::Day> parseDays(matjson::Value const& v) {
+    std::unordered_map<long long, GrindCalendarLayer::Day> out;
+    if (auto arr = v["days"].asArray()) {
+        for (auto const& d : arr.unwrap()) {
+            GrindCalendarLayer::Day day;
+            day.levels = static_cast<int>(d["levels"].asInt().unwrapOr(0));
+            day.stars = static_cast<int>(d["stars"].asInt().unwrapOr(0));
+            day.moons = static_cast<int>(d["moons"].asInt().unwrapOr(0));
+            day.demons = static_cast<int>(d["demons"].asInt().unwrapOr(0));
+            day.gp = static_cast<int>(d["gp"].asInt().unwrapOr(0));
+            day.packs = static_cast<int>(d["packs"].asInt().unwrapOr(0));
+            day.coins = static_cast<int>(d["coins"].asInt().unwrapOr(0));
+            out[d["day"].asInt().unwrapOr(0)] = day;
+        }
+    }
+    return out;
+}
+
+int dayValue(GrindCalendarLayer::Day const& d, GrindCalendarLayer::Metric m) {
+    using Metric = GrindCalendarLayer::Metric;
+    switch (m) {
+        case Metric::Stars: return d.stars;
+        case Metric::Moons: return d.moons;
+        case Metric::Levels: return d.levels;
+        case Metric::Demons: return d.demons;
+        case Metric::GP: return d.gp;
+        case Metric::Coins: return d.coins;
+    }
+    return 0;
+}
+
+long long lastGoalCheck = 0;
+
+}
+
+void GrindCalendarLayer::evaluateGoals(std::unordered_map<long long, Day> const& days, long long today) {
+    if (!notify::enabled(notify::Type::CalendarGoals)) return;
+    int y, m, d;
+    civilFromDays(today, y, m, d);
+    long long weekStart = today - weekday(today);
+    long long monthStart = daysFromCivil(y, m, 1);
+    long long starts[] = { today, weekStart, monthStart };
+    long long periodIds[] = { today, weekStart, monthStart };
+    static constexpr const char* kPeriodNames[] = { "Daily", "Weekly", "Monthly" };
+
+    for (auto metric : kMetrics) {
+        for (int period = 0; period < 3; period++) {
+            int target = goal(metric, period);
+            if (target <= 0) continue;
+            int sum = 0;
+            for (long long day = starts[period]; day <= today; day++) {
+                if (auto it = days.find(day); it != days.end()) sum += dayValue(it->second, metric);
+            }
+            if (sum < target) continue;
+            auto key = fmt::format("calendar-goal-done-{}-{}", static_cast<int>(metric), period);
+            if (Mod::get()->getSavedValue<long long>(key, -1) == periodIds[period]) continue;
+            Mod::get()->setSavedValue<long long>(key, periodIds[period]);
+            notify::show(
+                fmt::format("{} goal reached!", kPeriodNames[period]),
+                fmt::format("{}: {}/{}", metricName(metric), sum, target),
+                "GJ_timeIcon_001.png"
+            );
+        }
+    }
+}
+
+void GrindCalendarLayer::checkGoals() {
+    if (!consent::granted()) return;
+    if (GJAccountManager::get()->m_accountID <= 0) return;
+    if (!notify::enabled(notify::Type::CalendarGoals)) return;
+    long long now = static_cast<long long>(std::time(nullptr));
+    if (now - lastGoalCheck < 15) return;
+    lastGoalCheck = now;
+    auto body = GrindClansManager::authBody();
+    body["tzOffset"] = utcOffsetMinutes();
+    body["days"] = 40;
+    async::spawn(auth::post(fmt::format("{}/calendar", APIClient::getInstance().baseUrl), std::move(body), std::chrono::seconds{ 20 }),
+        [](web::WebResponse res) {
+            auto json = res.json();
+            if (!res.ok() || !json) return;
+            auto const& v = json.unwrap();
+            auto today = v["today"].asInt();
+            if (!today) return;
+            evaluateGoals(parseDays(v), today.unwrap());
+        });
+}
+
 void GrindCalendarLayer::load() {
     auto body = GrindClansManager::authBody();
     body["tzOffset"] = utcOffsetMinutes();
@@ -255,27 +347,15 @@ void GrindCalendarLayer::load() {
             }
             auto json = res.json();
             if (!res.ok() || !json) {
-                Notification::create("Couldn't load your calendar", NotificationIcon::Error)->show();
+                Notification::create("Failed to load", NotificationIcon::Error)->show();
                 return;
             }
             auto v = json.unwrap();
             self->m_today = v["today"].asInt().unwrapOr(self->m_today);
-            self->m_days.clear();
-            if (auto arr = v["days"].asArray()) {
-                for (auto const& d : arr.unwrap()) {
-                    Day day;
-                    day.levels = static_cast<int>(d["levels"].asInt().unwrapOr(0));
-                    day.stars = static_cast<int>(d["stars"].asInt().unwrapOr(0));
-                    day.moons = static_cast<int>(d["moons"].asInt().unwrapOr(0));
-                    day.demons = static_cast<int>(d["demons"].asInt().unwrapOr(0));
-                    day.gp = static_cast<int>(d["gp"].asInt().unwrapOr(0));
-                    day.packs = static_cast<int>(d["packs"].asInt().unwrapOr(0));
-                    day.coins = static_cast<int>(d["coins"].asInt().unwrapOr(0));
-                    self->m_days[d["day"].asInt().unwrapOr(0)] = day;
-                }
-            }
+            self->m_days = parseDays(v);
             self->m_loaded = true;
             self->rebuild();
+            evaluateGoals(self->m_days, self->m_today);
         });
 }
 

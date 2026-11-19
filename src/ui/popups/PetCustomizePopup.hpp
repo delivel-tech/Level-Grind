@@ -16,11 +16,13 @@ namespace levelgrind {
 
 class PetCustomisePopup : public BasePopup {
 public:
-    static PetCustomisePopup* create(PetManager::PetData petData);
+    static PetCustomisePopup* create(PetManager::PetData petData, geode::Function<void()> onClosed = {});
 
 private:
     bool init(PetManager::PetData petData);
+    geode::Function<void()> m_onClosed;
     void onIconSelect(CCObject* sender);
+    void onClose(CCObject* sender) override;
     void onColorsToggle(CCObject* sender);
     void onGlowToggle(CCObject* sender);
     void onIconsToggle(CCObject* sender);

@@ -6,6 +6,7 @@
 #include <Geode/modify/EndLevelLayer.hpp>
 #include <Geode/binding/GameStatsManager.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
+#include "../managers/Consent.hpp"
 
 using namespace geode::prelude;
 
@@ -14,6 +15,7 @@ namespace levelgrind {
 class $modify(PetELL, EndLevelLayer) {
     void customSetup() {
         EndLevelLayer::customSetup();
+        if (!consent::granted()) return;
 
         PetManager::getInstance().updatePetDeltasOnCompletion(this->m_stars, this->m_moons);
 

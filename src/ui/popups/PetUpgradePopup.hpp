@@ -12,7 +12,7 @@ namespace levelgrind {
 
 class PetUpgradePopup : public BasePopup, public ::UploadPopupDelegate {
 public:
-    static PetUpgradePopup* create(PetManager::PetData petData);
+    static PetUpgradePopup* create(PetManager::PetData petData, geode::Function<void()> onUpgraded = {});
 
     void onClosePopup(::UploadActionPopup* popup) override;
 
@@ -22,7 +22,9 @@ public:
     int getUpgradeLvlCostByLevel(int petLevel);
 
 private:
-    bool init(PetManager::PetData petData);
+    bool init(PetManager::PetData petData, geode::Function<void()> onUpgraded);
+    void finishUpgrade(bool ok, bool level, int cost);
+    geode::Function<void()> m_onUpgraded;
 
     TaskHolder<web::WebResponse> m_listener;
 

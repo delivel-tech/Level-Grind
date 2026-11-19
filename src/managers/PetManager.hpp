@@ -24,6 +24,9 @@ public:
         int petRarity;
         bool isBanned;
         std::string banReason;
+        int mood = 1;
+        int streak = 0;
+        int feedCost = 25;
     };
 
     enum PetStyle {
@@ -32,6 +35,38 @@ public:
         OwnCubeWithColors
     };
 
+    struct Appearance {
+        bool customColors = false;
+        ccColor3B color1 = { 111, 255, 0 };
+        ccColor3B color2 = { 0, 251, 255 };
+        bool customGlow = false;
+        ccColor3B glow = { 255, 255, 255 };
+        bool customIcon = false;
+        int iconId = 0;
+    };
+
+    struct OwnerLook {
+        int frame = 1;
+        ccColor3B color1 = { 125, 255, 0 };
+        ccColor3B color2 = { 0, 255, 255 };
+        bool glow = false;
+        ccColor3B glowColor = { 255, 255, 255 };
+    };
+
+    static Appearance localAppearance();
+    static void storeLocalAppearance(Appearance const& appearance);
+    static bool hasLocalCustomization();
+    static OwnerLook localOwner();
+    static matjson::Value appearanceToJson(Appearance const& appearance);
+    static Appearance appearanceFromJson(matjson::Value const& value);
+    static CCSprite* createPetSprite(PetStyle style, Appearance const& appearance, OwnerLook const& owner);
+    void pushAppearance(geode::Function<void()> done = {});
+    static std::string moodName(int mood);
+    static ccColor3B moodColor(int mood);
+    static CCSprite* createMiniPet(int petLevel, matjson::Value const& appearance, int icon, int color1, int color2, int color3);
+
+    static constexpr int kMaxLevel = 1000;
+    static constexpr int kMaxRarity = 24;
     int getUpgradeRarityCostByCurrRarity(int rarity);
     PetData parsePetData(web::WebResponse res, LoadingSpinner* spinner);
     float getNextLevelPercentage(int petStars, int nextLvlCost);

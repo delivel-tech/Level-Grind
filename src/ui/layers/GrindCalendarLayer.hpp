@@ -23,6 +23,9 @@ public:
 
     void rebuild();
 
+    static void checkGoals();
+    static void evaluateGoals(std::unordered_map<long long, Day> const& days, long long today);
+
 private:
     bool init() override;
     void load();

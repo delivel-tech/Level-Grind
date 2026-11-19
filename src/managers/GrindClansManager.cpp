@@ -2,6 +2,7 @@
 #include "GrindClansManager.hpp"
 #include "APIClient.hpp"
 #include "DataManager.hpp"
+#include "../ui/layers/GrindCalendarLayer.hpp"
 
 #include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GameManager.hpp>
@@ -9,6 +10,7 @@
 #include <Geode/binding/UploadActionPopup.hpp>
 #include <Geode/ui/Notification.hpp>
 #include <fmt/format.h>
+#include "Consent.hpp"
 
 namespace levelgrind {
 
@@ -71,6 +73,8 @@ ClanInfo GrindClansManager::parseClan(matjson::Value const& v) {
     c.featured = v["featured"].asBool().unwrapOr(false);
     c.rank = asI(v["rank"]);
     c.logoId = asLL(v["logoId"]);
+    c.golden = v["golden"].asBool().unwrapOr(false);
+    c.warWins = asI(v["warWins"]);
     return c;
 }
 
@@ -81,6 +85,33 @@ ClanDetails GrindClansManager::parseDetails(matjson::Value const& v) {
     d.myRole = asI(v["myRole"]);
     d.logoPending = v["logoPending"].asBool().unwrapOr(false);
     d.hasPinned = parsePinned(v["pinned"], d.pinned);
+    d.treasury = asLL(v["treasury"]);
+    d.warWins = asI(v["warWins"]);
+    d.boostUntil = asLL(v["boostUntil"]);
+    d.goldUntil = asLL(v["goldUntil"]);
+    if (v["shop"].isObject()) {
+        d.boostCost = asI(v["shop"]["boostCost"], 1500);
+        d.boostPct = asI(v["shop"]["boostPct"], 10);
+        d.boostHours = asI(v["shop"]["boostHours"], 24);
+        d.goldCost = asI(v["shop"]["goldCost"], 3000);
+        d.goldDays = asI(v["shop"]["goldDays"], 7);
+    }
+    if (v["war"].isObject()) {
+        d.hasWar = true;
+        d.warOpponent = parseClan(v["war"]["opponent"]);
+        d.warMine = asLL(v["war"]["myScore"]);
+        d.warTheirs = asLL(v["war"]["theirScore"]);
+        d.warEndsAt = asLL(v["war"]["endsAt"]);
+        d.warReward = asI(v["war"]["reward"], 100);
+    }
+    if (v["lastWar"].isObject()) {
+        d.hasLastWar = true;
+        d.lastWarOpponent = v["lastWar"]["opponentName"].asString().unwrapOrDefault();
+        d.lastWarMine = asLL(v["lastWar"]["myScore"]);
+        d.lastWarTheirs = asLL(v["lastWar"]["theirScore"]);
+        d.lastWarWon = v["lastWar"]["won"].asBool().unwrapOr(false);
+        d.lastWarDraw = v["lastWar"]["draw"].asBool().unwrapOr(false);
+    }
 
     if (auto arr = v["members"].asArray()) {
         for (auto const& m : arr.unwrap()) {
@@ -96,6 +127,11 @@ ClanDetails GrindClansManager::parseDetails(matjson::Value const& v) {
             mi.weekContributed = asI(m["weekContributed"]);
             mi.lastActive = asLL(m["lastActive"]);
             mi.joinedAt = asLL(m["joinedAt"]);
+            if (m["pet"].isObject()) {
+                mi.hasPet = true;
+                mi.petLevel = asI(m["pet"]["level"], 1);
+                mi.petAppearance = m["pet"]["appearance"];
+            }
             d.members.push_back(mi);
         }
     }
@@ -166,6 +202,15 @@ ClanHome GrindClansManager::parseHome(web::WebResponse& res) {
     if (auto arr = json["requested"].asArray()) {
         for (auto const& id : arr.unwrap()) h.requested.insert(asI(id));
     }
+    if (auto arr = json["invites"].asArray()) {
+        for (auto const& v : arr.unwrap()) {
+            ClanInviteInfo inv;
+            inv.clan = parseClan(v["clan"]);
+            inv.invitedBy = v["invitedBy"].asString().unwrapOrDefault();
+            inv.at = asLL(v["at"]);
+            h.invites.push_back(inv);
+        }
+    }
     if (json["clan"].isObject()) {
         h.hasClan = true;
         h.clan = parseDetails(json["clan"]);
@@ -174,6 +219,7 @@ ClanHome GrindClansManager::parseHome(web::WebResponse& res) {
     auto& mgr = GrindClansManager::getInstance();
     mgr.m_lastWallet = h.wallet;
     mgr.m_hasWallet = true;
+    mgr.m_myClanRole = h.hasClan ? h.clan.myRole : -1;
     return h;
 }
 
@@ -332,6 +378,10 @@ std::string GrindClansManager::feedText(ClanFeedEntry const& e) {
         case 7: return fmt::format("<cl>{}</c> finished a Grind Pack for <cy>+{} GP</c>", e.username, e.value);
         case 8: return fmt::format("<cl>{}</c> is now {}", e.username, e.value == 1 ? "an Officer" : "a Member");
         case 9: return fmt::format("<cy>{}</c> is the new Leader", e.username);
+        case 10: return fmt::format("The clan <cg>won the Clan War</c>! Every member got <cy>+{} GP</c>", e.value);
+        case 11: return "The clan <cr>lost the Clan War</c>";
+        case 12: return fmt::format("<cl>{}</c> donated <cy>{} GP</c> to the treasury", e.username, e.value);
+        case 13: return fmt::format("<cl>{}</c> bought {} for <cy>{} GP</c>", e.username, e.text == "boost" ? "a GP Boost" : "a Golden Name", e.value);
     }
     return e.username;
 }
@@ -353,6 +403,7 @@ std::string GrindClansManager::formatGP(long long gp) {
 static constexpr auto kQueueKey = "gp-claim-queue";
 
 void GrindClansManager::queueLevelClaim(int levelId, int stars, bool platformer) {
+    if (!consent::granted()) return;
     if (levelId <= 0 || stars <= 0) return;
 
     auto queue = Mod::get()->getSavedValue<matjson::Value>(kQueueKey, matjson::Value::array());
@@ -383,6 +434,7 @@ void GrindClansManager::queueLevelClaim(int levelId, int stars, bool platformer)
 }
 
 void GrindClansManager::flushClaims() {
+    if (!consent::granted()) return;
     if (GJAccountManager::get()->m_accountID <= 0) return;
     if (GJAccountManager::get()->m_accountID <= 0) return;
     if (!m_packClaiming) this->sendNextPackClaim();
@@ -430,6 +482,7 @@ void GrindClansManager::checkPacks(std::vector<GrindPack> const& packs) {
 }
 
 void GrindClansManager::checkAllPacks() {
+    if (!consent::granted()) return;
     if (m_packsLoaded) {
         this->checkPacks(m_packs);
         return;
@@ -490,6 +543,7 @@ void GrindClansManager::sendNextPackClaim() {
 static constexpr auto kCoinQueueKey = "gp-coin-queue";
 
 void GrindClansManager::queueCoinClaim(int levelId, std::vector<int> const& coins) {
+    if (!consent::granted()) return;
     if (levelId <= 0 || coins.empty()) return;
     auto queue = Mod::get()->getSavedValue<matjson::Value>(kCoinQueueKey, matjson::Value::array());
     if (!queue.isArray()) queue = matjson::Value::array();
@@ -507,6 +561,7 @@ void GrindClansManager::queueCoinClaim(int levelId, std::vector<int> const& coin
 }
 
 void GrindClansManager::flushCoinClaims() {
+    if (!consent::granted()) return;
     if (m_coinClaiming) return;
     auto queue = Mod::get()->getSavedValue<matjson::Value>(kCoinQueueKey, matjson::Value::array());
     if (!queue.isArray() || queue.size() == 0) return;
@@ -521,6 +576,7 @@ void GrindClansManager::flushCoinClaims() {
 
     m_coinTask.spawn(post("gp_claim_coins", body), [this, levelId](web::WebResponse res) {
         m_coinClaiming = false;
+        if (res.ok()) GrindCalendarLayer::checkGoals();
         bool drop = res.ok() || res.code() == 400;
         if (!drop) return;
         auto q = Mod::get()->getSavedValue<matjson::Value>(kCoinQueueKey, matjson::Value::array());
@@ -572,6 +628,7 @@ void GrindClansManager::sendNextClaim() {
             std::string reason = data["reason"].asString().unwrapOrDefault();
             m_lastWallet = parseWallet(data["wallet"]);
             m_hasWallet = true;
+            if (reason.empty()) GrindCalendarLayer::checkGoals();
 
             if (reason == "daily_cap") {
                 m_claiming = false;

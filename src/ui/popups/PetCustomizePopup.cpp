@@ -18,8 +18,9 @@
 
 namespace levelgrind {
 
-PetCustomisePopup* PetCustomisePopup::create(PetManager::PetData petData) {
+PetCustomisePopup* PetCustomisePopup::create(PetManager::PetData petData, geode::Function<void()> onClosed) {
     auto ret = new PetCustomisePopup;
+    ret->m_onClosed = std::move(onClosed);
     if (ret && ret->init(petData)) {
         ret->autorelease();
         return ret;
@@ -195,7 +196,7 @@ bool PetCustomisePopup::init(PetManager::PetData petData) {
         .id("scroll-bar")
         .collect();
 
-    if (m_rarity != Rarity::Mythic) {
+    if (m_rarity < Rarity::Mythic) {
         auto lockBtnMenu = Build<CCMenu>::create()
             .parent(listNode)
             .center()
@@ -291,6 +292,11 @@ void PetCustomisePopup::refreshSelection() {
         entry.player->setColor(selected ? ccColor3B{255, 255, 255} : ccColor3B{100, 100, 100});
         entry.player->setScale(0.8f);
     }
+}
+
+void PetCustomisePopup::onClose(CCObject* sender) {
+    PetManager::getInstance().pushAppearance(std::move(m_onClosed));
+    BasePopup::onClose(sender);
 }
 
 }

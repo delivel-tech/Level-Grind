@@ -1,4 +1,5 @@
 #include "ClanPopups.hpp"
+#include "../StaffIcons.hpp"
 #include "StaffPopup.hpp"
 #include "../../managers/DataManager.hpp"
 #include "Geode/cocos/label_nodes/CCLabelBMFont.h"
@@ -65,7 +66,7 @@ bool StaffPopup::init() {
         .parent(m_mainLayer)
         .pos(centerX(), centerY() - 20)
         .id("buttons-menu")
-        .scale(0.75f)
+        .scale(0.68f)
         .contentSize(m_mainLayer->getContentWidth() - 50.f, 80)
         .layout(
             RowLayout::create()
@@ -75,28 +76,28 @@ bool StaffPopup::init() {
         .zOrder(1)
         .collect();
 
-    Build<CCSprite>::createSpriteName("GJ_levelLeaderboardBtn_001.png")
+    Build(staffIconButton("staff_activity_staff_icon.png"_spr, false, CircleBaseSize::Medium))
         .intoMenuItem([] {
             StaffActivityPopup::create()->show();
         })
         .id("activity-btn")
         .parent(buttonsMenu);
 
-    Build<CCSprite>::createSpriteName("GJ_reportBtn_001.png")
+    Build(staffIconButton("reports_staff_icon.png"_spr, false, CircleBaseSize::Medium))
         .intoMenuItem([] {
             StaffReportsPopup::create()->show();
         })
         .id("reports-btn")
         .parent(buttonsMenu);
 
-    Build(CircleButtonSprite::createWithSpriteFrameName("GJ_sFriendsIcon_001.png", 0.8f))
+    Build(staffIconButton("clan_logos_staff_icon.png"_spr, false, CircleBaseSize::Medium))
         .intoMenuItem([] {
             StaffLogosPopup::create()->show();
         })
         .id("clan-logos-btn")
         .parent(buttonsMenu);
 
-    Build(CircleButtonSprite::createWithSpriteFrameName("gj_findBtn_001.png", 0.9f))
+    Build(staffIconButton("find_player_staff_icon.png"_spr, false, CircleBaseSize::Medium))
         .intoMenuItem([] {
             FindPlayerPopup::create()->show();
         })
@@ -104,7 +105,7 @@ bool StaffPopup::init() {
         .parent(buttonsMenu);
 
     if (pos == GrindPosition::Owner) {
-        auto syncBtn = Build(CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png"))
+        auto syncBtn = Build(staffIconButton("sync_levels_staff_icon.png"_spr, false, CircleBaseSize::Medium))
             .intoMenuItem([] {
                 SyncLevelsPopup::create()->show();
             })
@@ -114,7 +115,7 @@ bool StaffPopup::init() {
     }
 
     if (pos == GrindPosition::Admin || pos == GrindPosition::Owner) {
-        Build(CircleButtonSprite::createWithSpriteFrameName("gj_dailyCrown_001.png"))
+        Build(staffIconButton("queue_events_staff_icon.png"_spr, false, CircleBaseSize::Medium))
             .intoMenuItem([] {
                 EventsManagePopup::create()->show();
             })

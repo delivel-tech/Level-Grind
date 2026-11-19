@@ -208,8 +208,7 @@ bool GrindPacksLayer::init() {
         .collect();
 
 
-    if (DataManager::getInstance().getUserPosition() == GrindPosition::Owner || 
-    DataManager::getInstance().getUserPosition() == GrindPosition::Admin) {
+    if ((DataManager::getInstance().getUserPosition() == GrindPosition::Owner || DataManager::getInstance().getUserPosition() == GrindPosition::Admin)) {
 
         Build(CCSprite::createWithSpriteFrameName("GJ_listAddBtn_001.png"))
             .intoMenuItem([] {
@@ -339,7 +338,7 @@ void GrindPacksLayer::buildFilterButtons() {
     auto tabs = Build<CCMenu>::create()
         .layout(RowLayout::create()->setGap(6.f)->setAutoScale(false))
         .contentSize({ 80.f, 34.f })
-        .pos({ 42.f, DataManager::getInstance().getUserPosition() >= GrindPosition::Admin ? 102.f : 68.f })
+        .pos({ 42.f, (DataManager::getInstance().getUserPosition() == GrindPosition::Owner || DataManager::getInstance().getUserPosition() == GrindPosition::Admin) ? 102.f : 68.f })
         .id("pack-type-tabs")
         .parent(this)
         .zOrder(10)
@@ -428,12 +427,17 @@ void GrindPacksLayer::applyFilters() {
         if (m_difficultyFilter != 0 && static_cast<int>(p.difficulty) != m_difficultyFilter) continue;
         m_shownPacks.push_back(p);
     }
+    auto lower = [](std::string s) {
+        for (auto& ch : s) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        return s;
+    };
     if (m_sortAlpha) {
-        auto lower = [](std::string s) {
-            for (auto& ch : s) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-            return s;
-        };
         std::stable_sort(m_shownPacks.begin(), m_shownPacks.end(), [&](GrindPack const& a, GrindPack const& b) {
+            return lower(a.title) < lower(b.title);
+        });
+    } else {
+        std::stable_sort(m_shownPacks.begin(), m_shownPacks.end(), [&](GrindPack const& a, GrindPack const& b) {
+            if (a.difficulty != b.difficulty) return static_cast<int>(a.difficulty) < static_cast<int>(b.difficulty);
             return lower(a.title) < lower(b.title);
         });
     }

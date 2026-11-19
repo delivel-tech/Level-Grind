@@ -4,6 +4,7 @@
 #include "GrindClansManager.hpp"
 
 #include <fmt/format.h>
+#include "Consent.hpp"
 
 namespace levelgrind::badges {
 
@@ -56,6 +57,10 @@ T seen(const char* k, T current) {
 }
 
 void refresh(geode::Function<void()> onDone) {
+    if (!consent::granted()) {
+        if (onDone) onDone();
+        return;
+    }
     auto body = GrindClansManager::authBody();
     auto done = std::make_shared<geode::Function<void()>>(std::move(onDone));
     task().spawn(auth::post(fmt::format("{}/badges", APIClient::getInstance().baseUrl), std::move(body), std::chrono::seconds{ 15 }), [done](web::WebResponse res) {

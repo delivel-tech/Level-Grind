@@ -48,6 +48,56 @@ public:
     }
 };
 
+class TapCatcher : public CCLayer {
+public:
+    geode::Function<void(CCPoint)> m_onTap;
+    CCPoint m_start;
+    bool m_moved = false;
+
+    static TapCatcher* create(geode::Function<void(CCPoint)> onTap) {
+        auto ret = new TapCatcher;
+        if (ret->init()) {
+            ret->m_onTap = std::move(onTap);
+            ret->setTouchEnabled(true);
+            ret->autorelease();
+            return ret;
+        }
+        delete ret;
+        return nullptr;
+    }
+
+    void registerWithTouchDispatcher() override {
+        int prio = -600;
+        for (auto node = this->getParent(); node; node = node->getParent()) {
+            if (auto delegate = typeinfo_cast<CCTouchDelegate*>(node)) {
+                if (auto handler = CCTouchDispatcher::get()->findHandler(delegate)) {
+                    prio = std::min(prio, handler->m_nPriority - 10);
+                    break;
+                }
+            }
+        }
+        CCTouchDispatcher::get()->addTargetedDelegate(this, prio, false);
+    }
+
+    bool ccTouchBegan(CCTouch* touch, CCEvent*) override {
+        m_start = touch->getLocation();
+        m_moved = false;
+        return true;
+    }
+
+    void ccTouchMoved(CCTouch* touch, CCEvent*) override {
+        if (touch->getLocation().getDistance(m_start) > 8.f) m_moved = true;
+    }
+
+    void ccTouchEnded(CCTouch* touch, CCEvent*) override {
+        if (!m_moved && m_onTap) m_onTap(touch->getLocation());
+    }
+
+    void ccTouchCancelled(CCTouch*, CCEvent*) override {
+        m_moved = true;
+    }
+};
+
 CCSprite* categoryIcon(achievements::Category const* c) {
     if (!c) return CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
     auto spr = c->modSprite ? CCSprite::create(c->icon) : CCSprite::createWithSpriteFrameName(c->icon);
@@ -89,6 +139,32 @@ bool AchievementsPopup::init() {
     listBar->setScale(0.7f);
     m_mainLayer->addChild(listBar);
     m_mainLayer->addChild(WheelRouter::create({ m_tabs->getScrollLayer(), m_list->getScrollLayer() }), 100);
+
+    WeakRef<AchievementsPopup> weak = this;
+    m_mainLayer->addChild(TapCatcher::create([weak](CCPoint p) {
+        auto self = weak.lock();
+        if (!self || !self->m_tabs) return;
+        auto local = self->m_tabs->convertToNodeSpace(p);
+        auto size = self->m_tabs->getContentSize();
+        if (local.x < 0.f || local.y < 0.f || local.x > size.width || local.y > size.height) return;
+        auto content = self->m_tabs->getScrollLayer()->m_contentLayer;
+        auto inContent = content->convertToNodeSpace(p);
+        auto const& cats = achievements::categories();
+        for (size_t i = 0; i < self->m_tabs->size() && i < cats.size(); i++) {
+            auto cell = self->m_tabs->getCell(i);
+            if (!cell || !cell->boundingBox().containsPoint(inContent)) continue;
+            std::string id = cats[i].id;
+            if (self->m_category == id) return;
+            self->m_category = id;
+            Loader::get()->queueInMainThread([weak] {
+                auto self = weak.lock();
+                if (!self) return;
+                self->buildTabs();
+                self->buildList();
+            });
+            return;
+        }
+    }), 101);
 
     m_summary = CCLabelBMFont::create("", "bigFont.fnt");
     m_summary->setScale(0.3f);
@@ -143,10 +219,11 @@ void AchievementsPopup::buildTabs() {
         icon->setPosition({ 14.f, kTabH / 2.f });
         body->addChild(icon);
 
-        auto name = CCLabelBMFont::create(c.name, on ? "goldFont.fnt" : "bigFont.fnt");
+        auto name = CCLabelBMFont::create(c.name, "bigFont.fnt");
         name->setAnchorPoint({ 0.f, 0.5f });
         name->setPosition({ 26.f, kTabH / 2.f + 5.f });
-        name->limitLabelWidth(kTabsW - 32.f, on ? 0.42f : 0.34f, 0.1f);
+        name->limitLabelWidth(kTabsW - 32.f, 0.34f, 0.1f);
+        if (on) name->setColor({ 255, 220, 80 });
         body->addChild(name);
 
         auto count = CCLabelBMFont::create(fmt::format("{}/{}", done, total).c_str(), "bigFont.fnt");
@@ -157,29 +234,11 @@ void AchievementsPopup::buildTabs() {
         if (total > 0 && done == total) count->setColor({ 140, 255, 140 });
         body->addChild(count);
 
-        std::string id = c.id;
-        auto btn = CCMenuItemExt::createSpriteExtra(body, [self, id](CCObject*) {
-            if (!self || self->m_category == id) return;
-            self->m_category = id;
-            Loader::get()->queueInMainThread([self] {
-                if (!self) return;
-                self->buildTabs();
-                self->buildList();
-            });
-        });
-        btn->m_scaleMultiplier = 1.f;
-        btn->setPosition({ kTabsW / 2.f, kTabH / 2.f });
-
-        auto cell = CCMenu::create();
-        cell->ignoreAnchorPointForPosition(false);
-        cell->setContentSize({ kTabsW, kTabH });
-        cell->addChild(btn);
-        m_tabs->addCell(cell);
+        m_tabs->addCell(body);
     }
     m_tabs->updateLayout(false);
     if (redraw) m_tabs->setScrollPos(scroll);
     else m_tabs->scrollToTop();
-    handleTouchPriority(this);
 }
 
 CCNode* AchievementsPopup::makeCell(achievements::Achievement const& a, float width) {

@@ -41,6 +41,7 @@
 #include <cue/PlayerIcon.hpp>
 #include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GameManager.hpp>
+#include "../../managers/Consent.hpp"
 
 namespace levelgrind {
 
@@ -159,6 +160,7 @@ bool CreatorLayer::init() {
     if (!Mod::get()->getSavedValue<bool>("disable-pet")) {
         auto petCat = Build(petCatSpr)
             .intoMenuItem([] {
+            if (!consent::guard()) return;
                 PetLayer::create()->open();
             })
             .parent(catMenu)
@@ -195,6 +197,7 @@ bool CreatorLayer::init() {
 
     auto clansCat = Build(CCSprite::createWithSpriteFrameName("clans_cat.png"_spr))
         .intoMenuItem([] {
+            if (!consent::guard()) return;
             ClansLayer::create()->open();
         })
         .parent(catMenu)
@@ -210,16 +213,18 @@ bool CreatorLayer::init() {
         .id("helper-suggestions-cat")
         .collect();
 
-    auto calendarCat = Build(CCSprite::createWithSpriteFrameName("clans_cat.png"_spr))
+    auto calendarCat = Build(CCSprite::createWithSpriteFrameName("stat_tracker_cat.png"_spr))
         .intoMenuItem([] {
+            if (!consent::guard()) return;
             GrindCalendarLayer::create()->open();
         })
         .parent(catMenu)
         .id("calendar-cat")
         .collect();
 
-    auto leaderboardsCat = Build(CCSprite::createWithSpriteFrameName("clans_cat.png"_spr))
+    auto leaderboardsCat = Build(CCSprite::createWithSpriteFrameName("leaderboard_cat.png"_spr))
         .intoMenuItem([] {
+            if (!consent::guard()) return;
             GrindLeaderboardsLayer::create()->open();
         })
         .parent(catMenu)
@@ -269,7 +274,13 @@ bool CreatorLayer::init() {
     m_badgesAsked = true;
     this->schedule(schedule_selector(CreatorLayer::tickBadges), 0.5f);
 
+    this->applyConsent();
     return true;
+}
+
+void CreatorLayer::onEnterTransitionDidFinish() {
+    BaseLayer::onEnterTransitionDidFinish();
+    this->applyConsent();
 }
 
 void CreatorLayer::onEnter() {
@@ -284,6 +295,42 @@ void CreatorLayer::onEnter() {
 
 void CreatorLayer::tickBadges(float) {
     this->updateBadges();
+}
+
+static void enableCascade(CCNode* node) {
+    if (auto rgba = typeinfo_cast<CCNodeRGBA*>(node)) rgba->setCascadeColorEnabled(true);
+    else if (auto layer = typeinfo_cast<CCLayerRGBA*>(node)) layer->setCascadeColorEnabled(true);
+    for (auto child : CCArrayExt<CCNode*>(node->getChildren())) enableCascade(child);
+}
+
+static void tintTree(CCNode* node, ccColor3B color, bool parentCascades) {
+    auto rgba = typeinfo_cast<CCNodeRGBA*>(node);
+    if (rgba && !parentCascades) rgba->updateDisplayedColor(color);
+    for (auto child : CCArrayExt<CCNode*>(node->getChildren())) tintTree(child, color, rgba != nullptr);
+}
+
+void CreatorLayer::applyConsent() {
+    ccColor3B const color = consent::granted() ? ccColor3B{ 255, 255, 255 } : ccColor3B{ 180, 180, 180 };
+    auto dim = [color](CCNode* node) {
+        auto item = typeinfo_cast<CCMenuItemSpriteExtra*>(node);
+        if (!item || !item->getNormalImage()) return;
+        auto image = item->getNormalImage();
+        enableCascade(image);
+        if (auto rgba = typeinfo_cast<CCNodeRGBA*>(image)) {
+            rgba->setColor(color);
+            for (auto child : CCArrayExt<CCNode*>(image->getChildren())) tintTree(child, color, true);
+        } else {
+            tintTree(image, color, false);
+        }
+    };
+    for (auto const& cat : m_cats) {
+        auto id = cat->getID();
+        if (id == "pet-cat" || id == "clans-cat" || id == "calendar-cat" || id == "leaderboards-cat") dim(cat);
+    }
+    if (auto menu = this->getChildByID("left-side-menu")) {
+        dim(menu->getChildByID("achievements-btn"));
+        dim(menu->getChildByID("grind-profile-btn"));
+    }
 }
 
 void CreatorLayer::updateBadges() {
@@ -359,6 +406,7 @@ bool CreatorLayer::initFarMenus() {
         })
         .scale(1.2f)
         .intoMenuItem([] {
+            if (!consent::guard()) return;
             int id = GJAccountManager::get()->m_accountID;
             if (id <= 0) {
                 Notification::create("Log in to your GD account to see your Grind Profile", NotificationIcon::Info)->show();
@@ -397,6 +445,7 @@ bool CreatorLayer::initFarMenus() {
     Build(CircleButtonSprite::createWithSpriteFrameName("rankIcon_1_001.png", 1.f, CircleBaseColor::Blue))
         .scale(1.2f)
         .intoMenuItem([] {
+            if (!consent::guard()) return;
             AchievementsPopup::create()->show();
         })
         .scaleMult(1.1f)
@@ -552,6 +601,14 @@ bool CreatorLayer::initMd() {
             versionRow->updateLayout();
         }
     );
+
+    WeakRef<CreatorLayer> weakSelf = this;
+    consent::setOnChange([weakSelf] {
+        if (auto self = weakSelf.lock()) self->applyConsent();
+    });
+    this->applyConsent();
+
+    if (!consent::decided()) return true;
 
     if (Mod::get()->getSavedValue<bool>(fmt::format("discord-popup-opened-{}", Mod::get()->getVersion()))) return true;
 

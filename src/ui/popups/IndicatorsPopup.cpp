@@ -130,6 +130,11 @@ bool IndicatorsPopup::init(int levelID) {
                     .id("not-added-icon");
             }
 
+            Build(CCSprite::createWithSpriteFrameName(parsed.locked ? "GJ_lock_001.png" : "GJ_lock_open_001.png"))
+                .parent(self->m_statusMenu)
+                .scale(0.5f)
+                .id("lock-icon");
+
             self->m_statusMenu->updateLayout();
 
             self->m_loadingSpinner->removeFromParent();

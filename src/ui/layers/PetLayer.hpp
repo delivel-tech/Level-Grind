@@ -24,7 +24,15 @@ private:
     };
     void changeMusic(MusicMode mode);
 
-    void drawPet(PetManager::PetStyle style, int petLevel);
+    void drawPet(PetManager::PetStyle style, int petLevel, int mood);
+    void celebrate(bool rarity, PetManager::PetData const& data);
+    int m_lastLevel = -1;
+    int m_lastRarity = -1;
+    void reload();
+    void feed();
+    bool m_feeding = false;
+    TaskHolder<web::WebResponse> m_feedTask;
+    NineSlice* m_mainPanel = nullptr;
 
     CCLabelBMFont* m_petLabel = nullptr;
 

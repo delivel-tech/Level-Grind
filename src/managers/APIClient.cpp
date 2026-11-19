@@ -20,6 +20,7 @@
 #include "DataManager.hpp"
 #include "PetManager.hpp"
 #include "GrindClansManager.hpp"
+#include "Consent.hpp"
 
 using namespace geode::prelude;
 
@@ -722,6 +723,17 @@ BootupGetResponse APIClient::bootupGetParse(web::WebResponse res) {
     }
 
     ret.notes = notesMap;
+
+    if (auto listNotes = json["listNotes"].asArray()) {
+        for (auto const& val : listNotes.unwrap()) {
+            ListNoteInfo info;
+            info.id = val["id"].asInt().unwrapOr(0);
+            info.listID = static_cast<int>(val["listID"].asInt().unwrapOr(0));
+            info.note = val["note"].asString().unwrapOrDefault();
+            info.senderUsername = val["addedBy"].asString().unwrapOrDefault();
+            if (info.listID > 0 && !info.note.empty()) ret.listNotes.insert({ info.listID, info });
+        }
+    }
     ret.ok = true;
 
     return ret;
@@ -824,6 +836,15 @@ void APIClient::performBootupGet() {
         [this](web::WebResponse res) {
             auto parsed = bootupGetParse(res);
             DataManager::getInstance().setSharedData(parsed);
+            if (parsed.ok) {
+                int me = GJAccountManager::get()->m_accountID;
+                auto has = [me](std::vector<int> const& list) { return me > 0 && std::find(list.begin(), list.end(), me) != list.end(); };
+                GrindPosition pos = GrindPosition::User;
+                if (has(parsed.owners)) pos = GrindPosition::Owner;
+                else if (has(parsed.admins)) pos = GrindPosition::Admin;
+                else if (has(parsed.helpers)) pos = GrindPosition::Helper;
+                DataManager::getInstance().setUserPosition(pos);
+            }
         }
     );
 }
@@ -982,6 +1003,7 @@ Indicators APIClient::getIndicatorsParse(web::WebResponse res) {
     indicators.added = indicatorsJson["added"].asBool().unwrapOrDefault();
     indicators.coin = indicatorsJson["coin"].asBool().unwrapOrDefault();
     indicators.event = indicatorsJson["event"].asBool().unwrapOrDefault();
+    indicators.locked = indicatorsJson["locked"].asBool().unwrapOrDefault();
     indicators.pack = indicatorsJson["pack"].asBool().unwrapOrDefault();
 
     return indicators;
@@ -1419,6 +1441,7 @@ ReqAccessResponse APIClient::requestStaffAccessParse(web::WebResponse res) {
 }
 
 void APIClient::performGetToken() {
+    if (!consent::granted()) return;
     geode::queueInMainThread([] {
         async::spawn(auth::token(), [](std::string token) {
             geode::queueInMainThread([token = std::move(token)] {

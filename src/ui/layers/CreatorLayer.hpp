@@ -29,6 +29,9 @@ private:
     TaskHolder<web::WebResponse> m_listener;
 
     void updateBadges();
+    void applyConsent();
+    void onEnterTransitionDidFinish() override;
+    bool m_consentAsked = false;
     void tickBadges(float);
     void onEnter() override;
     bool m_badgesAsked = false;

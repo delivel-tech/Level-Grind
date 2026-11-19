@@ -1,6 +1,8 @@
 #include "UserManagePopup.hpp"
 #include "../../managers/DataManager.hpp"
 #include "../../managers/APIClient.hpp"
+#include "../../managers/Auth.hpp"
+#include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/UploadActionPopup.hpp>
 #include <UIBuilder.hpp>
@@ -17,6 +19,7 @@
 #include "Geode/utils/web.hpp"
 #include "RoleSelectorPopup.hpp"
 #include "WeeklyAchievementConfigurePopup.hpp"
+#include "../StaffIcons.hpp"
 
 using namespace geode::prelude;
 
@@ -158,32 +161,23 @@ bool UserManagePopup::init(GJUserScore* targetUser) {
 
     m_targetLabelMenu->updateLayout();
 
-    auto optionsMenu = Build<CCMenu>::create()
+    m_optionsMenu = Build<CCMenu>::create()
         .parent(m_mainLayer)
-        .pos(centerX(), centerY() - 20)
+        .pos(centerX(), centerY() - 23)
         .id("options-menu")
         .scale(0.9f)
         .contentSize(m_mainLayer->getContentWidth() - 50.f, 80)
-        .layout(
-            RowLayout::create()
-                    ->setGap(7)
-                    ->setGrowCrossAxis(true)
-                    ->setCrossAxisReverse(true)
-        )
+        .layout(ColumnLayout::create()->setGap(6.f)->setAxisReverse(true)->setAutoScale(false))
         .zOrder(1)
         .collect();
 
-    m_optionsMenu = optionsMenu;
-
-    auto menuBg = Build(NineSlice::create("square02_small.png"))
-        .contentSize({ optionsMenu->getContentWidth() + 5,
-        optionsMenu->getContentHeight() + 10 })
+    Build(NineSlice::create("square02_small.png"))
+        .contentSize({ m_optionsMenu->getContentWidth() + 5, m_optionsMenu->getContentHeight() + 10 })
         .pos(centerX(), centerY() - 20)
         .id("menu-bg")
         .scale(0.9f)
         .opacity(80)
-        .parent(m_mainLayer)
-        .collect();
+        .parent(m_mainLayer);
 
     auto spinner = Build(LoadingSpinner::create(55))
         .pos(centerX(), centerY() - 20)
@@ -235,127 +229,162 @@ void UserManagePopup::buildUI() {
                     .collect();
             }
 
-            bool petExists = parsed.petExists;
-            bool isPetBanned = parsed.isPetBanned;
-
-            if (petExists) {
-                auto wipePetBtn = Build(CCSprite::createWithSpriteFrameName("GJ_deleteServerBtn_001.png"))
-                    .parent(self->m_optionsMenu)
-                    .id("wipe-pet-btn")
-                    .intoMenuItem([self] {
-                        
-                        createQuickPopup(
-                            "Are you sure?",
-                            fmt::format("Please confirm your decision to wipe the {}'s pet.", self->m_targetUser->m_userName),
-                            "Cancel", "Confirm",
-                            [self](auto, bool btn2) {
-                                if (btn2) {
-                                    auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
-                                    uPopup->show();
-
-                                    auto uPopupRef = Ref(uPopup);
-
-                                    self->m_listener.spawn(
-                                        APIClient::getInstance().wipePet(self->m_targetUser->m_accountID),
-                                        [uPopupRef](web::WebResponse res) {
-                                            if (!uPopupRef) return;
-                                            auto parsed = APIClient::getInstance().wipePetParse(res);
-                                            if (parsed.ok) {
-                                                uPopupRef->showSuccessMessage("Success! Pet wiped.");
-                                            } else {
-                                                uPopupRef->showFailMessage("Failed! Try again later");
-                                            }
-                                        }
-                                    );
-                                }
-                            }
-                        );
-                    })
-                    .collect();
-            } else {
-                auto wipePetBtn = Build(CCSprite::createWithSpriteFrameName("GJ_deleteServerBtn_001.png"))
-                    .parent(self->m_optionsMenu)
-                    .id("wipe-pet-btn")
-                    .color({ 100, 100, 100 })
-                    .intoMenuItem([] {
-                    })
-                    .enabled(false)
-                    .collect();
-            }
-
-            if (isPetBanned) {
-                if (petExists) {
-                    auto unbanBtn = Build<CCSprite>::createSpriteName("GJ_cancelDownloadBtn_001.png")
-                        .parent(self->m_optionsMenu)
-                        .id("unban-pet-btn")
-                        .scale(1.2f)
-                        .intoMenuItem([self] {
-                            auto uPopup = UploadActionPopup::create(nullptr, "Unbanning pet...");
-                            uPopup->show();
-
-                            auto uPopupRef = Ref(uPopup);
-
-                            self->m_listener.spawn(
-                                APIClient::getInstance().unbanPet(self->m_targetUser->m_accountID),
-                                [uPopupRef](web::WebResponse res) {
-                                    if (!uPopupRef) return;
-                                    auto parsed = APIClient::getInstance().unbanPetParse(res);
-                                    if (parsed.ok) {
-                                        uPopupRef->showSuccessMessage("Success! Pet unbanned.");
-                                    } else {
-                                        uPopupRef->showFailMessage("Failed! Try again later");
-                                    }
-                                }
-                            );
-                        })
-                        .collect();
-                } else {
-                    auto unbanBtn = Build<CCSprite>::createSpriteName("GJ_cancelDownloadBtn_001.png")
-                        .parent(self->m_optionsMenu)
-                        .id("unban-pet-btn")
-                        .scale(1.2f)
-                        .color({ 100, 100, 100 })
-                        .intoMenuItem([] {
-                        })
-                        .enabled(false)
-                        .collect();
-                }
-            } else {
-                if (petExists) {
-                    auto banBtn = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
-                        .parent(self->m_optionsMenu)
-                        .id("ban-pet-btn")
-                        .intoMenuItem([self] {
-                            BanPetPopup::create(self->m_targetUser->m_accountID)->show();
-                        })
-                        .collect();
-                } else {
-                    auto banBtn = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
-                        .parent(self->m_optionsMenu)
-                        .id("ban-pet-btn")
-                        .color({ 100, 100, 100 })
-                        .intoMenuItem([] {
-                        })
-                        .enabled(false)
-                        .collect();
-                }
-            }
-
-            auto weeklyAchBtn = Build(CircleButtonSprite::createWithSpriteFrameName("rankIcon_1_001.png"))
-                .intoMenuItem([self] {
-                    WeeklyAchievementConfigurePopup::create(self->m_targetUser)->show();
-                })
-                .id("weekly-ach-btn")
-                .parent(self->m_optionsMenu)
-                .collect();
-
-            self->m_optionsMenu->updateLayout();
+            self->m_petExists = parsed.petExists;
+            self->m_petBanned = parsed.isPetBanned;
             self->m_targetLabelMenu->updateLayout();
+            self->buildActions();
 
             self->m_spinner->removeFromParent();
+            self->loadModeration();
             return;
         }
     );
+}
+
+void UserManagePopup::loadModeration() {
+    matjson::Value body;
+    body["accountId"] = GJAccountManager::get()->m_accountID;
+    body["targetAccountId"] = m_targetUser->m_accountID;
+    Ref<UserManagePopup> self = this;
+    m_modTask.spawn(auth::post(fmt::format("{}/staff_user_status", APIClient::getInstance().baseUrl), std::move(body)), [self](web::WebResponse res) {
+        if (!self) return;
+        auto json = res.json();
+        if (!res.ok() || !json) return;
+        auto const& v = json.unwrap();
+        self->m_clanBan = v["clanBan"].asBool().unwrapOr(false);
+        self->m_lbBan = v["lbBan"].asBool().unwrapOr(false);
+        self->buildActions();
+    });
+}
+
+void UserManagePopup::wipePet() {
+    Ref<UserManagePopup> self = this;
+    createQuickPopup(
+        "Wipe Pet",
+        fmt::format("Wipe the pet of <cy>{}</c>?", std::string(m_targetUser->m_userName)),
+        "Cancel", "Wipe",
+        [self](auto, bool yes) {
+            if (!yes || !self) return;
+            auto uPopup = UploadActionPopup::create(nullptr, "Wiping pet...");
+            uPopup->show();
+            Ref<UploadActionPopup> uPopupRef = uPopup;
+            self->m_listener.spawn(
+                APIClient::getInstance().wipePet(self->m_targetUser->m_accountID),
+                [uPopupRef](web::WebResponse res) {
+                    if (!uPopupRef) return;
+                    auto parsed = APIClient::getInstance().wipePetParse(res);
+                    if (parsed.ok) uPopupRef->showSuccessMessage("Success! Pet wiped.");
+                    else uPopupRef->showFailMessage("Failed! Try again later");
+                }
+            );
+        }
+    );
+}
+
+void UserManagePopup::unbanPet() {
+    auto uPopup = UploadActionPopup::create(nullptr, "Unbanning pet...");
+    uPopup->show();
+    Ref<UploadActionPopup> uPopupRef = uPopup;
+    Ref<UserManagePopup> self = this;
+    m_listener.spawn(
+        APIClient::getInstance().unbanPet(m_targetUser->m_accountID),
+        [uPopupRef, self](web::WebResponse res) {
+            if (!uPopupRef) return;
+            auto parsed = APIClient::getInstance().unbanPetParse(res);
+            if (parsed.ok) {
+                uPopupRef->showSuccessMessage("Success! Pet unbanned.");
+                if (self) {
+                    self->m_petBanned = false;
+                    self->buildActions();
+                }
+            } else {
+                uPopupRef->showFailMessage("Failed! Try again later");
+            }
+        }
+    );
+}
+
+void UserManagePopup::buildActions() {
+    if (!m_optionsMenu) return;
+    m_optionsMenu->removeAllChildren();
+    Ref<UserManagePopup> self = this;
+    int target = m_targetUser->m_accountID;
+    std::string name = m_targetUser->m_userName;
+
+    std::vector<CCMenuItemSpriteExtra*> items;
+    auto row = [&](const char* icon, bool active, geode::Function<void()> action) {
+        auto spr = staffIconButton(icon, active);
+        items.push_back(CCMenuItemExt::createSpriteExtra(spr, [action = std::move(action)](CCObject*) mutable { action(); }));
+    };
+
+    auto ban = [self, target, name](std::string kind, bool on, std::string label) {
+        createQuickPopup(
+            on ? "Ban" : "Unban",
+            fmt::format("{} <cy>{}</c> {} {}?", on ? "Ban" : "Unban", name, on ? "from" : "on", label),
+            "Cancel", on ? "Ban" : "Unban",
+            [self, target, kind, on](auto, bool yes) {
+                if (!yes || !self) return;
+                matjson::Value body;
+                body["accountId"] = GJAccountManager::get()->m_accountID;
+                body["targetAccountId"] = target;
+                body["kind"] = kind;
+                body["ban"] = on;
+                self->moderate("staff_ban", std::move(body), on ? "Banning..." : "Unbanning...", on ? "Banned." : "Unbanned.");
+            }
+        );
+    };
+
+    row("weekly_ach_staff_icon.png"_spr, false, [self] {
+        if (self) WeeklyAchievementConfigurePopup::create(self->m_targetUser)->show();
+    });
+    if (m_petExists) {
+        if (m_petBanned) {
+            row("ban_pet_staff_icon.png"_spr, true, [self] { if (self) self->unbanPet(); });
+        } else {
+            row("ban_pet_staff_icon.png"_spr, false, [self, target] { if (self) BanPetPopup::create(target)->show(); });
+        }
+        row("reset_pet_name_staff_icon.png"_spr, false, [self, target, name] {
+            createQuickPopup("Reset Pet Name", fmt::format("Reset the pet name of <cy>{}</c>?", name), "Cancel", "Reset",
+                [self, target](auto, bool yes) {
+                    if (!yes || !self) return;
+                    matjson::Value body;
+                    body["accountId"] = GJAccountManager::get()->m_accountID;
+                    body["targetAccountId"] = target;
+                    self->moderate("staff_reset_pet_name", std::move(body), "Resetting...", "Pet name reset.");
+                });
+        });
+        row("clear_pet_staff_icon.png"_spr, false, [self] { if (self) self->wipePet(); });
+    }
+    row("ban_clan_staff_icon.png"_spr, m_clanBan, [ban, on = !m_clanBan] { ban("clans", on, "Grind Clans"); });
+    row("lb_ban_staff_icon.png"_spr, m_lbBan, [ban, on = !m_lbBan] { ban("leaderboards", on, "leaderboards"); });
+
+    for (size_t i = 0; i < items.size(); i += 4) {
+        auto line = CCMenu::create();
+        line->setLayout(RowLayout::create()->setGap(7.f)->setAutoScale(false));
+        line->setContentSize({ m_optionsMenu->getContentWidth(), 36.f });
+        for (size_t j = i; j < std::min(items.size(), i + 4); j++) line->addChild(items[j]);
+        line->updateLayout();
+        m_optionsMenu->addChild(line);
+    }
+    m_optionsMenu->updateLayout();
+    handleTouchPriority(this);
+}
+
+void UserManagePopup::moderate(std::string endpoint, matjson::Value body, std::string loading, std::string success) {
+    auto popup = UploadActionPopup::create(nullptr, loading);
+    popup->show();
+    Ref<UploadActionPopup> popupRef = popup;
+    Ref<UserManagePopup> self = this;
+    m_modTask.spawn(auth::post(fmt::format("{}/{}", APIClient::getInstance().baseUrl, endpoint), std::move(body)),
+        [self, popupRef, success](web::WebResponse res) mutable {
+            auto json = res.json();
+            bool ok = res.ok() && json && json.unwrap()["ok"].asBool().unwrapOr(false);
+            if (popupRef) {
+                if (ok) popupRef->showSuccessMessage(success);
+                else popupRef->showFailMessage(APIClient::errorMessage(res, "Failed! Try again later."));
+            }
+            if (ok && self) self->loadModeration();
+        });
 }
 
 }

@@ -20,6 +20,7 @@
 #include <ctime>
 #include <fmt/format.h>
 #include "GrindProfilePopup.hpp"
+#include "../../managers/PetManager.hpp"
 
 namespace levelgrind {
 
@@ -96,7 +97,7 @@ void highlightSwatches(std::vector<CCSprite*> const& swatches, int selected) {
 }
 
 std::string joinText(int joinType) {
-    return joinType == 0 ? "Open" : "By request";
+    return joinType == 0 ? "Open" : joinType == 1 ? "By request" : "Invite only";
 }
 
 std::string minGpText(int minGp) {
@@ -233,7 +234,7 @@ LookEditor buildLookEditor(
 
     label(parent, "Joining", { labelX, topY - gap }, 0.45f);
     e.joinLabel = stepperRow(parent, { stepX, topY - gap }, joinText(*joinType), [joinType, refresh](int) {
-        *joinType = 1 - *joinType;
+        *joinType = (*joinType + 1) % 3;
         (*refresh)();
     });
 
@@ -555,6 +556,12 @@ void ClanViewPopup::build(ClanDetails const& d) {
         if (m.role > 0) {
             label(row, M::roleName(m.role).c_str(), { 182.f, 13.f }, 0.45f, "chatFont.fnt")->setColor(M::roleColor(m.role));
         }
+        if (m.hasPet) {
+            auto pet = PetManager::createMiniPet(m.petLevel, m.petAppearance, m.icon, m.color1, m.color2, m.color3);
+            pet->setScale(0.32f);
+            pet->setPosition({ 250.f, 12.f });
+            row->addChild(pet);
+        }
         auto gp = gpAmount(m.contributed, 0.4f);
         gp->setAnchorPoint({ 1.f, 0.5f });
         gp->setPosition({ 360.f, 13.f });
@@ -574,9 +581,14 @@ void ClanViewPopup::build(ClanDetails const& d) {
 
     if (m_onJoin) {
         bool full = c.members >= c.maxMembers;
-        auto txt = full ? "Full" : (c.joinType == 0 ? "Join" : "Request");
-        auto btn = CCMenuItemExt::createSpriteExtra(textButton(txt, full ? "GJ_button_04.png" : "GJ_button_01.png", 0.7f),
-            [this, c](CCObject*) {
+        bool closed = c.joinType == 2;
+        auto txt = full ? "Full" : closed ? "Invite only" : (c.joinType == 0 ? "Join" : "Request");
+        auto btn = CCMenuItemExt::createSpriteExtra(textButton(txt, full || closed ? "GJ_button_04.png" : "GJ_button_01.png", 0.7f),
+            [this, c, closed](CCObject*) {
+                if (closed) {
+                    Notification::create("This clan is invite only", NotificationIcon::Info)->show();
+                    return;
+                }
                 auto cb = std::move(m_onJoin);
                 this->onClose(nullptr);
                 if (cb) cb(c);
@@ -945,7 +957,7 @@ void ClanLeaderboardPopup::load() {
             row->addChild(em);
             auto name = label(row, c.name.c_str(), { 74.f, 18.f }, 0.4f, "bigFont.fnt");
             name->limitLabelWidth(160.f, 0.4f, 0.15f);
-            name->setColor(M::clanColor(c.colorId));
+            name->setColor(c.golden ? ccColor3B{ 255, 210, 60 } : M::clanColor(c.colorId));
             if (c.level >= kRainbowLevel) makeRainbow(name);
             if (c.level >= kPrestigeLevel) addPrestige(row, row->getContentSize(), M::clanColor(c.colorId));
             label(row, fmt::format("Level {} - {}/{} members", c.level, c.members, c.maxMembers).c_str(), { 74.f, 6.f }, 0.4f, "chatFont.fnt")->setOpacity(170);
@@ -1011,6 +1023,74 @@ ClanRequestsPopup* ClanRequestsPopup::create(ClanDetails const& d, ClanChanged o
     }
     delete ret;
     return nullptr;
+}
+
+ClanInvitesPopup* ClanInvitesPopup::create(std::vector<ClanInviteInfo> const& invites, ClanChanged onChanged) {
+    auto ret = new ClanInvitesPopup;
+    if (ret->init(invites, std::move(onChanged))) {
+        ret->autorelease();
+        return ret;
+    }
+    delete ret;
+    return nullptr;
+}
+
+bool ClanInvitesPopup::init(std::vector<ClanInviteInfo> const& invites, ClanChanged onChanged) {
+    if (!BasePopup::init(380.f, 250.f)) return false;
+    m_onChanged = std::move(onChanged);
+    this->setTitle(fmt::format("Clan Invites ({})", invites.size()).c_str());
+
+    auto list = cue::ListNode::create({ 350.f, 180.f });
+    list->setAutoUpdate(false);
+    list->setCellHeight(36.f);
+    list->setPosition({ centerX(), centerY() - 14.f });
+    m_mainLayer->addChild(list);
+
+    Ref<ClanInvitesPopup> self = this;
+    for (auto const& inv : invites) {
+        auto row = CCNode::create();
+        row->setContentSize({ 350.f, 36.f });
+        auto menu = CCMenu::create();
+        menu->setContentSize(row->getContentSize());
+        menu->ignoreAnchorPointForPosition(false);
+        menu->setAnchorPoint({ 0.f, 0.f });
+        menu->setPosition({ 0.f, 0.f });
+        row->addChild(menu);
+
+        auto em = emblem(inv.clan.emblemId, inv.clan.colorId, 22.f, inv.clan.logoId);
+        em->setPosition({ 18.f, 18.f });
+        row->addChild(em);
+        auto name = label(row, inv.clan.name.c_str(), { 38.f, 23.f }, 0.4f, "bigFont.fnt");
+        name->limitLabelWidth(170.f, 0.4f, 0.15f);
+        name->setColor(inv.clan.golden ? ccColor3B{ 255, 210, 60 } : M::clanColor(inv.clan.colorId));
+        if (inv.clan.level >= kRainbowLevel) makeRainbow(name);
+        label(row, fmt::format("Lv {} - {}/{} - from {}", inv.clan.level, inv.clan.members, inv.clan.maxMembers, inv.invitedBy).c_str(),
+            { 38.f, 9.f }, 0.42f, "chatFont.fnt")->setOpacity(200);
+
+        int clanId = inv.clan.id;
+        std::string clanName = inv.clan.name;
+        auto respond = [self, clanId, clanName](bool accept) {
+            auto body = M::authBody();
+            body["clanId"] = clanId;
+            body["accept"] = accept;
+            M::getInstance().runAction("clan_invite_respond", body,
+                accept ? "Joining..." : "Declining...",
+                accept ? fmt::format("Welcome to {}!", clanName) : "Invite declined.",
+                [self](matjson::Value const&) {
+                    if (!self) return;
+                    auto cb = std::move(self->m_onChanged);
+                    self->onClose(nullptr);
+                    if (cb) cb();
+                });
+        };
+        spriteButton(menu, "GJ_completesIcon_001.png", 0.75f, { 290.f, 18.f }, [respond] { respond(true); });
+        spriteButton(menu, "GJ_deleteIcon_001.png", 0.75f, { 325.f, 18.f }, [respond] { respond(false); });
+        list->addCell(row);
+    }
+    list->updateLayout(false);
+    list->scrollToTop();
+    handleTouchPriority(this);
+    return true;
 }
 
 bool ClanRequestsPopup::init(ClanDetails const& d, ClanChanged onChanged) {

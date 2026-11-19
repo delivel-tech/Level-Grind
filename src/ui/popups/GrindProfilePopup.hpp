@@ -20,6 +20,7 @@ public:
         long long gpLifetime = 0, gpWeek = 0;
         int achUnlocked = 0, achTotal = 0;
         int streak = 0;
+        int packs = 0;
         int last30Levels = 0, last30Stars = 0, last30Moons = 0, last30Demons = 0;
         bool hasClan = false;
         int clanId = 0, clanColor = 0, clanEmblem = 1, clanLevel = 1, clanRole = 0, clanJoinType = 0;
@@ -28,6 +29,9 @@ public:
         bool hasPet = false;
         std::string petName;
         int petLevel = 1, petRarity = 1;
+        bool hasAppearance = false;
+        int petMood = 1;
+        matjson::Value appearance;
     };
 
 private:

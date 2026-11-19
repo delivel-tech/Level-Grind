@@ -14,9 +14,9 @@ using namespace geode::prelude;
 
 namespace levelgrind {
 
-PetUpgradePopup* PetUpgradePopup::create(PetManager::PetData petData) {
+PetUpgradePopup* PetUpgradePopup::create(PetManager::PetData petData, geode::Function<void()> onUpgraded) {
     auto ret = new PetUpgradePopup;
-    if (ret && ret->init(petData)) {
+    if (ret && ret->init(petData, std::move(onUpgraded))) {
         ret->autorelease();
         return ret;
     }
@@ -24,8 +24,11 @@ PetUpgradePopup* PetUpgradePopup::create(PetManager::PetData petData) {
     return nullptr;
 }
 
-bool PetUpgradePopup::init(PetManager::PetData petData) {
+bool PetUpgradePopup::init(PetManager::PetData petData, geode::Function<void()> onUpgraded) {
     if (!Popup::init(260.f, 180.f)) return false;
+    m_onUpgraded = std::move(onUpgraded);
+    PetManager::getInstance().m_isLevelUpgraded = false;
+    PetManager::getInstance().m_isRarityUpgraded = false;
 
     this->setTitle("Upgrade Pet");
 
@@ -67,12 +70,8 @@ void PetUpgradePopup::onClosePopup(::UploadActionPopup* popup) {
 }
 
 void PetUpgradePopup::onUpgradeRarity(CCObject* sender) {
-    if (PetManager::getInstance().m_isRarityUpgraded) {
-        Notification::create("Please re-open pet layer", NotificationIcon::Info)->show();
-        return;
-    }
-    PetManager::getInstance().m_isRarityUpgraded = true;
-    if (m_petData.petRarity < 1 || m_petData.petRarity > 3) {
+    if (PetManager::getInstance().m_isRarityUpgraded) return;
+    if (m_petData.petRarity < 1 || m_petData.petRarity >= PetManager::kMaxRarity) {
         Notification::create("Your pet rarity is fully upgraded", NotificationIcon::Success)->show();
         return;
     }
@@ -100,11 +99,19 @@ void PetUpgradePopup::onUpgradeRarity(CCObject* sender) {
     upopup->show();
 
     auto uPopupRef = Ref(upopup);
+    PetManager::getInstance().m_isRarityUpgraded = true;
+    Ref<PetUpgradePopup> self = this;
 
     m_listener.spawn(
         auth::post("https://api.delivel.tech/v2/upgrade_pet_rarity", body),
-        [uPopupRef](web::WebResponse res) {
-            if (!uPopupRef) return;
+        [uPopupRef, self, upgCost](web::WebResponse res) {
+            bool ok = res.ok() && res.json() && res.json().unwrap()["ok"].asBool().unwrapOr(false);
+            if (ok && uPopupRef) {
+                uPopupRef->m_delegate = nullptr;
+                uPopupRef->closePopup();
+            }
+            if (self) self->finishUpgrade(ok, false, upgCost);
+            if (ok || !uPopupRef) return;
             if (!res.ok()) {
                 uPopupRef->showFailMessage("Upgrading failed! Try again later.");
                 log::error("req failed, error: {}", res.code());
@@ -136,12 +143,8 @@ void PetUpgradePopup::onUpgradeRarity(CCObject* sender) {
 }
 
 void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
-    if (PetManager::getInstance().m_isLevelUpgraded) {
-        Notification::create("Please re-open pet layer", NotificationIcon::Info)->show();
-        return;
-    }
-    PetManager::getInstance().m_isLevelUpgraded = true;
-    if (m_petData.petLevel < 1 || m_petData.petLevel > 29) {
+    if (PetManager::getInstance().m_isLevelUpgraded) return;
+    if (m_petData.petLevel < 1 || m_petData.petLevel >= PetManager::kMaxLevel) {
         Notification::create("Your pet level is fully upgraded", NotificationIcon::Success)->show();
         return;
     }
@@ -170,11 +173,19 @@ void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
     upopup->show();
 
     auto uPopupRef = Ref(upopup);
+    PetManager::getInstance().m_isLevelUpgraded = true;
+    Ref<PetUpgradePopup> self = this;
 
     m_listener.spawn(
         auth::post("https://api.delivel.tech/v2/upgrade_pet_level", body),
-        [uPopupRef](web::WebResponse res) {
-            if (!uPopupRef) return;
+        [uPopupRef, self, upgCost](web::WebResponse res) {
+            bool ok = res.ok() && res.json() && res.json().unwrap()["ok"].asBool().unwrapOr(false);
+            if (ok && uPopupRef) {
+                uPopupRef->m_delegate = nullptr;
+                uPopupRef->closePopup();
+            }
+            if (self) self->finishUpgrade(ok, true, upgCost);
+            if (ok || !uPopupRef) return;
             if (!res.ok()) {
                 uPopupRef->showFailMessage("Upgrading failed! Try again later.");
                 log::error("req failed, error: {}", res.code());
@@ -206,34 +217,23 @@ void PetUpgradePopup::onUpgradeLevel(CCObject* sender) {
 }
 
 int PetUpgradePopup::getUpgradeRarityCostByCurrRarity(int rarity) {
-    switch (rarity) {
-        case 1: return 1500; break;
-        case 2: return 4000; break;
-        case 3: return 8000; break;
-        default: return 999999; break;
-    }
+    return PetManager::getInstance().getUpgradeRarityCostByCurrRarity(rarity);
 }
 
 int PetUpgradePopup::getUpgradeLvlCostByLevel(int petLevel) {
-    const int MAX_LEVEL = 30;
-    const int TOTAL_COST = 20000; // Grind Points for all 30 levels
-    
-    auto baseCost = [&](int level) -> double {
-        return pow(level, 2);
-    };
+    return PetManager::getInstance().getUpgradeLvlCostByLevel(petLevel);
+}
 
-    auto getTotalBase = [&]() -> double {
-        double sum = 0;
-        for (int i = 1; i <= MAX_LEVEL; i++) {
-            sum += baseCost(i);
-        }
-        return sum;
-    };
-
-    static double scale = TOTAL_COST / getTotalBase();
-    int nextLevel = petLevel + 1;
-
-    return (int)(baseCost(nextLevel) * scale);
+void PetUpgradePopup::finishUpgrade(bool ok, bool level, int cost) {
+    if (level) PetManager::getInstance().m_isLevelUpgraded = false;
+    else PetManager::getInstance().m_isRarityUpgraded = false;
+    if (!ok) return;
+    if (level) m_petData.petLevel++;
+    else m_petData.petRarity++;
+    m_petData.gp = std::max<long long>(0, m_petData.gp - cost);
+    auto cb = std::move(m_onUpgraded);
+    this->onClose(nullptr);
+    if (cb) cb();
 }
 
 }

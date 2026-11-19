@@ -1,4 +1,5 @@
 #include "AddPackPopup.hpp"
+#include "../../managers/DataManager.hpp"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/ColorPickPopup.hpp"
@@ -130,7 +131,7 @@ AddPackPopup* AddPackPopup::create() {
 bool AddPackPopup::init() {
     if (!BasePopup::init({ 360.f, 290.f })) return false;
 
-    setTitle("Grind Coordinator: Add Pack");
+    setTitle(DataManager::getInstance().getUserPosition() == GrindPosition::Owner ? "Grind Coordinator: Add Pack" : "Grind Admin: Add Pack");
 
     this->buildPreview();
 

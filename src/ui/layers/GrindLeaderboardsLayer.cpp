@@ -261,9 +261,8 @@ CCNode* GrindLeaderboardsLayer::makeRow(Entry const& e, bool mine) {
     if (mine) cell->addChild(CCLayerColor::create({ 255, 255, 255, 40 }, w, kRowH), -1);
 
     if (e.rank >= 1 && e.rank <= 3) {
-        auto trophy = CCSprite::createWithSpriteFrameName(e.rank == 1 ? "rankIcon_1_001.png" : "rankIcon_top10_001.png");
+        auto trophy = CCSprite::createWithSpriteFrameName(e.rank == 1 ? "rankIcon_1_001.png" : e.rank == 2 ? "rankIcon_top50_001.png" : "rankIcon_top100_001.png");
         trophy->setScale(22.f / std::max(trophy->getContentWidth(), trophy->getContentHeight()));
-        if (e.rank == 3) trophy->setColor({ 235, 170, 120 });
         trophy->setPosition({ 22.f, kRowH / 2.f });
         cell->addChild(trophy);
     } else {
