@@ -681,7 +681,7 @@ void SuggestionsLayer::performFetchLevels() {
     this->startLoading();
 
     auto req = web::WebRequest();
-    req.timeout(std::chrono::seconds{20});
+    req.timeout(asp::Duration::fromSecs(20));
     WeakRef<SuggestionsLayer> weakSelf = this;
 
     auto url = fmt::format("https://api.delivel.tech/v2/get_suggestions?mode={}", m_suggestionsMode);

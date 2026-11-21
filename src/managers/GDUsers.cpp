@@ -1,5 +1,6 @@
 #include "GDUsers.hpp"
 
+#include <asp/time/Duration.hpp>
 #include <fmt/format.h>
 #include <unordered_map>
 
@@ -23,7 +24,7 @@ web::WebFuture send(std::string const& endpoint, std::string body) {
     auto req = web::WebRequest();
     req.userAgent("");
     req.header("Content-Type", "application/x-www-form-urlencoded");
-    req.timeout(std::chrono::seconds{ 15 });
+    req.timeout(asp::Duration::fromSecs(15));
     req.bodyString(body);
     return req.post(fmt::format("{}{}", kServer, endpoint));
 }

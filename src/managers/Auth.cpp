@@ -1,5 +1,6 @@
 #include "Auth.hpp"
 
+#include <algorithm>
 #include <dankmeme.argon/argon.hpp>
 
 namespace levelgrind::auth {
@@ -23,7 +24,10 @@ Future post(std::string url, matjson::Value body, std::optional<std::chrono::sec
               arc::Future<std::string> tokenFuture) -> Future {
         body["token"] = co_await std::move(tokenFuture);
         auto req = web::WebRequest();
-        if (timeout) req.timeout(*timeout);
+        if (timeout) {
+            auto secs = std::max<long long>(0, timeout->count());
+            req.timeout(asp::Duration::fromSecs(static_cast<uint64_t>(secs)));
+        }
         req.bodyJSON(body);
         co_return co_await req.post(std::move(url));
     }(std::move(url), std::move(body), timeout, token());

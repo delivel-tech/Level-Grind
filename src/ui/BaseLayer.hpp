@@ -11,7 +11,7 @@ public:
     static BaseLayer* create();
     void open();
     CCSize m_winSize;
-    CCMenuItemSpriteExtra* m_backBtn = nullptr;
+    CCNode* m_backBtn = nullptr;
     cue::RepeatingBackground* m_bg = nullptr;
 
     void replaceBgToClassic();

@@ -11,7 +11,7 @@ using namespace geode::prelude;
 
 namespace levelgrind {
 
-class ClansLayer : public BaseLayer, public TextInputDelegate, public EmotePickerDelegate {
+class ClansLayer : public BaseLayer, public EmotePickerDelegate {
 public:
     static ClansLayer* create();
 
@@ -41,15 +41,15 @@ private:
     CCNode* makeChatCell(ClanChatMessage const& msg, float width);
     void onSend();
     void pollChat(float);
-    void textInputReturn(CCTextInputNode* node) override;
 
-    void keyDown(enumKeyCodes key, double timestamp) override;
     void emotePickerClosed(EmotePickerPopup* picker) override;
     void emotePicked(EmotePickerPopup* picker, EmoteDef const* def) override;
     void emotePickerKeyDown(EmotePickerPopup* picker, enumKeyCodes key, double timestamp) override;
     void closeEmotePicker();
+    bool syncEmoteBridge();
+    void pollEmoteBridge(float);
     void onEnter() override;
-    void textChanged(CCTextInputNode* node) override;
+    void textChanged();
     void openSharedLevel(int id);
     void pollSharedLevel(float dt);
     void openMention(std::string const& name);
@@ -63,6 +63,10 @@ private:
     bool m_browsingInClan = false;
     long long m_pinnedId = 0;
     EmotePickerPopup* m_emotePicker = nullptr;
+    // Пикер эмодзи умеет вставлять текст только в старый CCTextInputNode,
+    // поэтому он работает с невидимым узлом-мостом, а мы копируем результат в TextInput.
+    Ref<CCTextInputNode> m_emoteBridge;
+    std::string m_emoteBridgeText;
 
     void buildTasks();
     void buildActions();

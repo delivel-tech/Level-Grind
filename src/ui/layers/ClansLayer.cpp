@@ -675,9 +675,18 @@ void ClansLayer::buildClanView() {
     m_chatInput->setMaxCharCount(150);
     m_chatInput->setCommonFilter(CommonFilter::Any);
     m_chatInput->hideBG();
-    m_chatInput->setDelegate(this);
+    m_chatInput->setDisplayEmojis(true);
+    m_chatInput->setAnchorPoint({ 0.5f, 0.5f });
+    {
+        WeakRef<ClansLayer> weakSelf = this;
+        m_chatInput->setCallback([weakSelf](std::string const&) {
+            if (auto s = weakSelf.lock()) s->textChanged();
+        });
+        m_chatInput->setEnterCallback([weakSelf](std::string const&) {
+            if (auto s = weakSelf.lock()) s->onSend();
+        });
+    }
     m_chatInput->setPosition({ 6.f + 260.f * 0.72f / 2.f + 4.f, 17.f });
-    m_chatInput->getInputNode()->setParseEmotes(EmoteSprite::maxEmotesMessage());
     m_left->addChild(m_chatInput, 6);
 
     auto menu = overlayMenu(m_left);
@@ -692,8 +701,19 @@ void ClansLayer::buildClanView() {
     emoteSpr->setScale(17.f / std::max(1.f, emoteSpr->getContentHeight()));
     auto emoteBtn = CCMenuItemExt::createSpriteExtra(emoteSpr, [self](CCMenuItemSpriteExtra* btn) {
         if (!self || !self->m_chatInput) return;
+        if (!self->m_emoteBridge) {
+            self->m_emoteBridge = CCTextInputNode::create(260.f, 20.f, "", "chatFont.fnt");
+            self->m_emoteBridge->setMaxLabelLength(500);
+            std::string allowed;
+            for (char ch = 32; ch < 127; ch++) allowed += ch;
+            self->m_emoteBridge->setAllowedChars(allowed);
+            // Пикер может не вызывать делегат, поэтому следим за мостом сами
+            self->schedule(schedule_selector(ClansLayer::pollEmoteBridge), 0.05f);
+        }
+        self->m_emoteBridgeText = self->m_chatInput->getString();
+        self->m_emoteBridge->setString(self->m_emoteBridgeText);
         self->m_emotePicker = EmotePickerPopup::toggle(
-            self->m_emotePicker, self.data(), btn, self->m_chatInput->getInputNode(), EmoteSprite::maxEmotesMessage(), 150
+            self->m_emotePicker, self.data(), btn, self->m_emoteBridge, EmoteSprite::maxEmotesMessage(), 150
         );
     });
     emoteBtn->setPosition({ w - 44.f, 17.f });
@@ -922,19 +942,6 @@ CCNode* ClansLayer::makeChatCell(ClanChatMessage const& msg, float width) {
     return row;
 }
 
-void ClansLayer::textInputReturn(CCTextInputNode*) {
-    this->onSend();
-}
-
-void ClansLayer::keyDown(enumKeyCodes key, double timestamp) {
-    if ((key == enumKeyCodes::KEY_Enter || key == enumKeyCodes::KEY_NumEnter) && m_chatInput
-        && (m_chatInput->getInputNode()->m_selected || m_emotePicker)) {
-        this->onSend();
-        return;
-    }
-    BaseLayer::keyDown(key, timestamp);
-}
-
 void ClansLayer::closeEmotePicker() {
     if (!m_emotePicker) return;
     auto picker = m_emotePicker;
@@ -946,12 +953,44 @@ void ClansLayer::emotePickerClosed(EmotePickerPopup* picker) {
     if (picker == m_emotePicker) m_emotePicker = nullptr;
 }
 
-void ClansLayer::emotePicked(EmotePickerPopup*, EmoteDef const*) {
+bool ClansLayer::syncEmoteBridge() {
+    if (!m_emoteBridge || !m_chatInput) return false;
+    std::string now = m_emoteBridge->getString();
+    if (now == m_emoteBridgeText) return false;
+    log::debug("[emote] bridge changed: '{}'", now);
+    m_emoteBridgeText = now;
+    m_chatInput->setString(now, true);
+    return true;
+}
 
+void ClansLayer::pollEmoteBridge(float) {
+    this->syncEmoteBridge();
+}
+
+void ClansLayer::emotePicked(EmotePickerPopup*, EmoteDef const* def) {
+    if (!def || !def->m_name) return;
+    log::debug("[emote] picked '{}'", def->m_name);
+    std::string token = std::string(":") + def->m_name + ":";
+    WeakRef<ClansLayer> weak = this;
+    // Пикер мог вставить текст в мост до или после этого вызова, поэтому читаем результат на следующем кадре
+    queueInMainThread([weak, token] {
+        auto self = weak.lock();
+        if (!self || self->syncEmoteBridge()) return;
+        // Пикер ничего не вставил сам: добавляем эмодзи вручную
+        if (!self->m_chatInput || !self->m_emoteBridge) return;
+        log::debug("[emote] picker did not insert, adding '{}' manually", token);
+        std::string text = self->m_chatInput->getString() + token;
+        self->m_emoteBridgeText = text;
+        self->m_emoteBridge->setString(text);
+        self->m_chatInput->setString(text, true);
+    });
 }
 
 void ClansLayer::emotePickerKeyDown(EmotePickerPopup*, enumKeyCodes key, double) {
-    if (key == enumKeyCodes::KEY_Enter || key == enumKeyCodes::KEY_NumEnter) this->onSend();
+    if (key == enumKeyCodes::KEY_Enter || key == enumKeyCodes::KEY_NumEnter) {
+        this->syncEmoteBridge();
+        this->onSend();
+    }
 }
 
 void ClansLayer::onSend() {
@@ -1287,7 +1326,7 @@ void ClansLayer::openMention(std::string const& name) {
     Notification::create(fmt::format("{} is not in your clan", name), NotificationIcon::Info)->show();
 }
 
-void ClansLayer::textChanged(CCTextInputNode*) {
+void ClansLayer::textChanged() {
     if (!m_chatInput || !m_mentionBar) return;
     m_mentionBar->removeAllChildren();
     m_mentionBar->setVisible(false);

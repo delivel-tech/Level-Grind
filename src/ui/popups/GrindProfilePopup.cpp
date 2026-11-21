@@ -97,7 +97,7 @@ void GrindProfilePopup::load() {
     auto req = web::WebRequest();
     if (m_data.accountId > 0) req.param("accountId", numToString(m_data.accountId));
     else req.param("username", m_nameHint);
-    req.timeout(std::chrono::seconds{ 20 });
+    req.timeout(asp::Duration::fromSecs(20));
 
     Ref<GrindProfilePopup> self = this;
     m_task.spawn(req.get(fmt::format("{}/player_profile", APIClient::getInstance().baseUrl)), [self](web::WebResponse res) {

@@ -28,6 +28,8 @@
 #include "../../managers/NotifyManager.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
 
+#include <algorithm>
+
 using namespace geode::prelude;
 
 namespace levelgrind {
@@ -99,7 +101,6 @@ bool PetLayer::init() {
         .parent(infoBtnMenu)
         .collect();
 
-
     auto mainPanel = Build(NineSlice::create("GJ_square02.png"))
         .contentSize({460.f, 232.f})
         .parent(this)
@@ -110,33 +111,62 @@ bool PetLayer::init() {
     m_mainPanel = mainPanel;
     CCSize mainPanelCS = mainPanel->getContentSize();
 
+    m_content = CCNode::create();
+    m_content->setID("content");
+    m_content->setAnchorPoint({ 0.f, 0.f });
+    m_content->setContentSize(mainPanelCS);
+    m_content->setPosition({ 0.f, 0.f });
+    mainPanel->addChild(m_content);
 
-    auto loading = LoadingSpinner::create(50.f);
-    mainPanel->addChild(loading);
-    loading->setPosition(
-        mainPanelCS.width / 2, mainPanelCS.height / 2
-    );
-
-    auto loadingRef = Ref(loading);
-    auto self = Ref(this);
-    auto mainPanelRef = Ref(mainPanel);
-
-    m_listener.spawn(
-        APIClient::getInstance().syncPet(),
-        [self, loadingRef, mainPanelRef](web::WebResponse res) {
-            if (!self || !loadingRef || !mainPanelRef) return;
-            auto data = PetManager::getInstance().parsePetData(res, loadingRef);
-            PetManager::getInstance().resetPetDeltas();
-            if (!data.ok) return;
-            loadingRef->removeFromParent();
-            self->drawUIFromData(data, mainPanelRef);
-        }
-    );
+    loadData(true);
 
     return true;
 }
 
-void PetLayer::drawUIFromData(PetManager::PetData data, NineSlice* mainPanel) {
+void PetLayer::loadData(bool firstLoad) {
+    if (!m_mainPanel || !m_content) return;
+
+    if (auto old = m_mainPanel->getChildByID("loading-spinner")) {
+        old->removeFromParent();
+    }
+
+    m_content->setVisible(false);
+
+    auto loading = LoadingSpinner::create(50.f);
+    loading->setID("loading-spinner");
+    loading->setPosition(m_mainPanel->getContentSize() / 2.f);
+    m_mainPanel->addChild(loading);
+
+    WeakRef<PetLayer> weak = this;
+    Ref<LoadingSpinner> loadingRef = loading;
+
+    m_listener.spawn(
+        APIClient::getInstance().syncPet(),
+        [weak, loadingRef, firstLoad](web::WebResponse res) {
+            auto self = weak.lock();
+            if (!self) return;
+
+            auto data = PetManager::getInstance().parsePetData(res, loadingRef);
+            if (firstLoad) PetManager::getInstance().resetPetDeltas();
+
+            if (!data.ok) {
+                if (!firstLoad) {
+                    if (loadingRef->getParent()) loadingRef->removeFromParent();
+                    self->m_content->setVisible(true);
+                }
+                return;
+            }
+
+            if (loadingRef->getParent()) loadingRef->removeFromParent();
+            self->m_petLabel = nullptr;
+            self->m_content->removeAllChildren();
+            self->m_content->setVisible(true);
+            self->drawUIFromData(data, self->m_content);
+        }
+    );
+}
+
+void PetLayer::drawUIFromData(PetManager::PetData data, CCNode* mainPanel) {
     if (data.isBanned) {
         changeMusic(MusicMode::Out);
         this->onBack(nullptr);
@@ -337,6 +367,7 @@ void PetLayer::celebrate(bool rarity, PetManager::PetData const& data) {
 
 void PetLayer::drawPet(PetManager::PetStyle style, int petLevel, int mood) {
     auto petPanel = getChildByIDRecursive("pet-panel");
+    if (!petPanel) return;
 
     auto petMenu = CCMenu::create();
     petMenu->setID("pet-menu");
@@ -412,25 +443,7 @@ void PetLayer::feed() {
 }
 
 void PetLayer::reload() {
-    if (!m_mainPanel) return;
-    m_mainPanel->removeAllChildren();
-    m_petLabel = nullptr;
-
-    auto size = m_mainPanel->getContentSize();
-    auto loading = LoadingSpinner::create(50.f);
-    loading->setPosition(size / 2.f);
-    m_mainPanel->addChild(loading);
-
-    Ref<LoadingSpinner> loadingRef = loading;
-    Ref<PetLayer> self = this;
-    Ref<NineSlice> panel = m_mainPanel;
-    m_listener.spawn(APIClient::getInstance().syncPet(), [self, loadingRef, panel](web::WebResponse res) {
-        if (!self || !loadingRef || !panel) return;
-        auto data = PetManager::getInstance().parsePetData(res, loadingRef);
-        if (!data.ok) return;
-        loadingRef->removeFromParent();
-        self->drawUIFromData(data, panel);
-    });
+    loadData(false);
 }
 
 void PetLayer::onBack(CCObject *sender) {

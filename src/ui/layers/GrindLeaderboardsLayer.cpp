@@ -190,7 +190,7 @@ void GrindLeaderboardsLayer::load() {
     req.param("type", kTypes[m_type]);
     int me = GJAccountManager::get()->m_accountID;
     if (me > 0) req.param("accountId", numToString(me));
-    req.timeout(std::chrono::seconds{ 20 });
+    req.timeout(asp::Duration::fromSecs(20));
 
     WeakRef<GrindLeaderboardsLayer> weak = this;
     m_task.spawn(req.get(fmt::format("{}/leaderboard", APIClient::getInstance().baseUrl)), [weak, seq, k](web::WebResponse res) {

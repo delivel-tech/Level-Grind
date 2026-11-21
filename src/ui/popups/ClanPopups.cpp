@@ -1336,7 +1336,7 @@ bool ClanLogoPopup::init(ClanInfo const& clan, bool pending, ClanChanged onChang
     m_onChanged = std::move(onChanged);
     this->setTitle("Clan Logo");
 
-    auto hint = label(m_mainLayer, "Any PNG or JPG: the middle square becomes a circle", { centerX(), top() - 40.f }, 0.5f, "chatFont.fnt", { 0.5f, 0.5f });
+    auto hint = label(m_mainLayer, "Any PNG or JPG", { centerX(), top() - 40.f }, 0.5f, "chatFont.fnt", { 0.5f, 0.5f });
     hint->setOpacity(190);
     hint->limitLabelWidth(270.f, 0.5f, 0.2f);
 

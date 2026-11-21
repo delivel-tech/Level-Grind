@@ -4,6 +4,8 @@
 
 **A big <cl>database</c> of <cy>grinding-worthy</c> levels!**
 
+**THIS VERSION IS ALPHA, YOU MIGHT ENCOUNTER BUGS. PLEASE REPORT THEM IN [LEVEL GRIND DISCORD SERVER](https://discord.gg/tmf5xtCX5y)**
+
 ---
 
 ### ![About](delivel.level-grind/info_btn.png?scale=0.3) About

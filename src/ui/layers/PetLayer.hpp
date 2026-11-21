@@ -16,26 +16,30 @@ public:
     static PetLayer* create();
 
 private:
-    bool init() override;
-    void drawUIFromData(PetManager::PetData data, NineSlice* mainPanel);
-    void onBack(CCObject* sender) override;
     enum MusicMode {
         In, Out
     };
+
+    bool init() override;
+    void onBack(CCObject* sender) override;
     void changeMusic(MusicMode mode);
 
+    void loadData(bool firstLoad);
+    void reload();
+    void drawUIFromData(PetManager::PetData data, cocos2d::CCNode* mainPanel);
     void drawPet(PetManager::PetStyle style, int petLevel, int mood);
     void celebrate(bool rarity, PetManager::PetData const& data);
+    void feed();
+
     int m_lastLevel = -1;
     int m_lastRarity = -1;
-    void reload();
-    void feed();
     bool m_feeding = false;
-    TaskHolder<web::WebResponse> m_feedTask;
-    NineSlice* m_mainPanel = nullptr;
 
+    NineSlice* m_mainPanel = nullptr;
+    cocos2d::CCNode* m_content = nullptr;
     CCLabelBMFont* m_petLabel = nullptr;
 
+    TaskHolder<web::WebResponse> m_feedTask;
     TaskHolder<web::WebResponse> m_listener;
 };
 
