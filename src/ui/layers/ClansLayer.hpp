@@ -63,8 +63,6 @@ private:
     bool m_browsingInClan = false;
     long long m_pinnedId = 0;
     EmotePickerPopup* m_emotePicker = nullptr;
-    // Пикер эмодзи умеет вставлять текст только в старый CCTextInputNode,
-    // поэтому он работает с невидимым узлом-мостом, а мы копируем результат в TextInput.
     Ref<CCTextInputNode> m_emoteBridge;
     std::string m_emoteBridgeText;
 

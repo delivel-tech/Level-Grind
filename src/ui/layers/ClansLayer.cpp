@@ -697,6 +697,7 @@ void ClansLayer::buildClanView() {
     send->setPosition({ w - 20.f, 17.f });
     menu->addChild(send);
 
+#ifndef GEODE_IS_MACOS
     auto emoteSpr = CCSprite::createWithSpriteFrameName("diffIcon_01_btn_001.png");
     emoteSpr->setScale(17.f / std::max(1.f, emoteSpr->getContentHeight()));
     auto emoteBtn = CCMenuItemExt::createSpriteExtra(emoteSpr, [self](CCMenuItemSpriteExtra* btn) {
@@ -707,7 +708,6 @@ void ClansLayer::buildClanView() {
             std::string allowed;
             for (char ch = 32; ch < 127; ch++) allowed += ch;
             self->m_emoteBridge->setAllowedChars(allowed);
-            // Пикер может не вызывать делегат, поэтому следим за мостом сами
             self->schedule(schedule_selector(ClansLayer::pollEmoteBridge), 0.05f);
         }
         self->m_emoteBridgeText = self->m_chatInput->getString();
@@ -718,6 +718,7 @@ void ClansLayer::buildClanView() {
     });
     emoteBtn->setPosition({ w - 44.f, 17.f });
     menu->addChild(emoteBtn);
+#endif
 
     auto lvlSpr = CCSprite::createWithSpriteFrameName("GJ_plusBtn_001.png");
     lvlSpr->setScale(17.f / std::max(1.f, lvlSpr->getContentHeight()));
@@ -972,11 +973,9 @@ void ClansLayer::emotePicked(EmotePickerPopup*, EmoteDef const* def) {
     log::debug("[emote] picked '{}'", def->m_name);
     std::string token = std::string(":") + def->m_name + ":";
     WeakRef<ClansLayer> weak = this;
-    // Пикер мог вставить текст в мост до или после этого вызова, поэтому читаем результат на следующем кадре
     queueInMainThread([weak, token] {
         auto self = weak.lock();
         if (!self || self->syncEmoteBridge()) return;
-        // Пикер ничего не вставил сам: добавляем эмодзи вручную
         if (!self->m_chatInput || !self->m_emoteBridge) return;
         log::debug("[emote] picker did not insert, adding '{}' manually", token);
         std::string text = self->m_chatInput->getString() + token;

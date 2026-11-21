@@ -22,7 +22,8 @@ class $modify(LevelGrind, LevelInfoLayer) {
     struct Fields {
         bool shownAutoNote = false;
     };
-    
+    // ios doesnt have LevelInfoLayer::onPlay binding so i have to do this shit i hate ios im crying
+#ifndef GEODE_IS_IOS
     void onPlay(CCObject* sender) {
         bool autoNote = Mod::get()->getSavedValue<bool>("auto-notes");
 
@@ -49,7 +50,7 @@ class $modify(LevelGrind, LevelInfoLayer) {
             LevelInfoLayer::onPlay(sender);
         }
     }
-
+#endif
     bool init(GJGameLevel* level, bool challenge) {
         if (!LevelInfoLayer::init(level, challenge)) return false;
 
