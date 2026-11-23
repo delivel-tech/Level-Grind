@@ -21,8 +21,8 @@ private:
             "By joining the <cp>Level Grind</c> server, you will get all the latest <cf>updates</c>, <cf>announcements</c>, and <cf>news</c> about the mod!"
         },
         {
-            "Talk to Level Grind (AI)",
-            "Chat with the <cp>Level Grind</c> <cr>Bot</c> AI! Ask questions about the mod, or just have a casual conversation :)"
+            "Talk with the Level Grind Bot!",
+            "Chat with the <cp>Level Grind</c> Bot! Ask questions about the mod, or just have a casual conversation :)"
         },
         {
             "Become a Booster!",
@@ -34,10 +34,10 @@ private:
         },
         {
             "Suggest new ideas!",
-            "The <cp>Level Grind</c> server has suggestion channels for the <cp>Mod</c>, <cg>Server</c>, <ca>Level Notes</c>, and <cf>Grind Packs</c>! Share your ideas and bring us something new! :D"
+            "The <cp>Level Grind</c> server has suggestion channels for <cy>levels</c>, <ca>notes</c>, <cj>lists</c>, <cf>grind packs</c>, as well as <cl>server</c> and <cp>mod</c> suggestions! Share your ideas and bring us something new! :D"
         },
         {
-            "Talk to other mod players",
+            "Talk to other mod players!",
             "And finally, <cg>engage</c> with the awesome <cp>Level Grind</c> community!"
         }
     };
