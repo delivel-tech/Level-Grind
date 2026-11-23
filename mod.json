@@ -6,7 +6,7 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v3.0.0-alpha.1",
+	"version": "v3.0.0-alpha.2",
 	"developer": "Delivel",
 	"description": "A big database of levels for grinding!",
 	"dependencies": {

@@ -1,5 +1,7 @@
 #include "../../managers/Auth.hpp"
 #include "ClanPopups.hpp"
+#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include "Geode/ui/Label.hpp"
 #include "ReportPopups.hpp"
 #include "../ClanUI.hpp"
 
@@ -21,6 +23,8 @@
 #include <fmt/format.h>
 #include "GrindProfilePopup.hpp"
 #include "../../managers/PetManager.hpp"
+
+#include <UIBuilder.hpp>
 
 namespace levelgrind {
 
@@ -550,9 +554,24 @@ void ClanViewPopup::build(ClanDetails const& d) {
         auto ic = playerIcon(m.icon, m.color1, m.color2, m.color3, 0.5f);
         ic->setPosition({ 18.f, 13.f });
         row->addChild(ic);
-        auto name = label(row, m.username.c_str(), { 36.f, 13.f }, 0.5f, "goldFont.fnt");
-        name->limitLabelWidth(140.f, 0.5f, 0.2f);
-        name->setColor(M::roleColor(m.role));
+
+        auto menu = CCMenu::create();
+        menu->setPosition({ 0, 0 });
+        menu->setContentSize(row->getContentSize());
+        row->addChild(menu);
+
+        auto name = Build(geode::Label::create(m.username, "bigFont.fnt"))
+            .scale(0.5f)
+            .with([](geode::Label* l) {
+                l->setLimitLabelWidth(140, 0.5f, 0.2f);
+            })
+            .color(M::roleColor(m.role))
+            .intoMenuItem([m] { GrindProfilePopup::create(m.accountId)->show(); })
+            .anchorPoint({ 0.f, 0.5f })
+            .pos(36, 13)
+            .parent(menu)
+            .collect();
+
         if (m.role > 0) {
             label(row, M::roleName(m.role).c_str(), { 182.f, 13.f }, 0.45f, "chatFont.fnt")->setColor(M::roleColor(m.role));
         }
@@ -728,7 +747,7 @@ bool ClanMembersPopup::init(ClanDetails const& d, ClanChanged onChanged) {
         row->addChild(ic);
 
         auto nameNode = CCNode::create();
-        auto name = label(nameNode, m.username.c_str(), { 0.f, 0.f }, 0.5f);
+        auto name = label(nameNode, m.username.c_str(), { 0.f, 0.f }, 0.5f, "bigFont.fnt");
         name->limitLabelWidth(130.f, 0.5f, 0.2f);
         name->setColor(M::roleColor(m.role));
         nameNode->setContentSize({ name->getScaledContentWidth(), 16.f });
@@ -1118,7 +1137,19 @@ bool ClanRequestsPopup::init(ClanDetails const& d, ClanChanged onChanged) {
         auto ic = playerIcon(r.icon, r.color1, r.color2, r.color3, 0.55f);
         ic->setPosition({ 18.f, 16.f });
         row->addChild(ic);
-        label(row, r.username.c_str(), { 36.f, 20.f }, 0.5f)->limitLabelWidth(150.f, 0.5f, 0.2f);
+        Build(geode::Label::create(r.username, "bigFont.fnt"))
+            .scale(0.5f)
+            .with([](geode::Label* l) {
+                l->setLimitLabelWidth(150.f, 0.5f, 0.2f);
+            })
+            .intoMenuItem([r] {
+                GrindProfilePopup::create(r.accountId)->show();
+            })
+            .anchorPoint({ 0.f, 0.5f })
+            .pos(36, 20)
+            .parent(menu)
+            .collect();
+
         auto gp = gpAmount(r.lifetimeGp, 0.38f, "chatFont.fnt");
         gp->setAnchorPoint({ 0.f, 0.5f });
         gp->setPosition({ 36.f, 8.f });
