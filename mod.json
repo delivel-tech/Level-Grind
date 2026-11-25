@@ -1,7 +1,8 @@
 {
-	"geode": "6.0.0-beta.1",
+	"geode": "6.0.0",
 	"gd": {
 		"win": "2.2091",
+		"ios": "2.2091",
 		"android": "2.2091"
 	},
 	"id": "delivel.level-grind",
