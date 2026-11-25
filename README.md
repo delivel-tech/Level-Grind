@@ -1,5 +1,7 @@
 # Level Grind
 
+![Downloads](https://api.geode-sdk.org/v1/mods/delivel.level-grind/status_badge?stat=downloads) ![Mod Version](https://api.geode-sdk.org/v1/mods/delivel.level-grind/status_badge?stat=version) ![Geode Version](https://api.geode-sdk.org/v1/mods/delivel.level-grind/status_badge?stat=geode_version)  ![GD Version](https://api.geode-sdk.org/v1/mods/delivel.level-grind/status_badge?stat=gd_version)
+
 ### A big <cg>database</c> of <cy>grinding worthy</c> <co>levels</c>!
 
 This mod is created for <cr>grinders</c>, who want to easily search for <cg>levels</c>.  
