@@ -4,7 +4,7 @@
 #include "../popups/AddPackPopup.hpp"
 #include "../components/GrindPackCell.hpp"
 #include "../../managers/GrindClansManager.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/LoadingSpinner.hpp"
@@ -101,7 +101,7 @@ bool GrindPacksLayer::init() {
             pageMenu->addChild(m_pageButton);
             this->addChild(pageMenu, 10);   
 
-            m_pageButtonLabel = CCLabelBMFont::create(
+            m_pageButtonLabel = geode::Label::create(
                 numToString(m_page + 1).c_str(), "bigFont.fnt"
             );
             if (m_pageButtonLabel) {
@@ -126,7 +126,7 @@ bool GrindPacksLayer::init() {
         .zOrder(5)
         .collect();
 
-    Build(CCLabelBMFont::create("Grind Packs", "bigFont.fnt"))
+    Build(geode::Label::create("Grind Packs", "bigFont.fnt"))
         .scale(0.8f)
         .parent(m_listNode)
         .zOrder(6)
@@ -148,7 +148,7 @@ bool GrindPacksLayer::init() {
         .scale(0.9f)
         .collect();
 
-    m_packsLabel = Build(CCLabelBMFont::create("", "goldFont.fnt"))
+    m_packsLabel = Build(geode::Label::create("", "goldFont.fnt"))
         .pos({ winSize.width - 5, winSize.height - 5 })
         .anchorPoint({ 1.f, 1.f })
         .scale(0.45f)
@@ -385,7 +385,7 @@ void GrindPacksLayer::buildFilterButtons() {
     }));
     filters->updateLayout();
 
-    m_emptyLabel = Build(CCLabelBMFont::create("No packs here yet", "bigFont.fnt"))
+    m_emptyLabel = Build(geode::Label::create("No packs here yet", "bigFont.fnt"))
         .scale(0.5f)
         .pos({ winSize.width / 2 - 5.f, winSize.height / 2 - 5.f })
         .parent(this)
@@ -409,7 +409,7 @@ void GrindPacksLayer::refreshFilterButtons() {
         face->setPosition({ 17.f, 24.f });
         face->setOpacity(m_difficultyFilter == 0 ? 160 : 255);
         m_diffHolder->addChild(face);
-        auto cap = CCLabelBMFont::create(m_difficultyFilter == 0 ? "All" : "Filter", "bigFont.fnt");
+        auto cap = geode::Label::create(m_difficultyFilter == 0 ? "All" : "Filter", "bigFont.fnt");
         cap->setScale(0.25f);
         cap->setPosition({ 17.f, 4.f });
         m_diffHolder->addChild(cap);

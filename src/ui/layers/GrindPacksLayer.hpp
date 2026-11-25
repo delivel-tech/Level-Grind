@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include "../BaseLayer.hpp"
 #include "../../utils/globals.hpp"
 #include "Geode/ui/ScrollLayer.hpp"
@@ -45,7 +46,7 @@ private:
     CCSprite* m_moonTab = nullptr;
     ButtonSprite* m_sortSpr = nullptr;
     CCNode* m_diffHolder = nullptr;
-    CCLabelBMFont* m_emptyLabel = nullptr;
+    geode::Label* m_emptyLabel = nullptr;
 
     void setIDPopupClosed(SetIDPopup* popup, int value) override;
 
@@ -56,8 +57,8 @@ private:
     CCMenuItemSpriteExtra* m_nextButton = nullptr;
     CCMenuItemSpriteExtra* m_pageButton = nullptr;
     CCMenuItemSpriteExtra* m_refreshBtn = nullptr;
-    CCLabelBMFont* m_pageButtonLabel = nullptr;
-    CCLabelBMFont* m_packsLabel = nullptr;
+    geode::Label* m_pageButtonLabel = nullptr;
+    geode::Label* m_packsLabel = nullptr;
     CCNode* m_circle = nullptr;
 
     TaskHolder<web::WebResponse> m_listener;

@@ -1,4 +1,5 @@
 #include "WeeklyAchievementConfigurePopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/GJUserScore.hpp>
 #include "../../managers/DataManager.hpp"
@@ -41,7 +42,7 @@ bool WeeklyAchievementConfigurePopup::init(GJUserScore* userScore) {
         this->onClose(nullptr);
     }
 
-    Build(CCLabelBMFont::create("Changes are saved as you type. Press Set to publish all three.", "chatFont.fnt"))
+    Build(geode::Label::create("Changes are saved as you type. Press Set to publish all three.", "chatFont.fnt"))
         .scale(0.55f)
         .pos(fromTop(40.f))
         .opacity(170)

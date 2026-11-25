@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <string>
 #include <unordered_map>
@@ -64,7 +65,7 @@ private:
 
     TaskHolder<web::WebResponse> m_listener;
 
-    CCLabelBMFont* m_countLabel = nullptr;
+    geode::Label* m_countLabel = nullptr;
     CCNode* m_starsRow = nullptr;
     void showCountResult(GetLevelsResponse const& parsed);
     std::unordered_map<std::string, GetLevelsResponse> m_countCache;

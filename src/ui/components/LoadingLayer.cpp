@@ -2,7 +2,7 @@
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/actions/CCActionInstant.h"
 #include "Geode/cocos/actions/CCActionInterval.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/ui/LoadingSpinner.hpp"
 #include <Geode/binding/CCBlockLayer.hpp>
 
@@ -37,9 +37,9 @@ bool LoadingLayer::init(std::string loadingLabel) {
     loadingSpinner->setPosition(winSize.width / 2, winSize.height / 2);
     m_spinner = loadingSpinner;
 
-    auto label = Build(CCLabelBMFont::create(loadingLabel.c_str(), "goldFont.fnt"))
+    auto label = Build(geode::Label::create(loadingLabel, "goldFont.fnt"))
         .scale(0.5f)
-        .limitLabelWidth(110.f, 0.5f, 0.2f)
+        .with([&](auto label) { label->setLimitLabelWidth(110.f, 0.5f, 0.2f); })
         .parent(this)
         .pos(winSize.width / 2.f, winSize.height / 2.f - 23.f)
         .collect();

@@ -1,6 +1,6 @@
 #include "GuidePopup.hpp"
 #include "Geode/cocos/base_nodes/CCNode.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/MDTextArea.hpp"
@@ -19,6 +19,20 @@ using namespace geode::prelude;
 #include <cue/ListNode.hpp>
 
 namespace levelgrind {
+
+void GuidePopup::addInfoButton(CCNode* layer, GuidePage page, CCPoint position) {
+    auto menu = CCMenu::create();
+    menu->setPosition(position);
+    menu->setID("info-btn-menu");
+    auto sprite = CCSprite::create("info_btn.png"_spr);
+    sprite->setScale(0.7f);
+    auto button = CCMenuItemExt::createSpriteExtra(sprite, [page](CCObject*) {
+        GuidePopup::create(page, GuidePopupState::FromOutside)->show();
+    });
+    button->setID("info-btn");
+    menu->addChild(button);
+    layer->addChild(menu, 10);
+}
 
 GuidePopup* GuidePopup::create(GuidePage page, GuidePopupState state) {
     auto ret = new GuidePopup;
@@ -130,7 +144,7 @@ void GuidePopup::addGrindLogo() {
         .id("grind-logo")
         .collect();
 
-    auto guidebookLabel = Build(CCLabelBMFont::create("Mod Guidebook", "bigFont.fnt"))
+    auto guidebookLabel = Build(geode::Label::create("Mod Guidebook", "bigFont.fnt"))
         .pos(
             m_mainLayer->getContentWidth() / 2.f,
             m_mainLayer->getContentHeight() / 1.2f - 13.f

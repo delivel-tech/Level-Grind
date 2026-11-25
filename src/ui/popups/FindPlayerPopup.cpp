@@ -1,4 +1,5 @@
 #include "FindPlayerPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "GrindProfilePopup.hpp"
 #include "../../managers/GDUsers.hpp"
 
@@ -27,7 +28,7 @@ bool FindPlayerPopup::init() {
     m_input->setPosition({ centerX(), centerY() + 6.f });
     m_mainLayer->addChild(m_input);
 
-    m_status = CCLabelBMFont::create("", "bigFont.fnt");
+    m_status = geode::Label::create("", "bigFont.fnt");
     m_status->setScale(0.3f);
     m_status->setPosition({ centerX(), centerY() - 20.f });
     m_mainLayer->addChild(m_status);

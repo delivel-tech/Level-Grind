@@ -1,4 +1,5 @@
 #include "ManageListPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "NotesManagerPopup.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/GrindClansManager.hpp"
@@ -16,8 +17,8 @@ namespace levelgrind {
 
 namespace {
 
-CCLabelBMFont* lbl(CCNode* parent, std::string const& text, CCPoint pos, float scale, const char* font = "bigFont.fnt") {
-    auto l = CCLabelBMFont::create(text.c_str(), font);
+geode::Label* lbl(CCNode* parent, std::string const& text, CCPoint pos, float scale, const char* font = "bigFont.fnt") {
+    auto l = geode::Label::create(text, font);
     l->setScale(scale);
     l->setPosition(pos);
     parent->addChild(l);

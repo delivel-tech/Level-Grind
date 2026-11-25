@@ -1,5 +1,5 @@
 #include "NoteViewerPopup.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
@@ -89,7 +89,7 @@ void NoteViewerPopup::updatePage() {
         .pos({centerX(), centerY() - 20})
         .collect();
 
-    m_pageLabel = Build(CCLabelBMFont::create(
+    m_pageLabel = Build(geode::Label::create(
         fmt::format("Note {} of {}", m_currentPage + 1, m_notes.size()).c_str(),
         "bigFont.fnt"
     ))
@@ -106,13 +106,13 @@ void NoteViewerPopup::updatePage() {
         .pos({centerX(), 27})
         .collect();
 
-    auto addedByLabel = Build(CCLabelBMFont::create("By: ", "goldFont.fnt"))
+    auto addedByLabel = Build(geode::Label::create("By: ", "goldFont.fnt"))
         .scale(0.5f)
         .parent(m_addedByMenu)
         .id("added-by-label")
         .collect();
 
-    auto usernameBtn = Build(CCLabelBMFont::create(
+    auto usernameBtn = Build(geode::Label::create(
         currentNote.senderUsername.c_str(), "goldFont.fnt"
     ))
         .scale(0.5f)
@@ -171,7 +171,7 @@ void NoteViewerPopup::addTop() {
         .id("grind-logo")
         .collect();
 
-    auto viewerLabel = Build(CCLabelBMFont::create("Notes Viewer", "bigFont.fnt"))
+    auto viewerLabel = Build(geode::Label::create("Notes Viewer", "bigFont.fnt"))
         .pos(
             m_mainLayer->getContentWidth() / 2.f,
             m_mainLayer->getContentHeight() / 1.2f - 13.f

@@ -1,6 +1,8 @@
 #include "GrindProfilePopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "ClanPopups.hpp"
 #include "UserManagePopup.hpp"
+#include "ReportPopups.hpp"
 #include "../ClanUI.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/DataManager.hpp"
@@ -36,8 +38,8 @@ int asI(matjson::Value const& v, int fallback = 0) {
     return static_cast<int>(v.asInt().unwrapOr(fallback));
 }
 
-CCLabelBMFont* text(CCNode* parent, std::string const& str, CCPoint pos, float scale, const char* font = "bigFont.fnt", CCPoint anchor = { 0.5f, 0.5f }) {
-    auto lbl = CCLabelBMFont::create(str.c_str(), font);
+geode::Label* text(CCNode* parent, std::string const& str, CCPoint pos, float scale, const char* font = "bigFont.fnt", CCPoint anchor = { 0.5f, 0.5f }) {
+    auto lbl = geode::Label::create(str, font);
     lbl->setScale(scale);
     lbl->setAnchorPoint(anchor);
     lbl->setPosition(pos);
@@ -141,8 +143,8 @@ void GrindProfilePopup::load() {
             d.clanId = asI(c["id"]);
             d.clanName = c["name"].asString().unwrapOrDefault();
             d.clanColor = asI(c["colorId"]);
+            d.badgeColors = c["badgeColors"].asInt().unwrapOr(-1);
             d.clanEmblem = asI(c["emblemId"], 1);
-            d.clanLogo = asLL(c["logoId"]);
             d.clanLevel = asI(c["level"], 1);
             d.clanRole = asI(c["role"]);
             d.clanJoinType = asI(c["joinType"]);
@@ -218,6 +220,17 @@ void GrindProfilePopup::build() {
         return;
     }
 
+    int me = GJAccountManager::get()->m_accountID;
+    if (me > 0 && id != me) {
+        auto flag = CCSprite::createWithSpriteFrameName("GJ_reportBtn_001.png");
+        flag->setScale(0.45f);
+        auto report = CCMenuItemExt::createSpriteExtra(flag, [id, name = m_data.username](CCObject*) {
+            ReportPopup::create(ReportTarget::Profile, id, name.empty() ? fmt::format("Account #{}", id) : name)->show();
+        });
+        report->setPosition({ w - 22.f, 17.f });
+        menu->addChild(report);
+    }
+
     this->buildStats(m_root, w, 100.f);
     this->buildChips(m_root, w, 48.f);
 }
@@ -238,7 +251,7 @@ void GrindProfilePopup::buildHeader(CCNode* root, float w, float h) {
     auto badges = roles::forAccount(d.accountId);
     std::string name = d.username.empty() ? (m_loaded ? "Unknown player" : "Loading...") : d.username;
     auto nameLbl = text(root, name, { 84.f, badges.empty() ? h - 40.f : h - 30.f }, 0.7f, "goldFont.fnt", { 0.f, 0.5f });
-    nameLbl->limitLabelWidth(w - 130.f, 0.7f, 0.3f);
+    nameLbl->setLimitLabelWidth(w - 130.f, 0.7f, 0.3f);
 
     if (!badges.empty()) {
         auto row = CCMenu::create();
@@ -262,10 +275,8 @@ void GrindProfilePopup::buildHeader(CCNode* root, float w, float h) {
         spr->getTopNode()->setScale(0.95f);
         spr->getTopNode()->setPosition(spr->getTopNode()->getPosition() + CCPoint{ 1.5f, -1.f });
         spr->setScale(0.55f);
-        Ref<GrindProfilePopup> self = this;
-        auto btn = CCMenuItemExt::createSpriteExtra(spr, [self](CCObject*) {
-            if (!self) return;
-            auto const& d = self->m_data;
+        auto btn = CCMenuItemExt::createSpriteExtra(spr, [this](CCObject*) {
+            auto const& d = m_data;
             auto score = GJUserScore::create();
             score->m_accountID = d.accountId;
             score->m_userName = d.username;
@@ -310,9 +321,9 @@ void GrindProfilePopup::buildStats(CCNode* root, float w, float y) {
         icon->setPosition({ x, y + 15.f });
         root->addChild(icon);
         auto val = text(root, cols[i].value, { x, y - 1.f }, 0.4f);
-        val->limitLabelWidth(colW - 8.f, 0.4f, 0.15f);
+        val->setLimitLabelWidth(colW - 8.f, 0.4f, 0.15f);
         auto cap = text(root, cols[i].caption, { x, y - 15.f }, 0.22f);
-        cap->limitLabelWidth(colW - 6.f, 0.22f, 0.1f);
+        cap->setLimitLabelWidth(colW - 6.f, 0.22f, 0.1f);
         cap->setOpacity(160);
         if (i < colCount - 1) {
             auto line = CCLayerColor::create({ 255, 255, 255, 25 }, 1.f, 40.f);
@@ -347,19 +358,19 @@ void GrindProfilePopup::buildChips(CCNode* root, float w, float y) {
 
     auto clan = chip(leftX);
     if (d.hasClan) {
-        auto em = clanui::emblem(d.clanEmblem, d.clanColor, 20.f, d.clanLogo);
+        auto em = clanui::emblem(d.clanEmblem, d.clanColor, 20.f, d.badgeColors);
         em->setAnchorPoint({ 0.5f, 0.5f });
         em->ignoreAnchorPointForPosition(false);
         em->setPosition({ 19.f, chipH / 2.f });
         clan->addChild(em);
         auto name = text(clan, d.clanName, { 38.f, chipH / 2.f + 6.f }, 0.34f, "bigFont.fnt", { 0.f, 0.5f });
-        name->limitLabelWidth(chipW - 44.f, 0.34f, 0.12f);
+        name->setLimitLabelWidth(chipW - 44.f, 0.34f, 0.12f);
         name->setColor(M::clanColor(d.clanColor));
         if (d.clanLevel >= clanui::kRainbowLevel) clanui::makeRainbow(name);
         if (d.clanLevel >= clanui::kPrestigeLevel) clanui::addPrestige(clan, { chipW, chipH }, M::clanColor(d.clanColor));
         auto sub = text(clan, fmt::format("{} - Lv {}", M::roleName(d.clanRole), d.clanLevel), { 38.f, chipH / 2.f - 8.f }, 0.24f, "bigFont.fnt", { 0.f, 0.5f });
         sub->setColor(M::roleColor(d.clanRole));
-        sub->limitLabelWidth(chipW - 44.f, 0.24f, 0.1f);
+        sub->setLimitLabelWidth(chipW - 44.f, 0.24f, 0.1f);
 
         clan->setPosition({ 0.f, 0.f });
         clan->setAnchorPoint({ 0.f, 0.f });
@@ -420,11 +431,11 @@ void GrindProfilePopup::buildChips(CCNode* root, float w, float y) {
         petanim::playMood(petSpr, d.petMood);
 
         auto name = text(pet, d.petName.empty() ? "Pet" : d.petName, { 38.f, chipH / 2.f + 7.f }, 0.34f, "bigFont.fnt", { 0.f, 0.5f });
-        name->limitLabelWidth(chipW - 44.f, 0.34f, 0.12f);
+        name->setLimitLabelWidth(chipW - 44.f, 0.34f, 0.12f);
         auto rarity = PetManager::getInstance().getRarityFromInt(d.petRarity);
         auto sub = text(pet, fmt::format("Lv {} - {}", d.petLevel, rarity.empty() ? "Common" : rarity), { 38.f, chipH / 2.f - 8.f }, 0.26f, "bigFont.fnt", { 0.f, 0.5f });
         sub->setColor(rarityColor(d.petRarity));
-        sub->limitLabelWidth(chipW - 44.f, 0.26f, 0.1f);
+        sub->setLimitLabelWidth(chipW - 44.f, 0.26f, 0.1f);
     } else {
         text(pet, "No pet", { chipW / 2.f, chipH / 2.f }, 0.32f)->setOpacity(130);
     }

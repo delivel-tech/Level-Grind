@@ -24,7 +24,7 @@ public:
 private:
     void updateTitle() {
         if (auto node = this->getChildByIDRecursive("title")) {
-            if (auto label = typeinfo_cast<CCLabelBMFont*>(node)) {
+            if (auto label = typeinfo_cast<CCLabelProtocol*>(node)) {
                 label->setString(m_name.c_str());
             };
         }

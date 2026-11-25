@@ -1,4 +1,5 @@
 #include "DifficultySelectorPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/cocoa/CCObject.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/Layout.hpp"
@@ -27,7 +28,7 @@ bool DifficultySelectorPopup::init(MainLayer* owner) {
 
     setTitle("Select Difficulties");
 
-    auto hardLabel = Build(CCLabelBMFont::create("Hard Difficulty", "bigFont.fnt"))
+    auto hardLabel = Build(geode::Label::create("Hard Difficulty", "bigFont.fnt"))
         .parent(m_mainLayer)
         .pos({ centerX(), centerY() + 60.f })
         .scale(0.5f)
@@ -69,7 +70,7 @@ bool DifficultySelectorPopup::init(MainLayer* owner) {
     fourStToggler->toggle(m_owner->isSplitDifficultySelected(4));
     fiveStToggler->toggle(m_owner->isSplitDifficultySelected(5));
 
-    auto harderLabel = Build(CCLabelBMFont::create("Harder Difficulty", "bigFont.fnt"))
+    auto harderLabel = Build(geode::Label::create("Harder Difficulty", "bigFont.fnt"))
         .parent(m_mainLayer)
         .pos({ centerX(), centerY() + 10.f })
         .scale(0.5f)
@@ -111,7 +112,7 @@ bool DifficultySelectorPopup::init(MainLayer* owner) {
     sixStToggler->toggle(m_owner->isSplitDifficultySelected(6));
     sevenStToggler->toggle(m_owner->isSplitDifficultySelected(7));
 
-    auto insaneLabel = Build(CCLabelBMFont::create("Insane Difficulty", "bigFont.fnt"))
+    auto insaneLabel = Build(geode::Label::create("Insane Difficulty", "bigFont.fnt"))
         .parent(m_mainLayer)
         .pos({ centerX(), centerY() - 40.f })
         .scale(0.5f)

@@ -13,6 +13,7 @@ namespace levelgrind {
 class GuidePopup : public BasePopup {
 public:
     static GuidePopup* create(GuidePage page, GuidePopupState state);
+    static void addInfoButton(CCNode* layer, GuidePage page, CCPoint position);
 
 private:
     bool init(GuidePage page, GuidePopupState state);

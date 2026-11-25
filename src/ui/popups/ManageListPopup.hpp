@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/binding/GJLevelList.hpp>
 #include "../BasePopup.hpp"
 
@@ -28,7 +29,7 @@ private:
     int m_tags = 0;
     CCMenu* m_tagMenu = nullptr;
 
-    CCLabelBMFont* m_status = nullptr;
+    geode::Label* m_status = nullptr;
     CCMenu* m_actions = nullptr;
     TaskHolder<web::WebResponse> m_task;
     ~ManageListPopup() { m_task.cancel(); }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/ui/LoadingSpinner.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/binding/CCBlockLayer.hpp>
@@ -24,7 +24,7 @@ private:
 
     CCBlockLayer* m_blockLayer = nullptr;
     LoadingSpinner* m_spinner = nullptr;
-    CCLabelBMFont* m_label = nullptr;
+    geode::Label* m_label = nullptr;
 };
 
 }

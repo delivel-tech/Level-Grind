@@ -2,7 +2,7 @@
 #include "../StaffIcons.hpp"
 #include "StaffPopup.hpp"
 #include "../../managers/DataManager.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include <UIBuilder.hpp>
 
@@ -45,7 +45,7 @@ bool StaffPopup::init() {
         return false;
     }
 
-    auto importantToolsLabel = Build(CCLabelBMFont::create("Important Tools", "bigFont.fnt"))
+    auto importantToolsLabel = Build(geode::Label::create("Important Tools", "bigFont.fnt"))
         .parent(m_mainLayer)
         .pos({m_title->getPositionX(), m_title->getPositionY() - 20 })
         .scale(0.5f)
@@ -88,13 +88,6 @@ bool StaffPopup::init() {
             StaffReportsPopup::create()->show();
         })
         .id("reports-btn")
-        .parent(buttonsMenu);
-
-    Build(staffIconButton("clan_logos_staff_icon.png"_spr, false, CircleBaseSize::Medium))
-        .intoMenuItem([] {
-            StaffLogosPopup::create()->show();
-        })
-        .id("clan-logos-btn")
         .parent(buttonsMenu);
 
     Build(staffIconButton("find_player_staff_icon.png"_spr, false, CircleBaseSize::Medium))

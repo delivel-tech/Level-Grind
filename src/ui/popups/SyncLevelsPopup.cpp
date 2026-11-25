@@ -1,5 +1,5 @@
 #include "SyncLevelsPopup.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/MDPopup.hpp"
 #include "Geode/ui/NineSlice.hpp"
@@ -65,7 +65,7 @@ CCNode* makePanel(CCNode* parent, CCPoint pos, CCSize size, const char* title, c
         titleX = 29.f;
     }
 
-    Build(CCLabelBMFont::create(title, "goldFont.fnt"))
+    Build(geode::Label::create(title, "goldFont.fnt"))
         .scale(0.55f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ titleX, size.height - 13.f })
@@ -94,7 +94,7 @@ TextInput* SyncLevelsPopup::addThresholdRow(CCNode* panel, float y, Threshold wh
     auto const& def = kThresholds[which];
     float const width = panel->getContentWidth();
 
-    Build(CCLabelBMFont::create(def.label, "bigFont.fnt"))
+    Build(geode::Label::create(def.label, "bigFont.fnt"))
         .scale(0.45f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 12.f, y })
@@ -145,7 +145,7 @@ bool SyncLevelsPopup::init() {
 
     setTitle("Grind Coordinator: Sync Levels");
 
-    Build(CCLabelBMFont::create("Points a level needs before each change is applied.", "chatFont.fnt"))
+    Build(geode::Label::create("Points a level needs before each change is applied.", "chatFont.fnt"))
         .scale(0.55f)
         .pos(fromTop(40.f))
         .opacity(170)

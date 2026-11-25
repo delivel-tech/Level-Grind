@@ -58,6 +58,7 @@ ClanInfo GrindClansManager::parseClan(matjson::Value const& v) {
     c.description = v["description"].asString().unwrapOrDefault();
     c.ownerId = asI(v["ownerId"]);
     c.colorId = asI(v["colorId"]);
+    c.badgeColors = v["badgeColors"].asInt().unwrapOr(-1);
     c.emblemId = asI(v["emblemId"], 1);
     c.joinType = asI(v["joinType"]);
     c.minGp = asI(v["minGp"]);
@@ -72,7 +73,6 @@ ClanInfo GrindClansManager::parseClan(matjson::Value const& v) {
     c.gpBonus = asI(v["gpBonus"]);
     c.featured = v["featured"].asBool().unwrapOr(false);
     c.rank = asI(v["rank"]);
-    c.logoId = asLL(v["logoId"]);
     c.golden = v["golden"].asBool().unwrapOr(false);
     c.warWins = asI(v["warWins"]);
     return c;
@@ -82,8 +82,8 @@ ClanDetails GrindClansManager::parseDetails(matjson::Value const& v) {
     ClanDetails d;
     d.info = parseClan(v["info"]);
     d.weekRank = asI(v["weekRank"]);
+    d.rules = v["rules"].asString().unwrapOrDefault();
     d.myRole = asI(v["myRole"]);
-    d.logoPending = v["logoPending"].asBool().unwrapOr(false);
     d.hasPinned = parsePinned(v["pinned"], d.pinned);
     d.treasury = asLL(v["treasury"]);
     d.warWins = asI(v["warWins"]);
@@ -257,6 +257,9 @@ std::vector<ClanChatMessage> GrindClansManager::parseChat(web::WebResponse& res,
     if (auto arr = json["messages"].asArray()) {
         for (auto const& m : arr.unwrap()) {
             ClanChatMessage msg;
+            msg.replyTo = asLL(m["replyTo"]);
+            msg.replyName = m["replyName"].asString().unwrapOrDefault();
+            msg.replyText = m["replyText"].asString().unwrapOrDefault();
             msg.id = asLL(m["id"]);
             msg.accountId = asI(m["accountId"]);
             msg.username = m["username"].asString().unwrapOrDefault();

@@ -4,7 +4,7 @@
 
 **A big <cl>database</c> of <cy>grinding-worthy</c> levels!**
 
-**THIS VERSION IS ALPHA, YOU MIGHT ENCOUNTER BUGS. PLEASE REPORT THEM IN [LEVEL GRIND DISCORD SERVER](https://discord.gg/tmf5xtCX5y)**
+**THIS VERSION IS BETA, YOU MIGHT ENCOUNTER BUGS. PLEASE REPORT THEM IN [LEVEL GRIND DISCORD SERVER](https://discord.gg/tmf5xtCX5y)**
 
 ---
 
@@ -45,5 +45,6 @@ The <cl>database</c> is actively filled by our <cc>Admins</c> and <cg>Helpers</c
 ### ![Credits](delivel.level-grind/badge_contributor.png?scale=0.7) Credits
 - <cl>**Texture Designs**</c>: [iDust](user:20851829) & [Dasshu](user:1975253)
 - <cl>**Making Argon and cue**</c>: [dankmeme01](user:9735891) :3
-- <cl>**Gradient label and base layer / popup code**</c>: based on [Globed](https://github.com/GlobedGD/globed2) by dankmeme01 (MIT License)
+- <cl>**Gradient label and base layer / popup code**</c>: based on [Globed](https://github.com/GlobedGD/globed2) by dankmeme01
+- <cl>**Providing Clan Emblem icons**</c>: [AutoNick](user:1093804)
 - <cl>**A lot of levels in the database**</c>: our <cg>Helpers</c> <3

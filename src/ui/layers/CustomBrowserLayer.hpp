@@ -7,7 +7,7 @@
 #include <Geode/modify/GameLevelManager.hpp>
 #include "../BaseLayer.hpp"
 #include "../../utils/globals.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
 
@@ -81,8 +81,8 @@ private:
     ScrollLayer* m_scrollLayer = nullptr;
 
     LoadingSpinner* m_circle = nullptr;
-    CCLabelBMFont* m_levelsLabel = nullptr;
-    CCLabelBMFont* m_pageButtonLabel = nullptr;
+    geode::Label* m_levelsLabel = nullptr;
+    geode::Label* m_pageButtonLabel = nullptr;
 
     CCMenuItemSpriteExtra* m_pageButton = nullptr;
     CCMenuItemSpriteExtra* m_refreshBtn = nullptr;
@@ -90,7 +90,7 @@ private:
     CCMenuItemSpriteExtra* m_nextButton = nullptr;
 
     ProgressBar* m_progressBar = nullptr;
-    CCLabelBMFont* m_completionInfoLabel = nullptr;
+    geode::Label* m_completionInfoLabel = nullptr;
 
     CCMenuItemSpriteExtra* m_randomPageBtn = nullptr;
 

@@ -1,6 +1,6 @@
 #include "PetLayer.hpp"
 #include "Geode/cocos/cocoa/CCGeometry.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/General.hpp"
@@ -178,9 +178,9 @@ void PetLayer::drawUIFromData(PetManager::PetData data, CCNode* mainPanel) {
     float const cx = size.width / 2.f;
     WeakRef<PetLayer> weakLayer = this;
 
-    m_petLabel = CCLabelBMFont::create(data.petName.c_str(), "goldFont.fnt");
+    m_petLabel = geode::Label::create(data.petName, "goldFont.fnt");
     m_petLabel->setPosition({ cx, size.height - 23.f });
-    m_petLabel->limitLabelWidth(size.width - 80.f, 0.85f, 0.35f);
+    m_petLabel->setLimitLabelWidth(size.width - 80.f, 0.85f, 0.35f);
     m_petLabel->setID("pet-name-label");
     mainPanel->addChild(m_petLabel);
 
@@ -228,8 +228,8 @@ void PetLayer::drawUIFromData(PetManager::PetData data, CCNode* mainPanel) {
         row->setLayout(RowLayout::create()->setGap(5.f)->setAutoScale(false));
         icon->setScale(17.f / std::max(icon->getContentWidth(), icon->getContentHeight()));
         row->addChild(icon);
-        auto label = CCLabelBMFont::create(value.c_str(), "bigFont.fnt");
-        label->limitLabelWidth(innerW - 24.f, 0.42f, 0.15f);
+        auto label = geode::Label::create(value, "bigFont.fnt");
+        label->setLimitLabelWidth(innerW - 24.f, 0.42f, 0.15f);
         row->addChild(label);
         row->updateLayout();
         col->addChild(row);
@@ -256,8 +256,8 @@ void PetLayer::drawUIFromData(PetManager::PetData data, CCNode* mainPanel) {
         bar->setPosition({ innerW / 2.f, 7.f });
         bar->updateProgress(std::clamp(percent, 0.f, 100.f));
         node->addChild(bar);
-        auto label = CCLabelBMFont::create(text.c_str(), "bigFont.fnt");
-        label->limitLabelWidth(innerW, 0.3f, 0.12f);
+        auto label = geode::Label::create(text, "bigFont.fnt");
+        label->setLimitLabelWidth(innerW, 0.3f, 0.12f);
         label->setPosition({ innerW / 2.f, barH - 6.f });
         node->addChild(label);
         col->addChild(node);
@@ -265,8 +265,8 @@ void PetLayer::drawUIFromData(PetManager::PetData data, CCNode* mainPanel) {
 
     auto left = column(leftCard);
     statRow(left, CCSprite::create("grind_point_icon.png"_spr), numToString(data.gp));
-    auto streakLabel = CCLabelBMFont::create(fmt::format("{} day streak", data.streak).c_str(), "bigFont.fnt");
-    streakLabel->limitLabelWidth(innerW, 0.36f, 0.15f);
+    auto streakLabel = geode::Label::create(fmt::format("{} day streak", data.streak).c_str(), "bigFont.fnt");
+    streakLabel->setLimitLabelWidth(innerW, 0.36f, 0.15f);
     streakLabel->setColor(data.streak > 0 ? ccColor3B{ 255, 200, 90 } : ccColor3B{ 170, 170, 170 });
     left->addChild(streakLabel);
     int const nextBonus = std::min((data.streak / 7 + 1) * 7, (data.streak / 30 + 1) * 30);
@@ -284,7 +284,11 @@ void PetLayer::drawUIFromData(PetManager::PetData data, CCNode* mainPanel) {
     left->updateLayout();
 
     auto right = column(rightCard);
-    statRow(right, CCSprite::createWithSpriteFrameName("shard0201ShardBig_001.png"), pm.getRarityFromInt(data.petRarity));
+    static constexpr const char* rarityFrames[] = {
+        "common.png"_spr, "rare.png"_spr, "legendary.png"_spr, "mythic_more.png"_spr
+    };
+    auto rarityFrame = rarityFrames[std::clamp(data.petRarity, 1, 4) - 1];
+    statRow(right, CCSprite::createWithSpriteFrameName(rarityFrame), pm.getRarityFromInt(data.petRarity));
     statRow(right, CCSprite::createWithSpriteFrameName("shard0203ShardBig_001.png"),
         fmt::format("Lvl {}", pm.isMaxLevel(data.petLevel) ? "MAX" : numToString(data.petLevel)));
     bool const maxed = pm.isMaxLevel(data.petLevel);
@@ -299,12 +303,12 @@ void PetLayer::drawUIFromData(PetManager::PetData data, CCNode* mainPanel) {
     });
     right->updateLayout();
 
-    auto ageLabel = CCLabelBMFont::create(pm.getPetAgeFromLevel(data.petLevel).c_str(), "goldFont.fnt");
+    auto ageLabel = geode::Label::create(pm.getPetAgeFromLevel(data.petLevel).c_str(), "goldFont.fnt");
     ageLabel->setScale(0.6f);
     ageLabel->setPosition({ petSize.width / 2.f, cardH - 18.f });
     petPanel->addChild(ageLabel, 10);
 
-    auto moodLabel = CCLabelBMFont::create(PetManager::moodName(data.mood).c_str(), "bigFont.fnt");
+    auto moodLabel = geode::Label::create(PetManager::moodName(data.mood).c_str(), "bigFont.fnt");
     moodLabel->setScale(0.34f);
     moodLabel->setColor(PetManager::moodColor(data.mood));
     moodLabel->setPosition({ petSize.width / 2.f, cardH - 35.f });

@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/ui/TextInput.hpp>
 #include <Geode/utils/web.hpp>
 #include <cue/ListNode.hpp>
@@ -32,7 +33,7 @@ private:
     std::string m_name;
     std::vector<Entry> m_notes;
     cue::ListNode* m_list = nullptr;
-    CCLabelBMFont* m_empty = nullptr;
+    geode::Label* m_empty = nullptr;
     TaskHolder<web::WebResponse> m_task;
 
     ~NotesManagerPopup() { m_task.cancel(); }

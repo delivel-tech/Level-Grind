@@ -1,6 +1,6 @@
 #include "ManageLevelPopup.hpp"
 #include "Geode/cocos/base_nodes/CCNode.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/loader/Log.hpp"
@@ -200,12 +200,12 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 .collect();
 
             self->m_levelInfoMenu->addChild(
-                CCLabelBMFont::create("Status:", "goldFont.fnt")
+                geode::Label::create("Status:", "goldFont.fnt")
             );
 
             if (parsed.isAdded) {
                 self->m_levelInfoMenu->addChild(
-                    CCLabelBMFont::create("Added", "goldFont.fnt")
+                    geode::Label::create("Added", "goldFont.fnt")
                 );
                 
                 self->m_levelInfoMenu->addChild(
@@ -213,11 +213,11 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                 );
 
                 self->m_levelInfoMenu->addChild(
-                    CCLabelBMFont::create(fmt::format("({})", parsed.addedBy).c_str(), "goldFont.fnt")
+                    geode::Label::create(fmt::format("({})", parsed.addedBy).c_str(), "goldFont.fnt")
                 );
             } else {
                 self->m_levelInfoMenu->addChild(
-                    CCLabelBMFont::create("Not Added", "goldFont.fnt")
+                    geode::Label::create("Not Added", "goldFont.fnt")
                 );
 
                 self->m_levelInfoMenu->addChild(
@@ -580,8 +580,8 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     .center()
                     .collect();
 
-                auto staffUsernameBtn = Build(CCLabelBMFont::create(fmt::format("{}", pointInfo.staffUsername).c_str(), "goldFont.fnt"))
-                    .limitLabelWidth(100, 1.f, 0.2f)
+                auto staffUsernameBtn = Build(geode::Label::create(fmt::format("{}", pointInfo.staffUsername).c_str(), "goldFont.fnt"))
+                    .with([&](auto label) { label->setLimitLabelWidth(100, 1.f, 0.2f); })
                     .intoMenuItem([pointInfo] {
                         GrindProfilePopup::create(pointInfo.staffId)->show();
                     })
@@ -647,13 +647,13 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
                     })
                     .collect();
                 
-                Build(CCLabelBMFont::create(fmt::format("Points: {}", parsed.points).c_str(), "bigFont.fnt"))
+                Build(geode::Label::create(fmt::format("Points: {}", parsed.points).c_str(), "bigFont.fnt"))
                     .scale(0.6f)
                     .parent(cellPoints)
                     .center()
                     .collect();
 
-                Build(CCLabelBMFont::create(fmt::format("Coin Points: {}", parsed.coinPoints).c_str(), "bigFont.fnt"))
+                Build(geode::Label::create(fmt::format("Coin Points: {}", parsed.coinPoints).c_str(), "bigFont.fnt"))
                     .scale(0.5f)
                     .parent(cellCoinPoints)
                     .center()
@@ -665,7 +665,7 @@ bool ManageLevelPopup::init(GJGameLevel* level) {
             };
 
             if (parsed.pointsInfo.empty()) {
-                Build(CCLabelBMFont::create("No points info found.", "bigFont.fnt"))
+                Build(geode::Label::create("No points info found.", "bigFont.fnt"))
                     .scale(0.4f)
                     .parent(pointsListNode)
                     .center()

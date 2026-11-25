@@ -1,4 +1,5 @@
 #include "ClanWarPopups.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../ClanUI.hpp"
 
 #include <Geode/binding/ButtonSprite.hpp>
@@ -12,8 +13,8 @@ using M = GrindClansManager;
 
 namespace {
 
-CCLabelBMFont* text(CCNode* parent, std::string const& str, CCPoint pos, float scale, const char* font = "bigFont.fnt", CCPoint anchor = { 0.5f, 0.5f }) {
-    auto l = CCLabelBMFont::create(str.c_str(), font);
+geode::Label* text(CCNode* parent, std::string const& str, CCPoint pos, float scale, const char* font = "bigFont.fnt", CCPoint anchor = { 0.5f, 0.5f }) {
+    auto l = geode::Label::create(str, font);
     l->setScale(scale);
     l->setAnchorPoint(anchor);
     l->setPosition(pos);
@@ -25,13 +26,13 @@ CCNode* clanSide(ClanInfo const& c, long long score, bool winning) {
     auto node = CCNode::create();
     node->setContentSize({ 110.f, 90.f });
     node->setAnchorPoint({ 0.5f, 0.5f });
-    auto em = clanui::emblem(c.emblemId, c.colorId, 34.f, c.logoId);
+    auto em = clanui::emblem(c.emblemId, c.colorId, 34.f, c.badgeColors);
     em->setAnchorPoint({ 0.5f, 0.5f });
     em->ignoreAnchorPointForPosition(false);
     em->setPosition({ 55.f, 60.f });
     node->addChild(em);
     auto name = text(node, c.name, { 55.f, 30.f }, 0.4f);
-    name->limitLabelWidth(104.f, 0.4f, 0.12f);
+    name->setLimitLabelWidth(104.f, 0.4f, 0.12f);
     name->setColor(M::clanColor(c.colorId));
     if (c.level >= clanui::kRainbowLevel) clanui::makeRainbow(name);
     auto pts = text(node, M::formatGP(score), { 55.f, 10.f }, 0.5f, "goldFont.fnt");
@@ -87,7 +88,7 @@ bool ClanWarPopup::init(ClanDetails const& d, long long now) {
         std::string result = d.lastWarDraw ? "Draw" : d.lastWarWon ? "Won" : "Lost";
         auto last = text(m_mainLayer, fmt::format("Last war: {} vs {} ({} - {})", result, d.lastWarOpponent,
             M::formatGP(d.lastWarMine), M::formatGP(d.lastWarTheirs)), { w / 2.f, 34.f }, 0.3f);
-        last->limitLabelWidth(w - 30.f, 0.3f, 0.12f);
+        last->setLimitLabelWidth(w - 30.f, 0.3f, 0.12f);
         last->setColor(d.lastWarDraw ? ccColor3B{ 220, 220, 220 } : d.lastWarWon ? ccColor3B{ 140, 255, 140 } : ccColor3B{ 255, 130, 130 });
     }
     text(m_mainLayer, fmt::format("Wars won: {}", d.warWins), { w / 2.f, 16.f }, 0.3f, "goldFont.fnt");
@@ -153,7 +154,7 @@ void ClanTreasuryPopup::build() {
         text(m_root, name, { 24.f, y + 8.f }, 0.4f, "goldFont.fnt", { 0.f, 0.5f });
         std::string sub = until > m_now ? fmt::format("Active - {}", clanui::countdown(until - m_now)) : desc;
         auto subLbl = text(m_root, sub, { 24.f, y - 9.f }, 0.26f, "bigFont.fnt", { 0.f, 0.5f });
-        subLbl->limitLabelWidth(w - 130.f, 0.26f, 0.1f);
+        subLbl->setLimitLabelWidth(w - 130.f, 0.26f, 0.1f);
         if (until > m_now) subLbl->setColor({ 140, 255, 140 });
         bool can = leader && d.treasury >= cost;
         auto spr = ButtonSprite::create(M::formatGP(cost).c_str(), 54, true, "bigFont.fnt", can ? "GJ_button_02.png" : "GJ_button_04.png", 26.f, 0.5f);

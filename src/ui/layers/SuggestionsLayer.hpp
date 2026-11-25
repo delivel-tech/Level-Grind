@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <unordered_map>
 #include "../BaseLayer.hpp"
 #include "../../utils/globals.hpp"
@@ -89,8 +90,8 @@ private:
     ScrollLayer* m_scrollLayer = nullptr;
 
     LoadingSpinner* m_circle = nullptr;
-    CCLabelBMFont* m_levelsLabel = nullptr;
-    CCLabelBMFont* m_pageButtonLabel = nullptr;
+    geode::Label* m_levelsLabel = nullptr;
+    geode::Label* m_pageButtonLabel = nullptr;
 
     CCMenuItemSpriteExtra* m_pageButton = nullptr;
     CCMenuItemSpriteExtra* m_refreshBtn = nullptr;

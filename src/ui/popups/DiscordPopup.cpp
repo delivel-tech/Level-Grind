@@ -2,7 +2,7 @@
 #include "Geode/cocos/actions/CCActionEase.h"
 #include "Geode/cocos/actions/CCActionInterval.h"
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/misc_nodes/CCClippingNode.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
@@ -131,7 +131,7 @@ bool DiscordPopup::init(std::vector<DiscordPageInfo> pages) {
         .id("grind-logo")
         .collect();
 
-    auto discordLabel = Build(CCLabelBMFont::create("Join our Discord Server!", "bigFont.fnt"))
+    auto discordLabel = Build(geode::Label::create("Join our Discord Server!", "bigFont.fnt"))
         .pos(
             m_mainMenu->getContentWidth() / 2.f,
             m_mainMenu->getContentHeight() / 1.2f - 13.f
@@ -228,7 +228,7 @@ bool DiscordPopup::init(std::vector<DiscordPageInfo> pages) {
         .parent(activeNowMenu)
         .collect();
 
-    auto onlineLabel = Build(CCLabelBMFont::create("online now", "goldFont.fnt"))
+    auto onlineLabel = Build(geode::Label::create("online now", "goldFont.fnt"))
         .id("online-label")
         .scale(0.8f)
         .parent(activeNowMenu)
@@ -267,7 +267,7 @@ bool DiscordPopup::init(std::vector<DiscordPageInfo> pages) {
                     .parent(activeNowMenuRef)
                     .collect();
 
-                auto activeNowLabel = Build(CCLabelBMFont::create(
+                auto activeNowLabel = Build(geode::Label::create(
                     fmt::format("{} active now", activeNowCount).c_str(),
                     "goldFont.fnt"
                 ))
@@ -343,7 +343,7 @@ void DiscordPopup::updatePage() {
     auto contentWidth = m_interactiveMenu->getContentWidth();
     auto contentHeight = m_interactiveMenu->getContentHeight();
 
-    m_pageTitleLabel = Build(CCLabelBMFont::create(currentPage.title.c_str(), "bigFont.fnt"))
+    m_pageTitleLabel = Build(geode::Label::create(currentPage.title, "bigFont.fnt"))
         .scale(0.7f)
         .pos({ contentWidth / 2.f, contentHeight - 35.f })
         .parent(m_interactiveMenu)

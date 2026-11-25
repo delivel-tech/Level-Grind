@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <cue/ListNode.hpp>
 #include "../BaseLayer.hpp"
 #include "../../managers/GrindListsData.hpp"
@@ -22,8 +23,8 @@ private:
     int m_page = 0;
 
     cue::ListNode* m_listNode = nullptr;
-    CCLabelBMFont* m_countLabel = nullptr;
-    CCLabelBMFont* m_status = nullptr;
+    geode::Label* m_countLabel = nullptr;
+    geode::Label* m_status = nullptr;
     CCNode* m_spinner = nullptr;
     CCMenuItemSpriteExtra* m_prev = nullptr;
     CCMenuItemSpriteExtra* m_next = nullptr;

@@ -1,4 +1,5 @@
 #include "AchievementsPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../../managers/NotifyManager.hpp"
 
 #include <Geode/binding/ButtonSprite.hpp>
@@ -166,7 +167,7 @@ bool AchievementsPopup::init() {
         }
     }), 101);
 
-    m_summary = CCLabelBMFont::create("", "bigFont.fnt");
+    m_summary = geode::Label::create("", "bigFont.fnt");
     m_summary->setScale(0.3f);
     m_summary->setPosition({ centerX(), 14.f });
     m_mainLayer->addChild(m_summary);
@@ -219,14 +220,14 @@ void AchievementsPopup::buildTabs() {
         icon->setPosition({ 14.f, kTabH / 2.f });
         body->addChild(icon);
 
-        auto name = CCLabelBMFont::create(c.name, "bigFont.fnt");
+        auto name = geode::Label::create(c.name, "bigFont.fnt");
         name->setAnchorPoint({ 0.f, 0.5f });
         name->setPosition({ 26.f, kTabH / 2.f + 5.f });
-        name->limitLabelWidth(kTabsW - 32.f, 0.34f, 0.1f);
+        name->setLimitLabelWidth(kTabsW - 32.f, 0.34f, 0.1f);
         if (on) name->setColor({ 255, 220, 80 });
         body->addChild(name);
 
-        auto count = CCLabelBMFont::create(fmt::format("{}/{}", done, total).c_str(), "bigFont.fnt");
+        auto count = geode::Label::create(fmt::format("{}/{}", done, total).c_str(), "bigFont.fnt");
         count->setAnchorPoint({ 0.f, 0.5f });
         count->setPosition({ 26.f, kTabH / 2.f - 7.f });
         count->setScale(0.24f);
@@ -255,17 +256,17 @@ CCNode* AchievementsPopup::makeCell(achievements::Achievement const& a, float wi
     icon->setPosition({ 24.f, kCellH / 2.f });
     cell->addChild(icon);
 
-    auto title = CCLabelBMFont::create(a.title.c_str(), "goldFont.fnt");
+    auto title = geode::Label::create(a.title, "goldFont.fnt");
     title->setAnchorPoint({ 0.f, 0.5f });
     title->setPosition({ 46.f, kCellH - 15.f });
-    title->limitLabelWidth(width - 120.f, 0.5f, 0.2f);
+    title->setLimitLabelWidth(width - 120.f, 0.5f, 0.2f);
     if (!a.unlocked) title->setColor({ 200, 200, 200 });
     cell->addChild(title);
 
-    auto desc = CCLabelBMFont::create(a.description.c_str(), "chatFont.fnt");
+    auto desc = geode::Label::create(a.description, "chatFont.fnt");
     desc->setAnchorPoint({ 0.f, 0.5f });
     desc->setPosition({ 46.f, 15.f });
-    desc->limitLabelWidth(width - 120.f, 0.55f, 0.25f);
+    desc->setLimitLabelWidth(width - 120.f, 0.55f, 0.25f);
     cell->addChild(desc);
 
     if (a.unlocked) {
@@ -274,9 +275,9 @@ CCNode* AchievementsPopup::makeCell(achievements::Achievement const& a, float wi
         check->setPosition({ width - 30.f, kCellH / 2.f + 6.f });
         cell->addChild(check);
     } else {
-        auto progress = CCLabelBMFont::create(fmt::format("{}/{}", a.progress, a.target).c_str(), "bigFont.fnt");
+        auto progress = geode::Label::create(fmt::format("{}/{}", a.progress, a.target).c_str(), "bigFont.fnt");
         progress->setPosition({ width - 30.f, kCellH / 2.f + 6.f });
-        progress->limitLabelWidth(50.f, 0.3f, 0.15f);
+        progress->setLimitLabelWidth(50.f, 0.3f, 0.15f);
         cell->addChild(progress);
     }
     if (a.gp > 0) {
@@ -285,7 +286,7 @@ CCNode* AchievementsPopup::makeCell(achievements::Achievement const& a, float wi
         row->setContentSize({ 50.f, 12.f });
         row->setAnchorPoint({ 0.5f, 0.5f });
         row->setPosition({ width - 30.f, kCellH / 2.f - 12.f });
-        auto gp = CCLabelBMFont::create(fmt::format("+{}", a.gp).c_str(), "bigFont.fnt");
+        auto gp = geode::Label::create(fmt::format("+{}", a.gp).c_str(), "bigFont.fnt");
         gp->setScale(0.26f);
         gp->setColor(a.unlocked ? ccColor3B{ 140, 255, 140 } : ccColor3B{ 255, 220, 80 });
         row->addChild(gp);

@@ -1,5 +1,5 @@
 #include "IndicatorsPopup.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
@@ -53,7 +53,7 @@ bool IndicatorsPopup::init(int levelID) {
         .parent(m_mainLayer)
         .collect();
 
-    auto statusLabel = Build(CCLabelBMFont::create(
+    auto statusLabel = Build(geode::Label::create(
         "Status:", "bigFont.fnt"
     ))
         .id("status-label")
@@ -109,7 +109,7 @@ bool IndicatorsPopup::init(int levelID) {
             self->m_statusSpinner = nullptr;
 
             if (parsed.added) {
-                Build(CCLabelBMFont::create("Added", "bigFont.fnt"))
+                Build(geode::Label::create("Added", "bigFont.fnt"))
                     .scale(0.5f)
                     .parent(self->m_statusMenu)
                     .id("added-label");
@@ -119,7 +119,7 @@ bool IndicatorsPopup::init(int levelID) {
                     .scale(0.5f)
                     .id("added-icon");
             } else {
-                Build(CCLabelBMFont::create("Not Added", "bigFont.fnt"))
+                Build(geode::Label::create("Not Added", "bigFont.fnt"))
                     .parent(self->m_statusMenu)
                     .scale(0.5f)
                     .id("not-added-label");

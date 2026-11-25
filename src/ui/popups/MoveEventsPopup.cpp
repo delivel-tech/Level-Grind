@@ -1,4 +1,5 @@
 #include "MoveEventsPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "Geode/ui/NineSlice.hpp"
 #include "Geode/ui/Notification.hpp"
 #include "Geode/ui/TextInput.hpp"
@@ -38,8 +39,8 @@ void layoutRow(CCMenu* menu, std::vector<CCMenuItemToggler*> const& items, float
     }
 }
 
-CCLabelBMFont* rowLabel(CCNode* panel, const char* text, float y) {
-    return Build(CCLabelBMFont::create(text, "goldFont.fnt"))
+geode::Label* rowLabel(CCNode* panel, const char* text, float y) {
+    return Build(geode::Label::create(text, "goldFont.fnt"))
         .scale(0.5f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 14.f, y })
@@ -66,7 +67,7 @@ bool MoveEventsPopup::init(geode::Function<void()> onMoved) {
 
     this->setTitle("Move Events");
 
-    Build(CCLabelBMFont::create("Shift queued events in time, e.g. to close a gap in the queue.", "chatFont.fnt"))
+    Build(geode::Label::create("Shift queued events in time, e.g. to close a gap in the queue.", "chatFont.fnt"))
         .scale(0.5f)
         .pos(fromTop(40.f))
         .opacity(170)
@@ -140,14 +141,14 @@ bool MoveEventsPopup::init(geode::Function<void()> onMoved) {
 
     y -= 32.f;
     m_sinceInput = this->addStepper(panel, menu, "Ended within", y, 0, 0, 365);
-    Build(CCLabelBMFont::create("days (for events stuck in the past)", "chatFont.fnt"))
+    Build(geode::Label::create("days (for events stuck in the past)", "chatFont.fnt"))
         .scale(0.5f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 14.f, y - 12.f })
         .opacity(150)
         .parent(panel);
 
-    Build(CCLabelBMFont::create("Events that have not ended yet always move", "bigFont.fnt"))
+    Build(geode::Label::create("Events that have not ended yet always move", "bigFont.fnt"))
         .scale(0.3f)
         .pos({ centerX(), 50.f })
         .opacity(160)

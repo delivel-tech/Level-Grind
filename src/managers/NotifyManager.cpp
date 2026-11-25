@@ -1,4 +1,5 @@
 #include "Auth.hpp"
+#include <Geode/ui/Label.hpp>
 #include "NotifyManager.hpp"
 #include "APIClient.hpp"
 #include "GrindClansManager.hpp"
@@ -91,24 +92,24 @@ CCNode* makeCard(Pending const& p, CCSize size) {
         card->addChild(icon);
         textX = 16.f + icon->getScaledContentWidth();
     }
-    auto title = CCLabelBMFont::create(p.title.c_str(), "goldFont.fnt");
+    auto title = geode::Label::create(p.title, "goldFont.fnt");
     title->setAnchorPoint({ 0.f, 0.5f });
     title->setPosition({ textX, size.height - 13.f });
-    title->limitLabelWidth(size.width - textX - 8.f, p.achievement ? 0.55f : 0.45f, 0.2f);
+    title->setLimitLabelWidth(size.width - textX - 8.f, p.achievement ? 0.55f : 0.45f, 0.2f);
     card->addChild(title);
-    auto text = CCLabelBMFont::create(p.text.c_str(), "chatFont.fnt");
+    auto text = geode::Label::create(p.text, "chatFont.fnt");
     text->setAnchorPoint({ 0.f, 0.5f });
     text->setPosition({ textX, 12.f });
-    text->limitLabelWidth(size.width - textX - 8.f, 0.55f, 0.25f);
+    text->setLimitLabelWidth(size.width - textX - 8.f, 0.55f, 0.25f);
     card->addChild(text);
     if (p.achievement && p.gp > 0) {
-        auto gp = CCLabelBMFont::create(fmt::format("+{} GP", p.gp).c_str(), "bigFont.fnt");
+        auto gp = geode::Label::create(fmt::format("+{} GP", p.gp).c_str(), "bigFont.fnt");
         gp->setScale(0.3f);
         gp->setColor({ 255, 220, 80 });
         gp->setAnchorPoint({ 1.f, 0.5f });
         gp->setPosition({ size.width - 10.f, size.height - 13.f });
         card->addChild(gp);
-        title->limitLabelWidth(size.width - textX - 50.f, 0.55f, 0.2f);
+        title->setLimitLabelWidth(size.width - textX - 50.f, 0.55f, 0.2f);
     }
     return card;
 }

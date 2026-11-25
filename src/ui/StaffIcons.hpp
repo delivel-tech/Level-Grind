@@ -17,7 +17,6 @@ inline StaffIconPlacement staffIconPlacement(std::string_view icon) {
     auto is = [&](const char* name) { return icon.find(name) != std::string_view::npos; };
     if (is("staff_activity")) return { { 23.f, 23.5f }, 1.385f };
     if (is("reports")) return { { 23.5f, 23.5f }, 1.2f };
-    if (is("clan_logos")) return { { 24.f, 23.5f }, 1.4f };
     if (is("find_player")) return { { 22.5f, 23.5f }, 1.2f };
     if (is("sync_levels")) return { { 25.f, 23.f }, 1.3f };
     if (is("queue_events")) return { { 23.f, 23.5f }, 1.3f };

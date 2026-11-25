@@ -16,15 +16,12 @@ private:
     bool initFarMenus();
     bool initMd();
 
-    static constexpr size_t kCatsPerPage = 8;
-    void showCatPage(int page);
-    int catPageCount() const;
+    bool initCategoryScroll(std::initializer_list<CCMenuItemSpriteExtra*> topRow,
+        std::initializer_list<CCMenuItemSpriteExtra*> bottomRow);
 
+    Ref<CCGLProgram> m_categoryFade;
     CCMenu* m_catMenu = nullptr;
     std::vector<Ref<CCMenuItemSpriteExtra>> m_cats;
-    int m_catPage = 0;
-    CCMenuItemSpriteExtra* m_prevPageBtn = nullptr;
-    CCMenuItemSpriteExtra* m_nextPageBtn = nullptr;
 
     TaskHolder<web::WebResponse> m_listener;
 

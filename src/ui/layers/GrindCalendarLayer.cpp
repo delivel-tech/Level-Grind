@@ -1,4 +1,6 @@
 #include "GrindCalendarLayer.hpp"
+#include "../popups/GuidePopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../BasePopup.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/Auth.hpp"
@@ -95,8 +97,8 @@ int utcOffsetMinutes() {
     return static_cast<int>(std::difftime(std::mktime(&local), std::mktime(&utc)) / 60.0);
 }
 
-CCLabelBMFont* label(CCNode* parent, std::string const& text, CCPoint pos, float scale, const char* font = "bigFont.fnt", CCPoint anchor = { 0.5f, 0.5f }) {
-    auto l = CCLabelBMFont::create(text.c_str(), font);
+geode::Label* label(CCNode* parent, std::string const& text, CCPoint pos, float scale, const char* font = "bigFont.fnt", CCPoint anchor = { 0.5f, 0.5f }) {
+    auto l = geode::Label::create(text, font);
     l->setScale(scale);
     l->setAnchorPoint(anchor);
     l->setPosition(pos);
@@ -209,6 +211,7 @@ bool GrindCalendarLayer::init() {
     m_metric = static_cast<Metric>(std::clamp(Mod::get()->getSavedValue<int>("calendar-metric", 0), 0, 5));
 
     auto win = m_winSize;
+    GuidePopup::addInfoButton(this, GuidePage::CalendarGuide, { win.width - 25.f, win.height - 22.f });
     label(this, "Stat Tracker", { win.width / 2.f, win.height - 18.f }, 0.75f, "goldFont.fnt");
 
     auto frame = NineSlice::create("GJ_square02.png");
@@ -478,7 +481,7 @@ void GrindCalendarLayer::buildGrid() {
         num->setOpacity(future ? 90 : 230);
         if (v > 0) {
             auto val = label(cell, shortNumber(v), { cellW / 2.f + 3.f, 9.f }, 0.3f, "goldFont.fnt");
-            val->limitLabelWidth(cellW - 10.f, 0.3f, 0.12f);
+            val->setLimitLabelWidth(cellW - 10.f, 0.3f, 0.12f);
         }
 
         if (day == m_selected) num->setColor({ 255, 210, 60 });
@@ -496,7 +499,7 @@ void GrindCalendarLayer::buildGrid() {
     int monthTotal = this->sumRange(first, first + count - 1);
     auto total = label(m_left, fmt::format("{} this month: {}", metricName(m_metric), monthTotal), { size.width / 2.f, 10.f }, 0.3f);
     total->setColor(color);
-    total->limitLabelWidth(size.width - 20.f, 0.3f, 0.15f);
+    total->setLimitLabelWidth(size.width - 20.f, 0.3f, 0.15f);
 }
 
 void GrindCalendarLayer::buildSide() {
@@ -536,7 +539,7 @@ void GrindCalendarLayer::buildSide() {
                 icon->setScale(12.f / std::max(icon->getContentWidth(), icon->getContentHeight()));
                 pair->addChild(icon);
             }
-            auto l = CCLabelBMFont::create(shortNumber(s.v).c_str(), "bigFont.fnt");
+            auto l = geode::Label::create(shortNumber(s.v).c_str(), "bigFont.fnt");
             l->setScale(0.32f);
             if (s.v == 0) l->setOpacity(120);
             pair->addChild(l);
@@ -592,7 +595,7 @@ void GrindCalendarLayer::buildSide() {
             label(m_right, title, { cx, cy + 6.f }, 0.26f, "bigFont.fnt")->setOpacity(170);
             auto v = label(m_right, val, { cx, cy - 6.f }, 0.34f);
             v->setColor(c);
-            v->limitLabelWidth(w / 3.f - 8.f, 0.34f, 0.15f);
+            v->setLimitLabelWidth(w / 3.f - 8.f, 0.34f, 0.15f);
         };
         float c1 = w / 6.f, c2 = w / 2.f, c3 = w * 5.f / 6.f;
         float r1 = y - 16.f, r2 = y - 42.f;

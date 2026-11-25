@@ -6,15 +6,23 @@
 	},
 	"id": "delivel.level-grind",
 	"name": "Level Grind",
-	"version": "v3.0.0-alpha.2",
+	"version": "v3.0.0-beta.1",
 	"developer": "Delivel",
 	"description": "A big database of levels for grinding!",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
-		"dankmeme.argon": ">=2.0.0-alpha.2"
+		"dankmeme.argon": ">=2.0.0-alpha.2",
+		"alphalaneous.alphas-ui-pack": ">=1.5.0-beta.2"
 	},
 	"resources": {
 		"spritesheets": {
+			"petRarities": [
+				"resources/pet_rarities/*.png"
+			],
+			"clanEmblems": [
+				"resources/emblems/bg/bg_*.png",
+				"resources/emblems/icon/icon_*.png"
+			],
 			"badgeSheet": [
 				"resources/badges/*.png"
 			],

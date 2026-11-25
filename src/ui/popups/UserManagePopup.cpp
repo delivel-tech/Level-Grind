@@ -1,4 +1,5 @@
 #include "UserManagePopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../../managers/DataManager.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/Auth.hpp"
@@ -146,16 +147,18 @@ bool UserManagePopup::init(GJUserScore* targetUser) {
         .zOrder(1)
         .collect();
 
-    auto targetLabel = Build<CCLabelBMFont>::create(
+    auto targetLabel = Build<geode::Label>::create(
         fmt::format(
             "Target: {}", targetUser->m_userName
-        ).c_str(), "bigFont.fnt", m_mainLayer->getContentSize().width - 40, kCCTextAlignmentCenter
+        ), "bigFont.fnt"
     )
         .id("target-label")
         .scale(0.5f)
         .parent(targetLabelMenu)
         .collect();
 
+    targetLabel->setMaxWidth(m_mainLayer->getContentSize().width - 40.f);
+    targetLabel->setAlignment(geode::Label::Alignment::Center);
     m_targetLabel = targetLabel;
     m_targetLabelMenu = targetLabelMenu;
 

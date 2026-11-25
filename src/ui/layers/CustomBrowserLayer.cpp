@@ -2,7 +2,7 @@
 #include "CustomBrowserLayer.hpp"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/General.hpp"
@@ -92,7 +92,7 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
 
     this->addChild(uiMenu, 10);
 
-    m_levelsLabel = CCLabelBMFont::create("", "goldFont.fnt");
+    m_levelsLabel = geode::Label::create("", "goldFont.fnt");
     m_levelsLabel->setPosition({winSize.width - 5, winSize.height - 5});
     m_levelsLabel->setAnchorPoint({1.f, 1.f});
     m_levelsLabel->setScale(0.45f);
@@ -121,7 +121,7 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
             this->addChild(pageMenu, 10);
             pageMenu->updateLayout();
 
-            m_pageButtonLabel = CCLabelBMFont::create(numToString(m_page + 1).c_str(), "bigFont.fnt");
+            m_pageButtonLabel = geode::Label::create(numToString(m_page + 1).c_str(), "bigFont.fnt");
 
             if (m_pageButtonLabel) {
                 auto size = m_pageButton->getContentSize();
@@ -215,10 +215,10 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
     this->scheduleUpdate();
     this->setKeypadEnabled(true);
 
-    auto titleLabel = Build(CCLabelBMFont::create(m_title.c_str(), "bigFont.fnt"))
+    auto titleLabel = Build(geode::Label::create(m_title, "bigFont.fnt"))
         .anchorPoint({ 0.5f, 0.5f })
         .pos({LIST_SIZE.width / 2.f, LIST_SIZE.height + 18.f})
-        .limitLabelWidth(LIST_SIZE.width - 30.f, .8f, 0.5f)
+        .with([&](auto label) { label->setLimitLabelWidth(LIST_SIZE.width - 30.f, .8f, 0.5f); })
         .parent(m_listNode)
         .zOrder(1)
         .collect();
@@ -231,7 +231,7 @@ bool CustomBrowserLayer::init(GetLevelsBody body, std::string title, CustomBrows
     }
 
     if (enableCompletionInfo) {
-        m_completionInfoLabel = Build(CCLabelBMFont::create("Completed 0 from 0", "goldFont.fnt"))
+        m_completionInfoLabel = Build(geode::Label::create("Completed 0 from 0", "goldFont.fnt"))
             .pos({winSize.width / 2, winSize.height - 5})
             .anchorPoint({0.5f, 1.f})
             .scale(0.45f)

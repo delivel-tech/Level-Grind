@@ -3,7 +3,7 @@
 #include <Geode/binding/GJUserScore.hpp>
 #include "../BasePopup.hpp"
 #include "../../utils/globals.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/LoadingSpinner.hpp"
 #include "Geode/utils/async.hpp"
@@ -24,7 +24,7 @@ private:
     Ref<GJUserScore> m_targetUser;
     LoadingSpinner* m_spinner;
     CCMenu* m_optionsMenu = nullptr;
-    CCLabelBMFont* m_targetLabel;
+    geode::Label* m_targetLabel;
     CCMenu* m_targetLabelMenu;
     CCSprite* getBadgeByHighestRole(UserRoles roles);
 

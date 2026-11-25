@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/ui/TextInput.hpp>
 #include <cue/ListNode.hpp>
 #include "../BasePopup.hpp"
@@ -10,6 +11,8 @@ using namespace geode::prelude;
 namespace levelgrind {
 
 using ClanChanged = geode::Function<void()>;
+
+void showClanRules(ClanDetails const& clan, geode::Function<void()> onSaved);
 
 class ClanMessagePopup : public BasePopup {
 public:
@@ -30,38 +33,10 @@ private:
     void finish(GJGameLevel* level);
     geode::Function<void(int, std::string const&)> m_onPicked;
     TextInput* m_input = nullptr;
-    CCLabelBMFont* m_status = nullptr;
+    geode::Label* m_status = nullptr;
     std::string m_pendingKey;
     int m_levelId = 0;
     float m_waited = 0.f;
-};
-
-class ClanLogoPopup : public BasePopup {
-public:
-    static ClanLogoPopup* create(ClanInfo const& clan, bool pending, ClanChanged onChanged);
-private:
-    bool init(ClanInfo const& clan, bool pending, ClanChanged onChanged);
-    void onPick();
-    void onUpload();
-    void setStatus(std::string const& text, bool error);
-    ClanInfo m_clan;
-    ClanChanged m_onChanged;
-    std::vector<uint8_t> m_bytes;
-    CCNode* m_preview = nullptr;
-    CCLabelBMFont* m_status = nullptr;
-    CCMenuItemSpriteExtra* m_uploadBtn = nullptr;
-    TaskHolder<file::PickResult> m_pickTask;
-};
-
-class StaffLogosPopup : public BasePopup {
-public:
-    static StaffLogosPopup* create();
-    void load();
-private:
-    bool init() override;
-    cue::ListNode* m_list = nullptr;
-    CCLabelBMFont* m_footer = nullptr;
-    TaskHolder<web::WebResponse> m_task;
 };
 
 class EarnGPPopup : public BasePopup {
@@ -85,13 +60,14 @@ private:
     TextInput* m_desc = nullptr;
     int m_color = 0;
     int m_emblem = 1;
+    long long m_badgeColors = -1;
     int m_joinType = 0;
     int m_minGp = 0;
     CCNode* m_preview = nullptr;
     CCNode* m_previewHolder = nullptr;
     std::vector<CCSprite*> m_swatches;
-    CCLabelBMFont* m_joinLabel = nullptr;
-    CCLabelBMFont* m_minLabel = nullptr;
+    geode::Label* m_joinLabel = nullptr;
+    geode::Label* m_minLabel = nullptr;
 };
 
 class ClanSettingsPopup : public BasePopup {
@@ -103,17 +79,20 @@ private:
     void onSave();
 
     ClanInfo m_clan;
+    long long m_initialBadgeColors = -1;
+    geode::Label* m_clanName = nullptr;
     ClanChanged m_onChanged;
     TextInput* m_desc = nullptr;
     int m_color = 0;
     int m_emblem = 1;
+    long long m_badgeColors = -1;
     int m_joinType = 0;
     int m_minGp = 0;
     CCNode* m_previewHolder = nullptr;
     std::vector<CCSprite*> m_swatches;
-    CCLabelBMFont* m_joinLabel = nullptr;
-    CCLabelBMFont* m_minLabel = nullptr;
-    CCLabelBMFont* m_costLabel = nullptr;
+    geode::Label* m_joinLabel = nullptr;
+    geode::Label* m_minLabel = nullptr;
+    geode::Label* m_costLabel = nullptr;
 };
 
 class ClanViewPopup : public BasePopup {
@@ -146,7 +125,7 @@ private:
     ClanDetails m_details;
     int m_tier = 0;
     CCNode* m_cards = nullptr;
-    CCLabelBMFont* m_tierLabel = nullptr;
+    geode::Label* m_tierLabel = nullptr;
 };
 
 class ClanLeaderboardPopup : public BasePopup {
@@ -159,7 +138,7 @@ private:
     std::string m_sort = "week";
     int m_page = 0;
     cue::ListNode* m_list = nullptr;
-    CCLabelBMFont* m_pageLabel = nullptr;
+    geode::Label* m_pageLabel = nullptr;
     std::vector<CCSprite*> m_tabSprites;
     bool m_hasMore = false;
     TaskHolder<web::WebResponse> m_task;

@@ -9,7 +9,7 @@
 #include "../../utils/globals.hpp"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/base_nodes/CCNode.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCScene.h"
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCTransition.h"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
@@ -101,7 +101,7 @@ private:
 
         std::string completed = fmt::format("{}/3", i);
 
-        auto completedLabel = Build(CCLabelBMFont::create(completed.c_str(), "bigFont.fnt"))
+        auto completedLabel = Build(geode::Label::create(completed, "bigFont.fnt"))
             .scale(0.6f)
             .parent(progressBar)
             .center()
@@ -133,8 +133,8 @@ private:
             .parent(infoMenu)
             .collect();
 
-        auto titleLabel = Build(CCLabelBMFont::create(packInfo.title.c_str(), "bigFont.fnt"))
-            .limitLabelWidth(270, 1.f, 0.4f)
+        auto titleLabel = Build(geode::Label::create(packInfo.title, "bigFont.fnt"))
+            .with([&](auto label) { label->setLimitLabelWidth(270, 1.f, 0.4f); })
             .color(packInfo.color)
             .parent(infoMenu)
             .collect();

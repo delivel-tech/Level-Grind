@@ -1,4 +1,6 @@
 #include "GrindListsLayer.hpp"
+#include "../popups/GuidePopup.hpp"
+#include <Geode/ui/Label.hpp>
 
 #include <Geode/binding/LevelListCell.hpp>
 #include <Geode/ui/LoadingSpinner.hpp>
@@ -27,6 +29,7 @@ bool GrindListsLayer::init() {
     addSideArt(this, SideArt::Bottom, SideArtStyle::LayerGray, false);
     m_filters = lists::Filters::load();
     auto winSize = m_winSize;
+    GuidePopup::addInfoButton(this, GuidePage::GrindListsGuide, { 25.f, 25.f });
 
     m_listNode = Build(cue::ListNode::create(LIST_SIZE, { 191, 114, 62, 255 }, cue::ListBorderStyle::Levels))
         .anchorPoint({ 0.5f, 0.5f })
@@ -35,13 +38,13 @@ bool GrindListsLayer::init() {
         .parent(this)
         .collect();
 
-    Build(CCLabelBMFont::create("Grind Lists (Beta)", "bigFont.fnt"))
+    Build(geode::Label::create("Grind Lists (Beta)", "bigFont.fnt"))
         .pos({ LIST_SIZE.width / 2, LIST_SIZE.height + 18.f })
-        .limitLabelWidth(LIST_SIZE.width - 30.f, 0.8f, 0.4f)
+        .with([&](auto label) { label->setLimitLabelWidth(LIST_SIZE.width - 30.f, 0.8f, 0.4f); })
         .zOrder(1)
         .parent(m_listNode);
 
-    m_countLabel = Build(CCLabelBMFont::create("", "goldFont.fnt"))
+    m_countLabel = Build(geode::Label::create("", "goldFont.fnt"))
         .anchorPoint({ 1.f, 1.f })
         .pos({ winSize.width - 5.f, winSize.height - 5.f })
         .scale(0.45f)
@@ -49,7 +52,7 @@ bool GrindListsLayer::init() {
         .parent(this)
         .collect();
 
-    m_status = Build(CCLabelBMFont::create("", "bigFont.fnt"))
+    m_status = Build(geode::Label::create("", "bigFont.fnt"))
         .pos({ winSize.width / 2, winSize.height / 2 - 5.f })
         .scale(0.45f)
         .zOrder(10)
@@ -88,7 +91,7 @@ bool GrindListsLayer::init() {
 
 void GrindListsLayer::setStatus(std::string const& text) {
     m_status->setString(text.c_str());
-    m_status->limitLabelWidth(LIST_SIZE.width - 30.f, 0.45f, 0.2f);
+    m_status->setLimitLabelWidth(LIST_SIZE.width - 30.f, 0.45f, 0.2f);
     m_status->setVisible(!text.empty());
 }
 
@@ -148,7 +151,7 @@ void GrindListsLayer::showPage() {
         cell->setAnchorPoint({ 0.f, 1.f });
         cell->updateBGColor(i - start);
 
-        auto progress = CCLabelBMFont::create(
+        auto progress = geode::Label::create(
             data.finished ? "Done!" : fmt::format("{} left", data.left).c_str(), "goldFont.fnt");
         progress->setScale(0.45f);
         progress->setAnchorPoint({ 1.f, 0.f });

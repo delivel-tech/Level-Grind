@@ -23,8 +23,8 @@ public:
         int packs = 0;
         int last30Levels = 0, last30Stars = 0, last30Moons = 0, last30Demons = 0;
         bool hasClan = false;
+        long long badgeColors = -1;
         int clanId = 0, clanColor = 0, clanEmblem = 1, clanLevel = 1, clanRole = 0, clanJoinType = 0;
-        long long clanLogo = 0;
         std::string clanName;
         bool hasPet = false;
         std::string petName;

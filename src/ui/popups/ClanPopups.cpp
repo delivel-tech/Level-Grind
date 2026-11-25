@@ -1,6 +1,8 @@
 #include "../../managers/Auth.hpp"
 #include "ClanPopups.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/ColorPickPopup.hpp>
+#include <Geode/ui/MDPopup.hpp>
+#include <Geode/ui/Label.hpp>
 #include "Geode/ui/Label.hpp"
 #include "ReportPopups.hpp"
 #include "../ClanUI.hpp"
@@ -12,8 +14,6 @@
 #include <Geode/binding/GJSearchObject.hpp>
 #include <Geode/binding/GameLevelManager.hpp>
 #include <Geode/binding/ProfilePage.hpp>
-#include <Geode/utils/base64.hpp>
-#include <Geode/utils/file.hpp>
 #include "../../managers/DataManager.hpp"
 #include <Geode/ui/LoadingSpinner.hpp>
 #include <Geode/ui/Notification.hpp>
@@ -45,8 +45,8 @@ int stepMinGp(int current, int dir) {
     return kMinGpSteps[idx];
 }
 
-CCLabelBMFont* label(CCNode* parent, const char* text, CCPoint pos, float scale = 0.45f, const char* font = "goldFont.fnt", CCPoint anchor = { 0.f, 0.5f }) {
-    auto l = CCLabelBMFont::create(text, font);
+geode::Label* label(CCNode* parent, const char* text, CCPoint pos, float scale = 0.45f, const char* font = "goldFont.fnt", CCPoint anchor = { 0.f, 0.5f }) {
+    auto l = geode::Label::create(text, font);
     l->setScale(scale);
     l->setAnchorPoint(anchor);
     l->setPosition(pos);
@@ -163,11 +163,11 @@ namespace {
 struct LookEditor {
     CCNode* holder = nullptr;
     std::vector<CCSprite*> swatches;
-    CCLabelBMFont* joinLabel = nullptr;
-    CCLabelBMFont* minLabel = nullptr;
+    geode::Label* joinLabel = nullptr;
+    geode::Label* minLabel = nullptr;
 };
 
-CCLabelBMFont* stepperRow(CCNode* parent, CCPoint pos, std::string const& text, geode::Function<void(int)> onStep) {
+geode::Label* stepperRow(CCNode* parent, CCPoint pos, std::string const& text, geode::Function<void(int)> onStep) {
     auto row = CCMenu::create();
     row->setLayout(RowLayout::create()->setGap(6.f)->setAutoScale(false));
     row->setContentSize({ 200.f, 24.f });
@@ -181,7 +181,7 @@ CCLabelBMFont* stepperRow(CCNode* parent, CCPoint pos, std::string const& text, 
 
     auto box = CCNode::create();
     box->setContentSize({ 110.f, 20.f });
-    auto value = CCLabelBMFont::create(text.c_str(), "bigFont.fnt");
+    auto value = geode::Label::create(text, "bigFont.fnt");
     value->setScale(0.42f);
     value->setPosition({ 55.f, 10.f });
     box->addChild(value);
@@ -195,40 +195,114 @@ CCLabelBMFont* stepperRow(CCNode* parent, CCPoint pos, std::string const& text, 
     return value;
 }
 
+class BadgeEditor : public BasePopup {
+public:
+    using Save = geode::Function<void(int, long long)>;
+    static void open(int id, int colorId, long long colors, Save save) {
+        auto popup = new BadgeEditor;
+        if (popup->init(id, colorId, colors, std::move(save))) {
+            popup->autorelease();
+            popup->show();
+        } else delete popup;
+    }
+
+private:
+    ClanBadge badge{};
+    ccColor3B baseColor{}, symbolColor{};
+    CCSprite* swatches[2]{};
+    CCNode* previews = nullptr;
+
+    long long colors() const {
+        return (static_cast<long long>(rgbValue(baseColor)) << 24) | rgbValue(symbolColor);
+    }
+
+    void refresh() {
+        previews->removeAllChildren();
+        auto draw = [&](EmblemPart part, float size, CCPoint pos) {
+            auto image = emblem(badge.encode(), 0, size, colors(), part);
+            image->setPosition(pos);
+            previews->addChild(image);
+        };
+        draw(EmblemPart::Both, 88.f, {73.f, 108.f});
+        draw(EmblemPart::Background, 46.f, {207.f, 125.f});
+        draw(EmblemPart::Symbol, 68.f, {207.f, 69.f});
+        swatches[0]->setColor(baseColor);
+        swatches[1]->setColor(symbolColor);
+    }
+
+    void pickColor(bool symbol) {
+        auto popup = ColorPickPopup::create(symbol ? symbolColor : baseColor);
+        if (!popup) return;
+        Ref<BadgeEditor> self = this;
+        popup->setCallback([self, symbol](ccColor4B const& c) {
+            (symbol ? self->symbolColor : self->baseColor) = {c.r, c.g, c.b};
+            self->refresh();
+        });
+        popup->show();
+    }
+
+    bool init(int id, int colorId, long long savedColors, Save save) {
+        if (!BasePopup::init(300.f, 185.f, "GJ_square01.png")) return false;
+        setTitle("Change Emblem");
+        badge = ClanBadge::decode(id);
+        baseColor = savedColors < 0 ? M::clanColor(colorId) : badgeColor(savedColors >> 24);
+        symbolColor = savedColors < 0 ? ClanBadge::inks[badge.ink] : badgeColor(savedColors);
+        auto originalColors = colors();
+        previews = CCNode::create();
+        m_mainLayer->addChild(previews);
+        for (int row = 0; row < 2; ++row) {
+            bool symbol = row == 1;
+            for (int dir : {-1, 1}) {
+                auto arrow = CCSprite::createWithSpriteFrameName(dir < 0 ? "edit_leftBtn_001.png" : "edit_rightBtn_001.png");
+                arrow->setScale(0.7f);
+                nodeButton(m_buttonMenu, arrow, {207.f + dir * 43.f, symbol ? 69.f : 125.f}, [this, symbol, dir] {
+                    int& part = symbol ? badge.symbol : badge.background;
+                    int count = symbol ? 7 : 10;
+                    part = (part - 1 + dir + count) % count + 1;
+                    refresh();
+                });
+            }
+            auto swatch = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+            swatch->setScale(0.65f);
+            swatches[row] = swatch;
+            nodeButton(m_buttonMenu, swatch, {56.f + row * 34.f, 50.f}, [this, symbol] { pickColor(symbol); });
+        }
+        nodeButton(m_buttonMenu, textButton("OK", "GJ_button_01.png", 0.85f), {centerX(), 21.f},
+            [this, id, savedColors, originalColors, save = std::move(save)]() mutable {
+                int selected = badge.encode();
+                save(selected == ClanBadge::decode(id).encode() ? id : selected,
+                    colors() == originalColors ? savedColors : colors());
+                onClose(nullptr);
+            });
+        refresh();
+        return true;
+    }
+};
+
 LookEditor buildLookEditor(
-    CCNode* parent, CCPoint emblemPos, float labelX, float controlX, float topY,
-    int* color, int* emblemId, int* joinType, int* minGp, geode::Function<void()> onRefresh
+    BasePopup* owner, CCNode* parent, CCPoint emblemPos, float labelX, float controlX, float topY,
+    int* color, int* emblemId, long long* colors, int* joinType, int* minGp, geode::Function<void()> onRefresh
 ) {
     LookEditor e;
     auto refresh = std::make_shared<geode::Function<void()>>(std::move(onRefresh));
 
     auto emblemRow = CCMenu::create();
-    emblemRow->setLayout(RowLayout::create()->setGap(4.f)->setAutoScale(false));
-    emblemRow->setContentSize({ 110.f, 46.f });
     emblemRow->setPosition(emblemPos);
     parent->addChild(emblemRow, 5);
-
-    auto left = CCSprite::createWithSpriteFrameName("edit_leftBtn_001.png");
-    left->setScale(0.7f);
-    emblemRow->addChild(CCMenuItemExt::createSpriteExtra(left, [emblemId, refresh](CCObject*) {
-        *emblemId = *emblemId <= 1 ? 485 : *emblemId - 1;
-        (*refresh)();
-    }));
     e.holder = CCNode::create();
-    e.holder->setContentSize({ 44.f, 44.f });
-    emblemRow->addChild(e.holder);
-    auto right = CCSprite::createWithSpriteFrameName("edit_rightBtn_001.png");
-    right->setScale(0.7f);
-    emblemRow->addChild(CCMenuItemExt::createSpriteExtra(right, [emblemId, refresh](CCObject*) {
-        *emblemId = *emblemId >= 485 ? 1 : *emblemId + 1;
-        (*refresh)();
-    }));
-    emblemRow->updateLayout();
-    label(parent, "Emblem", emblemPos + CCPoint{ 0.f, 32.f }, 0.42f, "goldFont.fnt", { 0.5f, 0.5f });
+    e.holder->setContentSize({44.f, 44.f});
+    nodeButton(emblemRow, e.holder, {0.f, 0.f}, [owner, color, emblemId, colors, refresh] {
+        BadgeEditor::open(*emblemId, *color, *colors, [editor = Ref<BasePopup>(owner), colors, emblemId, refresh](int id, long long tint) {
+            *emblemId = id;
+            *colors = tint;
+            (*refresh)();
+        });
+    });
+    label(parent, "Edit Emblem", emblemPos + CCPoint{0.f, 28.f}, 0.42f, "goldFont.fnt", {0.5f, 0.5f});
 
     float const gap = 30.f;
 
-    label(parent, "Color", { labelX, topY }, 0.45f);
+    label(parent, "Clan color", { labelX, topY }, 0.45f);
     e.swatches = buildSwatches(parent, { controlX, topY }, [color, refresh](int i) {
         *color = i;
         (*refresh)();
@@ -251,16 +325,16 @@ LookEditor buildLookEditor(
     return e;
 }
 
-void refreshLookEditor(LookEditor& e, int color, int emblemId, int joinType, int minGp) {
+void refreshLookEditor(LookEditor& e, int color, int emblemId, long long colors, int joinType, int minGp) {
     e.holder->removeAllChildren();
-    auto em = emblem(emblemId, color, 36.f);
+    auto em = emblem(emblemId, color, 36.f, colors);
     em->setPosition(e.holder->getContentSize() / 2.f);
     e.holder->addChild(em);
     highlightSwatches(e.swatches, color);
     e.joinLabel->setString(joinText(joinType).c_str());
-    e.joinLabel->limitLabelWidth(90.f, 0.45f, 0.2f);
+    e.joinLabel->setLimitLabelWidth(90.f, 0.45f, 0.2f);
     e.minLabel->setString(minGpText(minGp).c_str());
-    e.minLabel->limitLabelWidth(90.f, 0.45f, 0.2f);
+    e.minLabel->setLimitLabelWidth(90.f, 0.45f, 0.2f);
 }
 
 }
@@ -279,7 +353,8 @@ bool CreateClanPopup::init(int cost, GPWallet const& wallet, ClanChanged onCreat
     if (!BasePopup::init(400.f, 280.f)) return false;
     m_cost = cost;
     m_onCreated = std::move(onCreated);
-    m_emblem = std::max(1, GameManager::get()->getPlayerFrame());
+    m_emblem = 1;
+    m_badgeColors = 0xffffffffffffLL;
     this->setTitle("Create a Grind Clan");
 
     CCSize const ps { 370.f, 180.f };
@@ -305,8 +380,8 @@ bool CreateClanPopup::init(int cost, GPWallet const& wallet, ClanChanged onCreat
     p->addChild(line);
 
     auto editor = buildLookEditor(
-        p, { 62.f, ps.height - 44.f }, 16.f, 250.f, ps.height - 92.f,
-        &m_color, &m_emblem, &m_joinType, &m_minGp, [this] { this->refreshLook(); }
+        this, p, { 62.f, ps.height - 44.f }, 16.f, 250.f, ps.height - 92.f,
+        &m_color, &m_emblem, &m_badgeColors, &m_joinType, &m_minGp, [this] { this->refreshLook(); }
     );
     m_previewHolder = editor.holder;
     m_swatches = editor.swatches;
@@ -318,11 +393,11 @@ bool CreateClanPopup::init(int cost, GPWallet const& wallet, ClanChanged onCreat
     costRow->setContentSize({ 300.f, 20.f });
     costRow->setAnchorPoint({ 0.5f, 0.5f });
     costRow->setPosition({ centerX(), 46.f });
-    auto costLbl = CCLabelBMFont::create("Cost:", "goldFont.fnt");
+    auto costLbl = geode::Label::create("Cost:", "goldFont.fnt");
     costLbl->setScale(0.5f);
     costRow->addChild(costLbl);
     costRow->addChild(gpAmount(cost, 0.5f));
-    auto have = CCLabelBMFont::create(fmt::format("(you have {})", M::formatGP(wallet.balance)).c_str(), "chatFont.fnt");
+    auto have = geode::Label::create(fmt::format("(you have {})", M::formatGP(wallet.balance)).c_str(), "chatFont.fnt");
     have->setScale(0.5f);
     have->setColor(wallet.balance >= cost ? ccColor3B{ 140, 255, 140 } : ccColor3B{ 255, 120, 120 });
     costRow->addChild(have);
@@ -339,7 +414,7 @@ bool CreateClanPopup::init(int cost, GPWallet const& wallet, ClanChanged onCreat
 
 void CreateClanPopup::refreshLook() {
     LookEditor e { m_previewHolder, m_swatches, m_joinLabel, m_minLabel };
-    refreshLookEditor(e, m_color, m_emblem, m_joinType, m_minGp);
+    refreshLookEditor(e, m_color, m_emblem, m_badgeColors, m_joinType, m_minGp);
 }
 
 void CreateClanPopup::onCreate() {
@@ -356,6 +431,7 @@ void CreateClanPopup::onCreate() {
     body["description"] = m_desc->getString();
     body["colorId"] = m_color;
     body["emblemId"] = m_emblem;
+    body["badgeColors"] = static_cast<int64_t>(m_badgeColors);
     body["joinType"] = m_joinType;
     body["minGp"] = m_minGp;
 
@@ -384,6 +460,12 @@ bool ClanSettingsPopup::init(ClanInfo const& clan, ClanChanged onChanged) {
     m_onChanged = std::move(onChanged);
     m_color = clan.colorId;
     m_emblem = clan.emblemId;
+    m_badgeColors = clan.badgeColors;
+    if (m_badgeColors < 0) {
+        auto symbol = ClanBadge::inks[ClanBadge::decode(clan.emblemId).ink];
+        m_badgeColors = (static_cast<long long>(rgbValue(M::clanColor(clan.colorId))) << 24) | rgbValue(symbol);
+    }
+    m_initialBadgeColors = m_badgeColors;
     m_joinType = clan.joinType;
     m_minGp = clan.minGp;
     this->setTitle("Clan Settings");
@@ -393,7 +475,8 @@ bool ClanSettingsPopup::init(ClanInfo const& clan, ClanChanged onChanged) {
     auto p = panel.node;
 
     auto name = label(p, clan.name.c_str(), { 250.f, ps.height - 24.f }, 0.6f, "bigFont.fnt", { 0.5f, 0.5f });
-    name->limitLabelWidth(240.f, 0.6f, 0.2f);
+    name->setLimitLabelWidth(240.f, 0.6f, 0.2f);
+    m_clanName = name;
     name->setColor(M::clanColor(clan.colorId));
 
     m_desc = TextInput::create(260.f, "Short description", "chatFont.fnt");
@@ -409,8 +492,8 @@ bool ClanSettingsPopup::init(ClanInfo const& clan, ClanChanged onChanged) {
     p->addChild(line);
 
     auto editor = buildLookEditor(
-        p, { 62.f, ps.height - 44.f }, 16.f, 250.f, ps.height - 92.f,
-        &m_color, &m_emblem, &m_joinType, &m_minGp, [this] { this->refreshLook(); }
+        this, p, { 62.f, ps.height - 44.f }, 16.f, 250.f, ps.height - 92.f,
+        &m_color, &m_emblem, &m_badgeColors, &m_joinType, &m_minGp, [this] { this->refreshLook(); }
     );
     m_previewHolder = editor.holder;
     m_swatches = editor.swatches;
@@ -453,9 +536,10 @@ bool ClanSettingsPopup::init(ClanInfo const& clan, ClanChanged onChanged) {
 }
 
 void ClanSettingsPopup::refreshLook() {
+    m_clanName->setColor(M::clanColor(m_color));
     LookEditor e { m_previewHolder, m_swatches, m_joinLabel, m_minLabel };
-    refreshLookEditor(e, m_color, m_emblem, m_joinType, m_minGp);
-    bool newLook = m_color != m_clan.colorId || m_emblem != m_clan.emblemId;
+    refreshLookEditor(e, m_color, m_emblem, m_badgeColors, m_joinType, m_minGp);
+    bool newLook = m_color != m_clan.colorId || m_emblem != m_clan.emblemId || m_badgeColors != m_initialBadgeColors;
     if (m_costLabel) {
         m_costLabel->setString(newLook ? "A new color or emblem costs 50 GP" : "Description and joining are free to change");
         m_costLabel->setColor(newLook ? ccColor3B{ 255, 210, 90 } : ccColor3B{ 200, 200, 200 });
@@ -467,6 +551,8 @@ void ClanSettingsPopup::onSave() {
     body["description"] = m_desc->getString();
     body["colorId"] = m_color;
     body["emblemId"] = m_emblem;
+    bool sameLook = m_color == m_clan.colorId && m_emblem == m_clan.emblemId && m_badgeColors == m_initialBadgeColors;
+    body["badgeColors"] = static_cast<int64_t>(sameLook ? m_clan.badgeColors : m_badgeColors);
     body["joinType"] = m_joinType;
     body["minGp"] = m_minGp;
 
@@ -520,14 +606,14 @@ void ClanViewPopup::build(ClanDetails const& d) {
     this->setTitle(c.name.c_str());
 
     auto head = makePanel(m_mainLayer, { centerX(), top() - 70.f }, { 370.f, 64.f });
-    auto em = emblem(c.emblemId, c.colorId, 40.f, c.logoId);
+    auto em = emblem(c.emblemId, c.colorId, 40.f, c.badgeColors);
     em->setPosition({ 32.f, 32.f });
     head.node->addChild(em);
 
     label(head.node, fmt::format("Level {}  {}/{} members{}", c.level, c.members, c.maxMembers, c.featured ? "  - Featured" : "").c_str(),
         { 62.f, 46.f }, 0.45f);
     auto desc = label(head.node, c.description.empty() ? "No description" : c.description.c_str(), { 62.f, 28.f }, 0.5f, "chatFont.fnt");
-    desc->limitLabelWidth(290.f, 0.5f, 0.2f);
+    desc->setLimitLabelWidth(290.f, 0.5f, 0.2f);
     desc->setOpacity(c.description.empty() ? 120 : 220);
 
     auto week = gpAmount(c.weekXp, 0.4f);
@@ -748,7 +834,7 @@ bool ClanMembersPopup::init(ClanDetails const& d, ClanChanged onChanged) {
 
         auto nameNode = CCNode::create();
         auto name = label(nameNode, m.username.c_str(), { 0.f, 0.f }, 0.5f, "bigFont.fnt");
-        name->limitLabelWidth(130.f, 0.5f, 0.2f);
+        name->setLimitLabelWidth(130.f, 0.5f, 0.2f);
         name->setColor(M::roleColor(m.role));
         nameNode->setContentSize({ name->getScaledContentWidth(), 16.f });
         name->setPosition({ 0.f, 8.f });
@@ -834,7 +920,7 @@ bool ClanTasksPopup::init(ClanDetails const& d, long long weekEndsAt, long long 
     this->buildCards();
 
     label(m_mainLayer, "Everyone who earned GP this week gets the reward", { centerX(), 26.f }, 0.28f, "bigFont.fnt", { 0.5f, 0.5f })
-        ->limitLabelWidth(340.f, 0.28f, 0.12f);
+        ->setLimitLabelWidth(340.f, 0.28f, 0.12f);
     label(m_mainLayer, "Task GP counts for the clan too", { centerX(), 13.f }, 0.28f, "bigFont.fnt", { 0.5f, 0.5f })
         ->setColor({ 255, 230, 90 });
     return true;
@@ -858,7 +944,7 @@ void ClanTasksPopup::buildCards() {
         }
 
         auto title = label(card.node, M::taskTitle(t).c_str(), { 46.f, 37.f }, 0.48f);
-        title->limitLabelWidth(200.f, 0.48f, 0.2f);
+        title->setLimitLabelWidth(200.f, 0.48f, 0.2f);
         if (t.completed) title->setColor({ 140, 255, 140 });
 
         auto bar = ProgressBar::create(ProgressBar::Style::Solid);
@@ -869,7 +955,7 @@ void ClanTasksPopup::buildCards() {
         bar->updateProgress(std::clamp(100.f * t.progress / t.target, 0.f, 100.f));
         card.node->addChild(bar);
         label(card.node, fmt::format("{}/{}", t.progress, t.target).c_str(), { 24.f, 12.f }, 0.42f, "chatFont.fnt", { 0.5f, 0.5f })
-            ->limitLabelWidth(40.f, 0.42f, 0.15f);
+            ->setLimitLabelWidth(40.f, 0.42f, 0.15f);
 
         auto reward = gpAmount(t.rewardGp, 0.5f);
         reward->setPosition({ 300.f, 34.f });
@@ -971,11 +1057,11 @@ void ClanLeaderboardPopup::load() {
             }
             ccColor3B rankColor = c.rank == 1 ? ccColor3B{ 255, 210, 60 } : c.rank == 2 ? ccColor3B{ 210, 220, 235 } : c.rank == 3 ? ccColor3B{ 230, 150, 90 } : ccColor3B{ 255, 255, 255 };
             label(row, fmt::format("#{}", c.rank).c_str(), { 22.f, 15.f }, 0.5f, "goldFont.fnt", { 0.5f, 0.5f })->setColor(rankColor);
-            auto em = emblem(c.emblemId, c.colorId, 18.f, c.logoId);
+            auto em = emblem(c.emblemId, c.colorId, 18.f, c.badgeColors);
             em->setPosition({ 54.f, 15.f });
             row->addChild(em);
             auto name = label(row, c.name.c_str(), { 74.f, 18.f }, 0.4f, "bigFont.fnt");
-            name->limitLabelWidth(160.f, 0.4f, 0.15f);
+            name->setLimitLabelWidth(160.f, 0.4f, 0.15f);
             name->setColor(c.golden ? ccColor3B{ 255, 210, 60 } : M::clanColor(c.colorId));
             if (c.level >= kRainbowLevel) makeRainbow(name);
             if (c.level >= kPrestigeLevel) addPrestige(row, row->getContentSize(), M::clanColor(c.colorId));
@@ -1076,11 +1162,11 @@ bool ClanInvitesPopup::init(std::vector<ClanInviteInfo> const& invites, ClanChan
         menu->setPosition({ 0.f, 0.f });
         row->addChild(menu);
 
-        auto em = emblem(inv.clan.emblemId, inv.clan.colorId, 22.f, inv.clan.logoId);
+        auto em = emblem(inv.clan.emblemId, inv.clan.colorId, 22.f, inv.clan.badgeColors);
         em->setPosition({ 18.f, 18.f });
         row->addChild(em);
         auto name = label(row, inv.clan.name.c_str(), { 38.f, 23.f }, 0.4f, "bigFont.fnt");
-        name->limitLabelWidth(170.f, 0.4f, 0.15f);
+        name->setLimitLabelWidth(170.f, 0.4f, 0.15f);
         name->setColor(inv.clan.golden ? ccColor3B{ 255, 210, 60 } : M::clanColor(inv.clan.colorId));
         if (inv.clan.level >= kRainbowLevel) makeRainbow(name);
         label(row, fmt::format("Lv {} - {}/{} - from {}", inv.clan.level, inv.clan.members, inv.clan.maxMembers, inv.invitedBy).c_str(),
@@ -1182,6 +1268,79 @@ bool ClanRequestsPopup::init(ClanDetails const& d, ClanChanged onChanged) {
     return true;
 }
 
+namespace {
+class ClanTextEditor : public BasePopup {
+public:
+    static void open(int clanID, ClanChatMessage const* parent, std::string const& initial, geode::Function<void()> saved) {
+        auto popup = new ClanTextEditor;
+        if (!popup->init(clanID, parent, initial, std::move(saved))) {
+            delete popup;
+            return;
+        }
+        popup->autorelease();
+        popup->show();
+    }
+
+private:
+    geode::Function<void()> m_onSaved;
+
+    bool init(int clanID, ClanChatMessage const* parent, std::string const& initial, geode::Function<void()> saved) {
+        bool reply = parent != nullptr;
+        if (!BasePopup::init(330.f, reply ? 160.f : 220.f)) return false;
+        m_onSaved = std::move(saved);
+        setTitle(reply ? "Reply" : "Edit Clan Rules");
+        if (reply) {
+            auto quote = geode::Label::create(fmt::format("{}: {}", parent->username, parent->message), "chatFont.fnt");
+            quote->setLimitLabelWidth(294.f, 0.5f, 0.18f);
+            quote->setPosition({centerX(), top() - 43.f});
+            m_mainLayer->addChild(quote);
+        }
+        auto input = reply ? TextInput::create(294.f, "Your reply", "chatFont.fnt")
+            : TextInput::createMultiline({294.f, 128.f}, "# Rules", "chatFont.fnt");
+        input->setMaxCharCount(reply ? 150 : 2000);
+        if (reply) {
+            input->setCommonFilter(CommonFilter::TextEmojis);
+            input->setDisplayEmojis(true);
+        } else input->setWrap(true);
+        input->setString(initial);
+        input->setPosition({centerX(), centerY() - 2.f});
+        m_mainLayer->addChild(input);
+        nodeButton(m_buttonMenu, textButton(reply ? "Send" : "Save", "GJ_button_01.png", 0.7f), {centerX(), 22.f},
+            [this, input, clanID, replyID = parent ? parent->id : 0LL] {
+                auto body = M::authBody();
+                if (replyID) {
+                    if (string::trim(input->getString()).empty()) return;
+                    body["replyTo"] = static_cast<int64_t>(replyID);
+                    body["message"] = input->getString();
+                } else {
+                    body["clanId"] = clanID;
+                    body["rules"] = input->getString();
+                }
+                Ref<ClanTextEditor> self = this;
+                M::getInstance().runAction(replyID ? "clan_chat_send" : "clan_rules_set", body,
+                    replyID ? "Sending reply..." : "Saving rules...", replyID ? "Reply sent." : "Rules saved.",
+                    [self](matjson::Value const&) {
+                        self->onClose(nullptr);
+                        if (self->m_onSaved) self->m_onSaved();
+                    });
+            });
+        return true;
+    }
+};
+}
+
+void showClanRules(ClanDetails const& clan, geode::Function<void()> onSaved) {
+    auto content = clan.rules.empty() ? std::string("No rules have been posted yet.") : clan.rules;
+    if (clan.myRole != 2) {
+        MDPopup::create("Clan Rules", content, "Close")->show();
+        return;
+    }
+    MDPopup::create("Clan Rules", content, "Close", "Edit",
+        [id = clan.info.id, rules = clan.rules, saved = std::move(onSaved)](bool edit) mutable {
+            if (edit) ClanTextEditor::open(id, nullptr, rules, std::move(saved));
+        })->show();
+}
+
 ClanMessagePopup* ClanMessagePopup::create(ClanChatMessage const& msg, bool canDelete, bool canPin, bool isPinned, geode::Function<void()> onChanged) {
     auto ret = new ClanMessagePopup;
     if (ret->init(msg, canDelete, canPin, isPinned, std::move(onChanged))) {
@@ -1195,16 +1354,16 @@ ClanMessagePopup* ClanMessagePopup::create(ClanChatMessage const& msg, bool canD
 bool ClanMessagePopup::init(ClanChatMessage const& msg, bool canDelete, bool canPin, bool isPinned, geode::Function<void()> onDeleted) {
     int myId = GJAccountManager::get()->m_accountID;
     bool mine = msg.accountId == myId;
-    int buttons = 1 + (mine ? 0 : 1) + (canDelete ? 1 : 0) + (canPin ? 1 : 0);
+    int buttons = 2 + (mine ? 0 : 1) + (canDelete ? 1 : 0) + (canPin ? 1 : 0);
     float const rowH = 30.f;
     if (!BasePopup::init(260.f, 96.f + buttons * rowH)) return false;
     m_msg = msg;
     m_onDeleted = std::move(onDeleted);
     this->setTitle(msg.username.c_str());
 
-    auto preview = CCLabelBMFont::create(msg.message.c_str(), "chatFont.fnt");
+    auto preview = geode::Label::create(msg.message, "chatFont.fnt");
     preview->setScale(0.5f);
-    preview->limitLabelWidth(220.f, 0.5f, 0.2f);
+    preview->setLimitLabelWidth(220.f, 0.5f, 0.2f);
     preview->setPosition({ centerX(), top() - 44.f });
     preview->setOpacity(210);
     m_mainLayer->addChild(preview);
@@ -1222,6 +1381,10 @@ bool ClanMessagePopup::init(ClanChatMessage const& msg, bool canDelete, bool can
         menu->addChild(CCMenuItemExt::createSpriteExtra(spr, [cb = std::move(cb)](CCObject*) mutable { cb(); }));
     };
 
+    add("Reply", "GJ_button_01.png", [this] {
+        ClanTextEditor::open(0, &m_msg, "", nullptr);
+        onClose(nullptr);
+    });
     add("View Profile", "GJ_button_04.png", [id = msg.accountId] { GrindProfilePopup::create(id)->show(); });
     if (!mine) {
         add("Report", "GJ_button_05.png", [self] {
@@ -1349,220 +1512,6 @@ void ShareLevelPopup::finish(GJGameLevel* level) {
     std::string name = level->m_levelName;
     this->onClose(nullptr);
     if (cb) cb(id, name);
-}
-
-ClanLogoPopup* ClanLogoPopup::create(ClanInfo const& clan, bool pending, ClanChanged onChanged) {
-    auto ret = new ClanLogoPopup;
-    if (ret->init(clan, pending, std::move(onChanged))) {
-        ret->autorelease();
-        return ret;
-    }
-    delete ret;
-    return nullptr;
-}
-
-bool ClanLogoPopup::init(ClanInfo const& clan, bool pending, ClanChanged onChanged) {
-    if (!BasePopup::init(300.f, 230.f)) return false;
-    m_clan = clan;
-    m_onChanged = std::move(onChanged);
-    this->setTitle("Clan Logo");
-
-    auto hint = label(m_mainLayer, "Any PNG or JPG", { centerX(), top() - 40.f }, 0.5f, "chatFont.fnt", { 0.5f, 0.5f });
-    hint->setOpacity(190);
-    hint->limitLabelWidth(270.f, 0.5f, 0.2f);
-
-    label(m_mainLayer, "Now", { centerX() - 60.f, top() - 62.f }, 0.4f, "goldFont.fnt", { 0.5f, 0.5f });
-    auto now = emblem(clan.emblemId, clan.colorId, 48.f, clan.logoId);
-    now->setPosition({ centerX() - 60.f, top() - 100.f });
-    m_mainLayer->addChild(now);
-
-    label(m_mainLayer, "New", { centerX() + 60.f, top() - 62.f }, 0.4f, "goldFont.fnt", { 0.5f, 0.5f });
-    m_preview = CCNode::create();
-    m_preview->setContentSize({ 60.f, 60.f });
-    m_preview->setAnchorPoint({ 0.5f, 0.5f });
-    m_preview->setPosition({ centerX() + 60.f, top() - 100.f });
-    m_mainLayer->addChild(m_preview);
-    auto q = label(m_preview, "?", { 30.f, 30.f }, 0.8f, "bigFont.fnt", { 0.5f, 0.5f });
-    q->setOpacity(120);
-
-    m_status = label(m_mainLayer, pending ? "A logo is waiting for staff review" : "", { centerX(), 62.f }, 0.3f, "bigFont.fnt", { 0.5f, 0.5f });
-    m_status->setColor({ 255, 220, 120 });
-
-    auto menu = CCMenu::create();
-    menu->setLayout(RowLayout::create()->setGap(8.f)->setAutoScale(false));
-    menu->setContentSize({ 280.f, 34.f });
-    menu->setPosition({ centerX(), 30.f });
-    m_mainLayer->addChild(menu);
-
-    Ref<ClanLogoPopup> self = this;
-    menu->addChild(CCMenuItemExt::createSpriteExtra(textButton("Choose", "GJ_button_04.png", 0.6f), [self](CCObject*) {
-        if (self) self->onPick();
-    }));
-    m_uploadBtn = CCMenuItemExt::createSpriteExtra(textButton("Send", "GJ_button_01.png", 0.6f), [self](CCObject*) {
-        if (self) self->onUpload();
-    });
-    m_uploadBtn->setEnabled(false);
-    m_uploadBtn->setColor({ 120, 120, 120 });
-    menu->addChild(m_uploadBtn);
-    if (clan.logoId > 0) {
-        menu->addChild(CCMenuItemExt::createSpriteExtra(textButton("Remove", "GJ_button_06.png", 0.6f), [self](CCObject*) {
-            if (!self) return;
-            createQuickPopup("Remove logo?", "Go back to the normal emblem?", "Keep", "Remove", [self](auto, bool yes) {
-                if (!yes || !self) return;
-                M::getInstance().runAction("clan_logo_remove", M::authBody(), "Removing...", "Logo removed.", [self](matjson::Value const&) {
-                    if (!self) return;
-                    auto cb = std::move(self->m_onChanged);
-                    self->onClose(nullptr);
-                    if (cb) cb();
-                });
-            });
-        }));
-    }
-    menu->updateLayout();
-    return true;
-}
-
-void ClanLogoPopup::onPick() {
-    file::FilePickOptions options;
-    options.filters.push_back({ "Images", { "*.png", "*.jpg", "*.jpeg" } });
-    Ref<ClanLogoPopup> self = this;
-    m_pickTask.spawn(file::pick(file::PickMode::OpenFile, options), [self](file::PickResult result) {
-        if (!self) return;
-        if (!result || !result.unwrap()) return;
-        auto path = *result.unwrap();
-        auto data = file::readBinary(path);
-        if (!data) {
-            self->setStatus("Couldn't read that file", true);
-            return;
-        }
-        auto bytes = std::move(data).unwrap();
-        if (bytes.size() > 1024 * 1024) {
-            self->setStatus("That image is too big (max 1 MB)", true);
-            return;
-        }
-        auto texture = clanlogo::textureFromBytes(bytes);
-        if (!texture) {
-            self->setStatus("Only PNG and JPG images work", true);
-            return;
-        }
-        self->m_bytes = std::move(bytes);
-        self->m_preview->removeAllChildren();
-        auto preview = emblemWithTexture(texture, self->m_clan.colorId, 48.f);
-        preview->setPosition({ 30.f, 30.f });
-        self->m_preview->addChild(preview);
-        self->m_uploadBtn->setEnabled(true);
-        self->m_uploadBtn->setColor({ 255, 255, 255 });
-        self->setStatus("Looks good? Send it to staff for review", false);
-    });
-}
-
-void ClanLogoPopup::setStatus(std::string const& text, bool error) {
-    m_status->setString(text.c_str());
-    m_status->setColor(error ? ccColor3B{ 255, 110, 110 } : ccColor3B{ 255, 220, 120 });
-    m_status->limitLabelWidth(270.f, 0.3f, 0.15f);
-}
-
-void ClanLogoPopup::onUpload() {
-    if (m_bytes.empty()) return;
-    auto body = M::authBody();
-    body["image"] = utils::base64::encode(std::span<uint8_t const>(m_bytes.data(), m_bytes.size()), utils::base64::Base64Variant::Normal);
-    Ref<ClanLogoPopup> self = this;
-    M::getInstance().runAction("clan_logo_upload", std::move(body), "Uploading...", "Sent! Staff will check it soon.", [self](matjson::Value const&) {
-        if (!self) return;
-        auto cb = std::move(self->m_onChanged);
-        self->onClose(nullptr);
-        if (cb) cb();
-    });
-}
-
-StaffLogosPopup* StaffLogosPopup::create() {
-    auto ret = new StaffLogosPopup;
-    if (ret->init()) {
-        ret->autorelease();
-        return ret;
-    }
-    delete ret;
-    return nullptr;
-}
-
-bool StaffLogosPopup::init() {
-    if (!BasePopup::init(380.f, 260.f, "GJ_square01.png")) return false;
-    this->setTitle("Clan Logos");
-    m_list = cue::ListNode::create({ 340.f, 180.f });
-    m_list->setAutoUpdate(false);
-    m_list->setCellHeight(56.f);
-    m_list->setPosition({ centerX(), centerY() - 10.f });
-    m_mainLayer->addChild(m_list);
-    m_footer = label(m_mainLayer, "Loading...", { centerX(), 16.f }, 0.32f, "bigFont.fnt", { 0.5f, 0.5f });
-    this->load();
-    return true;
-}
-
-static matjson::Value staffBody() {
-    matjson::Value body;
-    body["accountId"] = GJAccountManager::get()->m_accountID;
-    return body;
-}
-
-void StaffLogosPopup::load() {
-    m_list->clear();
-    m_list->updateLayout(false);
-    m_footer->setString("Loading...");
-    Ref<StaffLogosPopup> self = this;
-    m_task.spawn(M::post("clan_logo_pending", staffBody()), [self](web::WebResponse res) {
-        if (!self) return;
-        std::string err;
-        if (!M::parseOk(res, err)) {
-            self->m_footer->setString(err.c_str());
-            return;
-        }
-        auto data = res.json().unwrap();
-        long long now = data["now"].asInt().unwrapOr(static_cast<long long>(time(nullptr)));
-        if (auto logos = data["logos"].asArray()) {
-            for (auto const& l : logos.unwrap()) {
-                long long id = l["id"].asInt().unwrapOr(0);
-                auto row = CCNode::create();
-                row->setContentSize({ 340.f, 56.f });
-                auto menu = CCMenu::create();
-                menu->setPosition({ 0.f, 0.f });
-                row->addChild(menu, 2);
-
-                auto raw = utils::base64::decode(l["image"].asString().unwrapOrDefault(), utils::base64::Base64Variant::Normal);
-                if (raw) {
-                    auto bytes = std::move(raw).unwrap();
-                    if (auto texture = clanlogo::textureFromBytes(std::vector<uint8_t>(bytes.begin(), bytes.end()))) {
-                        auto pic = emblemWithTexture(texture, 0, 40.f);
-                        pic->setPosition({ 30.f, 28.f });
-                        row->addChild(pic);
-                    }
-                }
-                auto name = label(row, l["clanName"].asString().unwrapOrDefault().c_str(), { 62.f, 36.f }, 0.42f, "bigFont.fnt");
-                name->limitLabelWidth(150.f, 0.42f, 0.15f);
-                label(row, fmt::format("by {} - {} ago", l["uploadedBy"].asString().unwrapOrDefault(),
-                    M::timeAgo(l["at"].asInt().unwrapOr(0), now)).c_str(), { 62.f, 18.f }, 0.45f, "chatFont.fnt")->setOpacity(190);
-
-                auto review = [self, id](bool approve) {
-                    auto body = staffBody();
-                    body["logoId"] = static_cast<int64_t>(id);
-                    body["approve"] = approve;
-                    M::getInstance().runAction("clan_logo_review", body, approve ? "Approving..." : "Rejecting...",
-                        approve ? "Logo approved!" : "Logo rejected.", [self](matjson::Value const&) {
-                            if (self) self->load();
-                        });
-                };
-                auto yes = CCMenuItemExt::createSpriteExtra(textButton("Approve", "GJ_button_01.png", 0.5f), [review](CCObject*) { review(true); });
-                yes->setPosition({ 250.f, 28.f });
-                menu->addChild(yes);
-                auto no = CCMenuItemExt::createSpriteExtra(textButton("Reject", "GJ_button_06.png", 0.5f), [review](CCObject*) { review(false); });
-                no->setPosition({ 310.f, 28.f });
-                menu->addChild(no);
-                self->m_list->addCell(row);
-            }
-        }
-        self->m_list->updateLayout(false);
-        self->m_list->scrollToTop();
-        self->m_footer->setString(self->m_list->size() == 0 ? "No logos waiting. Nice!" : fmt::format("{} waiting", self->m_list->size()).c_str());
-    });
 }
 
 }

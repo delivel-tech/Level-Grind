@@ -1,4 +1,5 @@
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <cue/RadioLogic.hpp>
 #include "../layers/SuggestionsLayer.hpp"
@@ -26,8 +27,8 @@ private:
     TextInput* m_input = nullptr;
     int m_difficulty = 0;
     CCNode* m_diffHolder = nullptr;
-    CCLabelBMFont* m_diffLabel = nullptr;
-    CCLabelBMFont* m_preview = nullptr;
+    geode::Label* m_diffLabel = nullptr;
+    geode::Label* m_preview = nullptr;
 };
 
 }

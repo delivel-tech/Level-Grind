@@ -1,4 +1,5 @@
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include "../BasePopup.hpp"
 
 using namespace geode::prelude;
@@ -30,12 +31,12 @@ private:
     TextInput* m_levelInputs[3] = {};
 
     CCSprite* m_diffIcon = nullptr;
-    CCLabelBMFont* m_diffLabel = nullptr;
+    geode::Label* m_diffLabel = nullptr;
     CCSprite* m_starSpr = nullptr;
     CCSprite* m_moonSpr = nullptr;
 
     CCSprite* m_previewDiff = nullptr;
-    CCLabelBMFont* m_previewTitle = nullptr;
+    geode::Label* m_previewTitle = nullptr;
     CCSprite* m_previewType = nullptr;
 
     TaskHolder<web::WebResponse> m_listener;

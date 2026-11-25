@@ -1,5 +1,5 @@
 #include "PetCustomizePopup.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/ColorPickPopup.hpp"
@@ -57,7 +57,7 @@ bool PetCustomisePopup::init(PetManager::PetData petData) {
         .center()
         .collect();
 
-    auto colorsTitle = Build(CCLabelBMFont::create("Colors", "bigFont.fnt"))
+    auto colorsTitle = Build(geode::Label::create("Colors", "bigFont.fnt"))
         .scale(0.4f)
         .parent(columnMenu)
         .id("colors-title")
@@ -122,7 +122,7 @@ bool PetCustomisePopup::init(PetManager::PetData petData) {
         .parent(columnMenu)
         .collect();
 
-    auto glowTitle = Build(CCLabelBMFont::create("Glow", "bigFont.fnt"))
+    auto glowTitle = Build(geode::Label::create("Glow", "bigFont.fnt"))
         .scale(0.4f)
         .parent(columnMenu)
         .id("colors-title")

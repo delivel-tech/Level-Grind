@@ -1,5 +1,5 @@
 #include "WeeklyAchCandidateCell.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/NineSlice.hpp"
@@ -39,8 +39,8 @@ constexpr const char* kTypeIcons[] = {
     "GJ_demonIcon_001.png",
 };
 
-CCLabelBMFont* fieldLabel(CCNode* parent, const char* text, float y) {
-    return Build(CCLabelBMFont::create(text, "goldFont.fnt"))
+geode::Label* fieldLabel(CCNode* parent, const char* text, float y) {
+    return Build(geode::Label::create(text, "goldFont.fnt"))
         .scale(0.42f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 10.f, y })
@@ -99,7 +99,7 @@ void WeeklyAchCandidateCell::buildHeader() {
         this->addChild(rank);
     }
 
-    Build(CCLabelBMFont::create(style.name, "goldFont.fnt"))
+    Build(geode::Label::create(style.name, "goldFont.fnt"))
         .scale(0.55f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 34.f, y + 1.f })
@@ -166,18 +166,18 @@ void WeeklyAchCandidateCell::buildEmpty() {
         .id("add-btn")
         .parent(menu);
 
-    Build(CCLabelBMFont::create("Empty spot", "goldFont.fnt"))
+    Build(geode::Label::create("Empty spot", "goldFont.fnt"))
         .scale(0.5f)
         .pos({ kSize.width / 2.f, midY - 22.f })
         .opacity(200)
         .parent(m_content);
 
     std::string hint = m_userScore ? fmt::format("Tap + to add {}", std::string(m_userScore->m_userName)) : "Open from a profile";
-    Build(CCLabelBMFont::create(hint.c_str(), "chatFont.fnt"))
+    Build(geode::Label::create(hint, "chatFont.fnt"))
         .scale(0.5f)
         .pos({ kSize.width / 2.f, midY - 38.f })
         .opacity(160)
-        .limitLabelWidth(kSize.width - 20.f, 0.5f, 0.2f)
+        .with([&](auto label) { label->setLimitLabelWidth(kSize.width - 20.f, 0.5f, 0.2f); })
         .parent(m_content);
 }
 
@@ -203,10 +203,10 @@ void WeeklyAchCandidateCell::buildFilled() {
         .collect();
     if (m_info.glow == 0) icon->disableGlowOutline();
 
-    Build(CCLabelBMFont::create(m_info.username.c_str(), "goldFont.fnt"))
+    Build(geode::Label::create(m_info.username, "goldFont.fnt"))
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 42.f, playerY + 1.f })
-        .limitLabelWidth(w - 52.f, 0.55f, 0.2f)
+        .with([&](auto label) { label->setLimitLabelWidth(w - 52.f, 0.55f, 0.2f); })
         .parent(m_content);
 
     fieldLabel(m_content, "Title", 124.f);

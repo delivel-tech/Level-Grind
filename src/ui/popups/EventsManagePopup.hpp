@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include "../BasePopup.hpp"
 #include "Geode/utils/async.hpp"
 #include "Geode/utils/web.hpp"
@@ -22,7 +23,7 @@ private:
     struct Card {
         TextInput* classic = nullptr;
         TextInput* plat = nullptr;
-        CCLabelBMFont* dateLabel = nullptr;
+        geode::Label* dateLabel = nullptr;
     };
     Card m_cards[3];
     bool m_queueing = false;

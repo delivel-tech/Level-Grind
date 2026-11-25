@@ -1,4 +1,5 @@
 #include "ClansLayer.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../ClanUI.hpp"
 #include "../popups/ClanPopups.hpp"
 #include "../popups/GuidePopup.hpp"
@@ -39,8 +40,8 @@ constexpr CCSize kActionsSize { 150.f, 80.f };
 
 constexpr float kChatPoll = 4.f;
 
-CCLabelBMFont* lbl(CCNode* parent, std::string const& text, CCPoint pos, float scale, const char* font = "goldFont.fnt", CCPoint anchor = { 0.f, 0.5f }) {
-    auto l = CCLabelBMFont::create(text.c_str(), font);
+geode::Label* lbl(CCNode* parent, std::string const& text, CCPoint pos, float scale, const char* font = "goldFont.fnt", CCPoint anchor = { 0.f, 0.5f }) {
+    auto l = geode::Label::create(text, font);
     l->setScale(scale);
     l->setAnchorPoint(anchor);
     l->setPosition(pos);
@@ -73,9 +74,9 @@ CCMenuItemSpriteExtra* actionButton(CCMenu* menu, CCNode* top, const char* capti
     top->setPosition({ cw / 2.f, 23.f });
     holder->addChild(top);
 
-    auto cap = CCLabelBMFont::create(caption, "bigFont.fnt");
+    auto cap = geode::Label::create(caption, "bigFont.fnt");
     cap->setPosition({ cw / 2.f, 5.f });
-    cap->limitLabelWidth(cw - 2.f, 0.24f, 0.1f);
+    cap->setLimitLabelWidth(cw - 2.f, 0.24f, 0.1f);
     holder->addChild(cap);
 
     if (badge > 0) {
@@ -85,7 +86,7 @@ CCMenuItemSpriteExtra* actionButton(CCMenu* menu, CCNode* top, const char* capti
         bubble->setColor({ 230, 50, 50 });
         bubble->setPosition(bp);
         holder->addChild(bubble, 2);
-        auto n = CCLabelBMFont::create(fmt::format("{}", std::min(badge, 99)).c_str(), "bigFont.fnt");
+        auto n = geode::Label::create(fmt::format("{}", std::min(badge, 99)).c_str(), "bigFont.fnt");
         n->setScale(0.26f);
         n->setPosition(bp);
         holder->addChild(n, 3);
@@ -102,10 +103,10 @@ CCNode* centeredText(std::vector<std::pair<std::string, ccColor3B>> const& lines
     col->setContentSize({ 260.f, 80.f });
     col->setAnchorPoint({ 0.5f, 0.5f });
     for (auto const& [text, color] : lines) {
-        auto l = CCLabelBMFont::create(text.c_str(), "bigFont.fnt");
+        auto l = geode::Label::create(text, "bigFont.fnt");
         l->setScale(scale * 0.65f);
         l->setColor(color);
-        l->limitLabelWidth(250.f, scale * 0.65f, 0.12f);
+        l->setLimitLabelWidth(250.f, scale * 0.65f, 0.12f);
         col->addChild(l);
     }
     col->updateLayout();
@@ -285,7 +286,7 @@ void ClansLayer::updateWallet(GPWallet const& w) {
     amount->setAnchorPoint({ 0.f, 0.5f });
     amount->setPosition({ 8.f, 11.f });
     pill->addChild(amount);
-    auto today = CCLabelBMFont::create(fmt::format("today {}/{}", w.todayEarned, w.dailyCap).c_str(), "bigFont.fnt");
+    auto today = geode::Label::create(fmt::format("today {}/{}", w.todayEarned, w.dailyCap).c_str(), "bigFont.fnt");
     today->setScale(0.27f);
     today->setOpacity(190);
     today->setAnchorPoint({ 1.f, 0.5f });
@@ -445,7 +446,7 @@ void ClansLayer::fillBrowse(ClanBrowse const& res) {
 
     if (!res.ok) {
         m_pageLabel->setString(res.error.c_str());
-        m_pageLabel->limitLabelWidth(kLeftSize.width - 50.f, 0.28f, 0.12f);
+        m_pageLabel->setLimitLabelWidth(kLeftSize.width - 50.f, 0.28f, 0.12f);
         setArrow(m_prevBtn, false);
         setArrow(m_nextBtn, false);
         return;
@@ -474,7 +475,7 @@ void ClansLayer::fillBrowse(ClanBrowse const& res) {
         m_pageLabel->setString(m_sort == "week"
             ? fmt::format("Page {}  -  week ends in {}", m_page + 1, countdown(left)).c_str()
             : fmt::format("Page {}  -  all time", m_page + 1).c_str());
-        m_pageLabel->limitLabelWidth(kLeftSize.width - 50.f, 0.28f, 0.12f);
+        m_pageLabel->setLimitLabelWidth(kLeftSize.width - 50.f, 0.28f, 0.12f);
     }
 }
 
@@ -498,11 +499,11 @@ CCNode* ClansLayer::makeClanCell(ClanInfo const& c, float width, bool ranked) {
 
     auto info = CCNode::create();
     info->setContentSize({ 150.f, 32.f });
-    auto em = emblem(c.emblemId, c.colorId, 22.f, c.logoId);
+    auto em = emblem(c.emblemId, c.colorId, 22.f, c.badgeColors);
     em->setPosition({ 12.f, 16.f });
     info->addChild(em);
     auto name = lbl(info, c.name, { 28.f, 21.f }, 0.38f, "bigFont.fnt");
-    name->limitLabelWidth(108.f, 0.38f, 0.15f);
+    name->setLimitLabelWidth(108.f, 0.38f, 0.15f);
     if (ranked && c.rank > 0 && c.rank <= 3) name->setColor(rankColor(c.rank));
     if (c.golden) name->setColor({ 255, 210, 60 });
     if (c.level >= kRainbowLevel) makeRainbow(name);
@@ -599,25 +600,12 @@ void ClansLayer::buildClanView() {
     float const w = kLeftSize.width;
     float const h = kLeftSize.height;
 
-    auto em = emblem(c.emblemId, c.colorId, 26.f, c.logoId);
+    auto em = emblem(c.emblemId, c.colorId, 26.f, c.badgeColors);
     em->setPosition({ 24.f, h - 24.f });
-    if (m_home.clan.myRole >= 1 && c.level >= 30) {
-        auto logoMenu = overlayMenu(m_left, 6);
-        Ref<ClansLayer> logoSelf = this;
-        auto logoBtn = CCMenuItemExt::createSpriteExtra(em, [logoSelf](CCObject*) {
-            if (!logoSelf) return;
-            ClanLogoPopup::create(logoSelf->m_home.clan.info, logoSelf->m_home.clan.logoPending, [logoSelf] {
-                if (logoSelf) logoSelf->reload();
-            })->show();
-        });
-        logoBtn->setPosition({ 24.f, h - 24.f });
-        logoMenu->addChild(logoBtn);
-    } else {
-        m_left->addChild(em);
-    }
+    m_left->addChild(em);
 
     auto name = lbl(m_left, c.name, { 46.f, h - 14.f }, 0.45f, "bigFont.fnt");
-    name->limitLabelWidth(150.f, 0.45f, 0.2f);
+    name->setLimitLabelWidth(125.f, 0.45f, 0.2f);
     name->setColor(M::clanColor(c.colorId));
     auto info = lbl(m_left, fmt::format("Lv {}  -  {}/{} members  -  +{}%", c.level, c.members, c.maxMembers, c.gpBonus),
         { 46.f, h - 28.f }, 0.38f, "chatFont.fnt");
@@ -673,7 +661,7 @@ void ClansLayer::buildClanView() {
     m_chatInput = TextInput::create(260.f, "Message your clan...", "chatFont.fnt");
     m_chatInput->setScale(0.72f);
     m_chatInput->setMaxCharCount(150);
-    m_chatInput->setCommonFilter(CommonFilter::Any);
+    m_chatInput->setCommonFilter(CommonFilter::TextEmojis);
     m_chatInput->hideBG();
     m_chatInput->setDisplayEmojis(true);
     m_chatInput->setAnchorPoint({ 0.5f, 0.5f });
@@ -691,6 +679,14 @@ void ClansLayer::buildClanView() {
 
     auto menu = overlayMenu(m_left);
     Ref<ClansLayer> self = this;
+    auto rules = CCMenuItemExt::createSpriteExtra(textButton("Rules", "GJ_button_04.png", 0.48f), [this](CCObject*) {
+        WeakRef<ClansLayer> weak = this;
+        showClanRules(m_home.clan, [weak] {
+            if (auto self = weak.lock()) self->reload();
+        });
+    });
+    rules->setPosition({ w - 85.f, h - 14.f });
+    menu->addChild(rules);
     auto sendSpr = CCSprite::createWithSpriteFrameName("GJ_chatBtn_001.png");
     sendSpr->setScale(0.42f);
     auto send = CCMenuItemExt::createSpriteExtra(sendSpr, [self](CCObject*) { if (self) self->onSend(); });
@@ -705,9 +701,7 @@ void ClansLayer::buildClanView() {
         if (!self->m_emoteBridge) {
             self->m_emoteBridge = CCTextInputNode::create(260.f, 20.f, "", "chatFont.fnt");
             self->m_emoteBridge->setMaxLabelLength(500);
-            std::string allowed;
-            for (char ch = 32; ch < 127; ch++) allowed += ch;
-            self->m_emoteBridge->setAllowedChars(allowed);
+            self->m_emoteBridge->setAllowedChars(getCommonFilterAllowedChars(CommonFilter::TextEmojis));
             self->schedule(schedule_selector(ClansLayer::pollEmoteBridge), 0.05f);
         }
         self->m_emoteBridgeText = self->m_chatInput->getString();
@@ -765,16 +759,16 @@ void ClansLayer::showPinned(bool has, ClanChatMessage const& msg) {
     auto bg = darkBox({ w - 16.f, 18.f }, 170);
     bg->setAnchorPoint({ 0.f, 0.f });
     bar->addChild(bg);
-    auto title = CCLabelBMFont::create("Pinned", "goldFont.fnt");
+    auto title = geode::Label::create("Pinned", "goldFont.fnt");
     title->setScale(0.32f);
     title->setAnchorPoint({ 0.f, 0.5f });
     title->setPosition({ 5.f, 9.f });
     bar->addChild(title);
-    auto text = CCLabelBMFont::create(fmt::format("{}: {}", msg.username, msg.message).c_str(), "chatFont.fnt");
+    auto text = geode::Label::create(fmt::format("{}: {}", msg.username, msg.message).c_str(), "chatFont.fnt");
     text->setScale(0.42f);
     text->setAnchorPoint({ 0.f, 0.5f });
     text->setPosition({ 8.f + title->getScaledContentWidth(), 9.f });
-    text->limitLabelWidth(w - 40.f - title->getScaledContentWidth(), 0.42f, 0.2f);
+    text->setLimitLabelWidth(w - 40.f - title->getScaledContentWidth(), 0.42f, 0.2f);
     bar->addChild(text);
     m_left->addChild(bar, 9);
     m_pinnedBar = bar;
@@ -856,7 +850,9 @@ CCNode* ClansLayer::makeChatCell(ClanChatMessage const& msg, float width) {
     });
     CCNode* text = chatText(msg.message, textScale, maxBubble - pad * 2.f, links);
     if (!text) {
-        auto plain = CCLabelBMFont::create(msg.message.c_str(), "chatFont.fnt", (maxBubble - pad * 2.f) / textScale, kCCTextAlignmentLeft);
+        auto plain = geode::Label::create(msg.message, "chatFont.fnt");
+        plain->setMaxWidth((maxBubble - pad * 2.f) / textScale);
+        plain->setAlignment(geode::Label::Alignment::Left);
         plain->setScale(textScale);
         text = plain;
     }
@@ -864,10 +860,10 @@ CCNode* ClansLayer::makeChatCell(ClanChatMessage const& msg, float width) {
     float const dotsW = 16.f;
 
     std::string when = M::timeAgo(msg.at, m_serverNow > 0 ? m_serverNow : static_cast<long long>(time(nullptr)));
-    auto nameLbl = CCLabelBMFont::create(mine ? "You" : msg.username.c_str(), "goldFont.fnt");
+    auto nameLbl = geode::Label::create(mine ? "You" : msg.username.c_str(), "goldFont.fnt");
     nameLbl->setScale(0.36f);
     nameLbl->setColor(mine ? ccColor3B{ 170, 255, 170 } : M::roleColor(role));
-    auto timeLbl = CCLabelBMFont::create(when.c_str(), "chatFont.fnt");
+    auto timeLbl = geode::Label::create(when, "chatFont.fnt");
     timeLbl->setScale(0.32f);
     timeLbl->setOpacity(150);
 
@@ -875,6 +871,19 @@ CCNode* ClansLayer::makeChatCell(ClanChatMessage const& msg, float width) {
     float headerW = nameLbl->getScaledContentWidth() + 8.f + (showTime ? timeLbl->getScaledContentWidth() : 30.f) + dotsW;
     float bubbleW = std::min(maxBubble, std::max(text->getScaledContentWidth(), headerW) + pad * 2.f);
     float bubbleH = text->getScaledContentHeight() + 18.f;
+    geode::Label* quote = nullptr;
+    if (msg.replyTo) {
+        auto const& excerpt = msg.replyText;
+        size_t end = std::min<size_t>(48, excerpt.size());
+        while (end && end < excerpt.size() && (static_cast<unsigned char>(excerpt[end]) & 0xc0) == 0x80) --end;
+        auto shortText = excerpt.substr(0, end);
+        if (end < excerpt.size()) shortText += "...";
+        quote = geode::Label::create(excerpt.empty() ? "Reply to deleted message" : fmt::format("> {}: {}", msg.replyName, shortText), "chatFont.fnt");
+        quote->setLimitLabelWidth(maxBubble - pad * 2.f, 0.38f, 0.16f);
+        quote->setColor({175, 210, 245});
+        bubbleW = std::max(bubbleW, quote->getScaledContentWidth() + pad * 2.f);
+        bubbleH += 12.f;
+    }
     float rowH = bubbleH + 6.f;
 
     auto row = CCNode::create();
@@ -905,7 +914,7 @@ CCNode* ClansLayer::makeChatCell(ClanChatMessage const& msg, float width) {
     nameLbl->setPosition({ bubbleX + pad, 3.f + bubbleH - 8.f });
     row->addChild(nameLbl);
     if (role > 0 && !mine) {
-        auto roleLbl = CCLabelBMFont::create(M::roleName(role).c_str(), "chatFont.fnt");
+        auto roleLbl = geode::Label::create(M::roleName(role).c_str(), "chatFont.fnt");
         roleLbl->setScale(0.3f);
         roleLbl->setColor(M::roleColor(role));
         roleLbl->setAnchorPoint({ 0.f, 0.5f });
@@ -916,14 +925,19 @@ CCNode* ClansLayer::makeChatCell(ClanChatMessage const& msg, float width) {
     timeLbl->setPosition({ bubbleX + bubbleW - pad - dotsW, 3.f + bubbleH - 8.f });
     if (showTime) row->addChild(timeLbl);
 
-    text->setPosition({ bubbleX + pad, 3.f + bubbleH - 15.f });
+    if (quote) {
+        quote->setAnchorPoint({0.f, 1.f});
+        quote->setPosition({bubbleX + pad, 3.f + bubbleH - 15.f});
+        row->addChild(quote);
+    }
+    text->setPosition({ bubbleX + pad, 3.f + bubbleH - 15.f - (quote ? 12.f : 0.f) });
     row->addChild(text);
 
     {
         auto menu = overlayMenu(row);
         auto hit = CCNode::create();
         hit->setContentSize({ dotsW, 14.f });
-        auto dots = CCLabelBMFont::create("...", "bigFont.fnt");
+        auto dots = geode::Label::create("...", "bigFont.fnt");
         dots->setScale(0.35f);
         dots->setPosition({ dotsW / 2.f, 9.f });
         dots->setOpacity(200);
@@ -1044,7 +1058,7 @@ void ClansLayer::buildTasks() {
                 m_tasks->addChild(icon);
             }
             auto title = lbl(m_tasks, M::taskTitle(t), { 24.f, y + 8.f }, 0.26f, "bigFont.fnt");
-            title->limitLabelWidth(w - 62.f, 0.26f, 0.12f);
+            title->setLimitLabelWidth(w - 62.f, 0.26f, 0.12f);
             if (t.completed) title->setColor({ 140, 255, 140 });
 
             auto bar = ProgressBar::create(ProgressBar::Style::Solid);
@@ -1055,7 +1069,7 @@ void ClansLayer::buildTasks() {
             bar->updateProgress(std::clamp(100.f * t.progress / t.target, 0.f, 100.f));
             m_tasks->addChild(bar);
             lbl(m_tasks, fmt::format("{}/{}", t.progress, t.target), { 13.f, y - 7.f }, 0.28f, "chatFont.fnt", { 0.5f, 0.5f })
-                ->limitLabelWidth(22.f, 0.28f, 0.1f);
+                ->setLimitLabelWidth(22.f, 0.28f, 0.1f);
 
             if (t.completed) {
                 auto check = CCSprite::createWithSpriteFrameName("GJ_completesIcon_001.png");
@@ -1071,7 +1085,7 @@ void ClansLayer::buildTasks() {
         }
 
         auto tierLbl = lbl(m_tasks, M::tierName(m_taskTier), { w / 2.f, 14.f }, 0.3f, "bigFont.fnt", { 0.5f, 0.5f });
-        tierLbl->limitLabelWidth(72.f, 0.3f, 0.15f);
+        tierLbl->setLimitLabelWidth(72.f, 0.3f, 0.15f);
         tierLbl->setColor(M::tierColor(m_taskTier));
         if (tiers > 1) {
             auto tierMenu = overlayMenu(m_tasks, 6);
@@ -1122,7 +1136,7 @@ void ClansLayer::buildTasks() {
             m_tasks->addChild(icon);
         }
         auto wayLbl = lbl(m_tasks, way.text, { 24.f, y }, 0.28f, "bigFont.fnt");
-        wayLbl->limitLabelWidth(w - 80.f, 0.28f, 0.12f);
+        wayLbl->setLimitLabelWidth(w - 80.f, 0.28f, 0.12f);
         wayLbl->setColor(way.color);
         lbl(m_tasks, way.reward, { w - 8.f, y }, 0.34f, "goldFont.fnt", { 1.f, 0.5f });
         y -= 20.f;

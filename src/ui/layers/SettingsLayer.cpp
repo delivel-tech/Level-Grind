@@ -3,7 +3,7 @@
 #include "../popups/AchievementsPopup.hpp"
 #include "SettingsLayer.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/BasedButton.hpp"
@@ -211,8 +211,8 @@ CCMenu* SettingsLayer::makeToggleCell(
         .id(fmt::format("{}-cell", settingKey))
         .collect();
 
-    auto label = Build(CCLabelBMFont::create(title, "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.62f, 0.5f, 0.1f)
+    auto label = Build(geode::Label::create(title, "bigFont.fnt"))
+        .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.62f, 0.5f, 0.1f); })
         .anchorPoint({ 0, 0.5f })
         .pos({ 8, CELL_SIZE.height / 2 })
         .parent(cell)
@@ -274,8 +274,8 @@ CCMenu* SettingsLayer::makeFloatCell(
         .id(fmt::format("{}-cell", settingKey))
         .collect();
 
-    auto label = Build(CCLabelBMFont::create(title, "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.45f, 0.5f, 0.1f)
+    auto label = Build(geode::Label::create(title, "bigFont.fnt"))
+        .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.45f, 0.5f, 0.1f); })
         .anchorPoint({ 0, 0.5f })
         .pos({ 8, 22 })
         .parent(cell)
@@ -378,8 +378,8 @@ CCMenu* SettingsLayer::makeColorCell(
         .contentSize(CELL_SIZE.width, 34.f)
         .collect();
 
-    auto label = Build(CCLabelBMFont::create(title, "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.45f, 0.5f, 0.1f)
+    auto label = Build(geode::Label::create(title, "bigFont.fnt"))
+        .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.45f, 0.5f, 0.1f); })
         .anchorPoint({ 0, 0.5f })
         .pos({ 8, 17 })
         .parent(cell)
@@ -449,7 +449,7 @@ CCMenu* SettingsLayer::makeHeaderCell(const char* title) {
         .contentSize({ CELL_SIZE.width, 24.f })
         .collect();
 
-    auto headerLabel = Build(CCLabelBMFont::create(title, "goldFont.fnt"))
+    auto headerLabel = Build(geode::Label::create(title, "goldFont.fnt"))
         .scale(0.5f)
         .pos({ CELL_SIZE.width / 2, 12 })
         .parent(headerCell)
@@ -543,8 +543,8 @@ void SettingsLayer::createOtherList() {
         .contentSize(CELL_SIZE)
         .collect();
 
-    auto reqLabel = Build(CCLabelBMFont::create("Request Staff Access", "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f)
+    auto reqLabel = Build(geode::Label::create("Request Staff Access", "bigFont.fnt"))
+        .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f); })
         .anchorPoint({ 0, 0.5f })
         .pos({ 8, CELL_SIZE.height / 2 })
         .parent(reqCell)
@@ -621,8 +621,8 @@ void SettingsLayer::createOtherList() {
         .contentSize(CELL_SIZE)
         .collect();
 
-    auto labelSync = Build(CCLabelBMFont::create("Sync data", "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f)
+    auto labelSync = Build(geode::Label::create("Sync data", "bigFont.fnt"))
+        .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f); })
         .anchorPoint({ 0, 0.5f })
         .pos({ 8, CELL_SIZE.height / 2 })
         .parent(syncCell)
@@ -683,8 +683,8 @@ void SettingsLayer::createOtherList() {
         .contentSize(CELL_SIZE)
         .collect();
 
-    Build(CCLabelBMFont::create("Data & Privacy", "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f)
+    Build(geode::Label::create("Data & Privacy", "bigFont.fnt"))
+        .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f); })
         .anchorPoint({ 0, 0.5f })
         .pos({ 8, CELL_SIZE.height / 2 })
         .parent(privacyCell);
@@ -706,8 +706,8 @@ void SettingsLayer::createOtherList() {
         .contentSize(CELL_SIZE)
         .collect();
 
-    auto labelArgon = Build(CCLabelBMFont::create("Request Argon Token", "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f)
+    auto labelArgon = Build(geode::Label::create("Request Argon Token", "bigFont.fnt"))
+        .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f); })
         .anchorPoint({ 0, 0.5f })
         .pos({ 8, CELL_SIZE.height / 2 })
         .parent(argonCell)
@@ -763,8 +763,8 @@ void SettingsLayer::createOtherList() {
         .contentSize(CELL_SIZE)
         .collect();
 
-    Build(CCLabelBMFont::create("Clear Saved Data (Local)", "bigFont.fnt"))
-        .limitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f)
+    Build(geode::Label::create("Clear Saved Data (Local)", "bigFont.fnt"))
+        .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.6f, 0.5f, 0.1f); })
         .anchorPoint({ 0, 0.5f })
         .pos({ 8, CELL_SIZE.height / 2 })
         .parent(clearCell);
@@ -867,8 +867,8 @@ void SettingsLayer::createNotificationsList() {
             .ignoreAnchorPointForPos(false)
             .contentSize(CELL_SIZE)
             .collect();
-        auto label = Build(CCLabelBMFont::create(title.c_str(), "bigFont.fnt"))
-            .limitLabelWidth(CELL_SIZE.width * 0.62f, 0.5f, 0.1f)
+        auto label = Build(geode::Label::create(title, "bigFont.fnt"))
+            .with([&](auto label) { label->setLimitLabelWidth(CELL_SIZE.width * 0.62f, 0.5f, 0.1f); })
             .anchorPoint({ 0, 0.5f })
             .pos({ 8, CELL_SIZE.height / 2 })
             .parent(cell)

@@ -1,7 +1,7 @@
 #include "../../managers/Auth.hpp"
 #include "CreditsPopup.hpp"
 #include "Geode/cocos/base_nodes/CCNode.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
@@ -70,7 +70,7 @@ public:
         }
         if (m_nameLabel && m_nameItem) {
             m_nameLabel->setString(user.username.c_str());
-            m_nameLabel->limitLabelWidth(52.f, 0.45f, 0.05f);
+            m_nameLabel->setLimitLabelWidth(52.f, 0.45f, 0.05f);
             auto pos = m_nameItem->getPosition();
             m_nameItem->updateSprite();
             m_nameItem->setPosition(pos);
@@ -80,7 +80,7 @@ public:
 private:
     int m_accountId = 0;
     cue::PlayerIcon* m_icon = nullptr;
-    CCLabelBMFont* m_nameLabel = nullptr;
+    geode::Label* m_nameLabel = nullptr;
     CCMenuItemSpriteExtra* m_nameItem = nullptr;
 
     bool init(const CreditsUser& user) {
@@ -114,9 +114,9 @@ private:
             .collect();
 
         CCMenuItemSpriteExtra* nameLabel;
-        auto menu = Build<CCLabelBMFont>::create(user.username.c_str(), "goldFont.fnt")
+        auto menu = Build<geode::Label>::create(user.username.c_str(), "goldFont.fnt")
             .scale(0.45f)
-            .limitLabelWidth(52.f, 0.45f, 0.05f)
+            .with([&](auto label) { label->setLimitLabelWidth(52.f, 0.45f, 0.05f); })
             .store(m_nameLabel)
             .intoMenuItem([accountId = user.accountId, name = user.username] {
                 GrindProfilePopup::create(accountId, name)->show();
@@ -201,7 +201,7 @@ private:
             m_badge = badge;
         }
 
-        auto title = Build<CCLabelBMFont>::create(fmt::format("{}", cat.categoryName).c_str(), "bigFont.fnt")
+        auto title = Build<geode::Label>::create(fmt::format("{}", cat.categoryName).c_str(), "bigFont.fnt")
             .parent(titleMenu)
             .collect();
 
@@ -283,7 +283,7 @@ private:
 
         this->setContentSize(CCSize{LIST_SIZE.width, playerWrapper->getScaledContentSize().height + 8.f + title->getScaledContentSize().height});
 
-        auto membersAmountLabel = Build(CCLabelBMFont::create(numToString(cat.users.size()).c_str(), "chatFont.fnt"))
+        auto membersAmountLabel = Build(geode::Label::create(numToString(cat.users.size()).c_str(), "chatFont.fnt"))
             .scale(0.65f)
             .color({ 0, 0, 0  })
             .opacity(100)

@@ -1,6 +1,6 @@
 #pragma once
 #include "../BasePopup.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/misc_nodes/CCClippingNode.h"
 #include "Geode/ui/MDTextArea.hpp"
@@ -36,7 +36,7 @@ private:
 
     CCMenuItemSpriteExtra* m_pageArrowLeft = nullptr;
     CCMenuItemSpriteExtra* m_pageArrowRight = nullptr;
-    CCLabelBMFont* m_pageTitleLabel = nullptr;
+    geode::Label* m_pageTitleLabel = nullptr;
     MDTextArea* m_pageDescArea = nullptr;
 
     bool init(std::vector<DiscordPageInfo> pages);

@@ -1,4 +1,5 @@
 #include "SuggestionsLayer.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../popups/SuggestionsFilterPopup.hpp"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/utils/web.hpp"
@@ -75,7 +76,7 @@ bool SuggestionsLayer::init() {
 
     this->addChild(uiMenu, 10);
 
-    m_levelsLabel = CCLabelBMFont::create("", "goldFont.fnt");
+    m_levelsLabel = geode::Label::create("", "goldFont.fnt");
     m_levelsLabel->setPosition({winSize.width - 5, winSize.height - 5});
     m_levelsLabel->setAnchorPoint({1.f, 1.f});
     m_levelsLabel->setScale(0.45f);
@@ -120,7 +121,7 @@ bool SuggestionsLayer::init() {
 
             pageMenu->updateLayout();
 
-            m_pageButtonLabel = CCLabelBMFont::create(numToString(m_page + 1).c_str(), "bigFont.fnt");
+            m_pageButtonLabel = geode::Label::create(numToString(m_page + 1).c_str(), "bigFont.fnt");
 
             if (m_pageButtonLabel) {
                 auto size = m_pageButton->getContentSize();
@@ -185,10 +186,10 @@ bool SuggestionsLayer::init() {
     this->scheduleUpdate();
     this->setKeypadEnabled(true);
 
-    auto titleLabel = Build(CCLabelBMFont::create(m_title.c_str(), "bigFont.fnt"))
+    auto titleLabel = Build(geode::Label::create(m_title, "bigFont.fnt"))
         .anchorPoint({ 0.5f, 0.5f })
         .pos({LIST_SIZE.width / 2.f, LIST_SIZE.height + 18.f})
-        .limitLabelWidth(LIST_SIZE.width - 30.f, .8f, 0.5f)
+        .with([&](auto label) { label->setLimitLabelWidth(LIST_SIZE.width - 30.f, .8f, 0.5f); })
         .parent(m_listNode)
         .zOrder(1)
         .collect();

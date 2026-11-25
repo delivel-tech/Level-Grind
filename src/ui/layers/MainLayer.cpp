@@ -2,7 +2,7 @@
 #include "MainLayer.hpp"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/Layout.hpp"
@@ -273,10 +273,10 @@ CCMenu* MainLayer::addSection(CCNode* parent, char const* title, CCPoint center,
         .id("background")
         .parent(section);
 
-    Build(CCLabelBMFont::create(title, "goldFont.fnt"))
+    Build(geode::Label::create(title, "goldFont.fnt"))
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 8.f, size.height / 2 + 1.f })
-        .with([&](CCLabelBMFont* label) { label->limitLabelWidth(titleWidth - 12.f, 0.5f, 0.1f); })
+        .with([&](geode::Label* label) { label->setLimitLabelWidth(titleWidth - 12.f, 0.5f, 0.1f); })
         .id("title")
         .parent(section);
 
@@ -315,7 +315,7 @@ bool MainLayer::initSearchPanel() {
         .collect();
 
     m_countMaxWidth = winSize.width / 2 - logo->getScaledContentSize().width / 2 - 14.f;
-    m_countLabel = Build(CCLabelBMFont::create("", "goldFont.fnt"))
+    m_countLabel = Build(geode::Label::create("", "goldFont.fnt"))
         .anchorPoint({ 1.f, 1.f })
         .pos({ winSize.width - 7.f, winSize.height - 6.f })
         .id("levels-found-label")
@@ -426,7 +426,7 @@ bool MainLayer::initSearchPanel() {
         .scale(0.6f)
         .id("demons-hint-icon")
         .parent(m_demonsHint);
-    Build(CCLabelBMFont::create("only", "chatFont.fnt"))
+    Build(geode::Label::create("only", "chatFont.fnt"))
         .color({ 200, 200, 200 })
         .scale(0.7f)
         .id("demons-hint-label")
@@ -824,7 +824,7 @@ void MainLayer::scheduleCountRefresh() {
 void MainLayer::setCountText(std::string const& value) {
     if (!m_countLabel) return;
     m_countLabel->setString(fmt::format("Levels found: {}", value).c_str());
-    m_countLabel->limitLabelWidth(m_countMaxWidth, 0.5f, 0.2f);
+    m_countLabel->setLimitLabelWidth(m_countMaxWidth, 0.5f, 0.2f);
 }
 
 static std::string withCommas(long long n) {
@@ -904,7 +904,7 @@ void MainLayer::showCountResult(GetLevelsResponse const& parsed) {
     auto addLine = [&](const char* icon, long long left, long long total) {
         if (total <= 0) return;
         auto line = CCNode::create();
-        auto lbl = CCLabelBMFont::create(fmt::format("{} left / {}", withCommas(left), withCommas(total)).c_str(), "goldFont.fnt");
+        auto lbl = geode::Label::create(fmt::format("{} left / {}", withCommas(left), withCommas(total)).c_str(), "goldFont.fnt");
         lbl->setScale(0.4f);
         lbl->setAnchorPoint({ 1.f, 0.5f });
         line->addChild(lbl);

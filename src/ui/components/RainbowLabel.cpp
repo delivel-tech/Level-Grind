@@ -1,4 +1,5 @@
 #include "RainbowLabel.hpp"
+#include <Geode/ui/Label.hpp>
 
 #include <chrono>
 
@@ -97,7 +98,7 @@ RainbowLabel* RainbowLabel::create(std::string const& text, const char* font) {
 
 bool RainbowLabel::init(std::string const& text, const char* font) {
     if (!CCNodeRGBA::init()) return false;
-    m_label = CCLabelBMFont::create(text.c_str(), font);
+    m_label = geode::Label::create(text, font);
     m_label->setAnchorPoint({ 0.f, 0.f });
     this->addChild(m_label);
     this->setCascadeOpacityEnabled(true);
@@ -124,8 +125,8 @@ void RainbowLabel::setColors(std::vector<ccColor3B> const& colors) {
     m_colorCount = static_cast<int>(i + 1);
 }
 
-void RainbowLabel::limitLabelWidth(float width, float defaultScale, float minScale) {
-    m_label->limitLabelWidth(width, defaultScale, minScale);
+void RainbowLabel::setLimitLabelWidth(float width, float defaultScale, float minScale) {
+    m_label->setLimitLabelWidth(width, defaultScale, minScale);
     float s = m_label->getScale();
     m_label->setScale(1.f);
     this->setContentSize(m_label->getContentSize());

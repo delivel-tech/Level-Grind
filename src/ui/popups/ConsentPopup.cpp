@@ -1,4 +1,5 @@
 #include "ConsentPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../ClanUI.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/Consent.hpp"
@@ -32,7 +33,7 @@ bool ConsentPopup::init(geode::Function<void()> onAnswered) {
     m_onAnswered = std::move(onAnswered);
     this->setTitle("Before you continue...");
 
-    auto info = CCLabelBMFont::create("You must accept these to use online features:", "chatFont.fnt");
+    auto info = geode::Label::create("You must accept these to use online features:", "chatFont.fnt");
     info->setScale(0.7f);
     info->setPosition({ centerX(), kSize.height - 46.f });
     m_mainLayer->addChild(info);

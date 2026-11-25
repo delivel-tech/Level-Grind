@@ -5,7 +5,7 @@
 #include "Geode/cocos/actions/CCActionTween.h"
 #include "Geode/cocos/cocoa/CCGeometry.h"
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include <Geode/Enums.hpp>
 #include <cue/PlayerIcon.hpp>
@@ -78,7 +78,7 @@ void WeeklyAchievementCell::buildInfo() {
         .collect();
 
 
-    auto title = Build(CCLabelBMFont::create(
+    auto title = Build(geode::Label::create(
         m_cellInfo.title.c_str(),
         "bigFont.fnt"
     ))
@@ -240,7 +240,7 @@ void WeeklyAchievementCell::buildAfterPodium() {
         })
         .collect();
 
-    auto usernameBtn = Build(CCLabelBMFont::create(
+    auto usernameBtn = Build(geode::Label::create(
         m_cellInfo.username.c_str(),
         "goldFont.fnt"
     ))

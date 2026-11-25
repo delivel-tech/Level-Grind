@@ -3,7 +3,7 @@
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include "../BasePopup.hpp"
 #include "../../utils/globals.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/ui/MDTextArea.hpp"
 
@@ -22,7 +22,7 @@ public:
     CCMenuItemSpriteExtra* m_arrowRight = nullptr;
 
     MDTextArea* m_currentTextArea = nullptr;
-    CCLabelBMFont* m_pageLabel = nullptr;
+    geode::Label* m_pageLabel = nullptr;
     CCMenu* m_addedByMenu = nullptr;
 
 private:

@@ -1,4 +1,5 @@
 #include "../../managers/Auth.hpp"
+#include <Geode/ui/Label.hpp>
 #include "StaffActivityPopup.hpp"
 #include "../../managers/APIClient.hpp"
 #include "../../managers/DataManager.hpp"
@@ -61,7 +62,7 @@ bool StaffActivityPopup::init() {
         this->load(m_mode);
     });
     toggleRow->addChild(toggler);
-    auto toggleLabel = CCLabelBMFont::create("Show notes instead of votes", "bigFont.fnt");
+    auto toggleLabel = geode::Label::create("Show notes instead of votes", "bigFont.fnt");
     toggleLabel->setScale(0.32f);
     toggleRow->addChild(toggleLabel);
     toggleRow->updateLayout();
@@ -107,9 +108,9 @@ void StaffActivityPopup::load(int mode) {
             }
 
             auto showText = [&](std::string const& text) {
-                auto lbl = CCLabelBMFont::create(text.c_str(), "bigFont.fnt");
+                auto lbl = geode::Label::create(text, "bigFont.fnt");
                 lbl->setScale(0.4f);
-                lbl->limitLabelWidth(kListSize.width - 30.f, 0.4f, 0.2f);
+                lbl->setLimitLabelWidth(kListSize.width - 30.f, 0.4f, 0.2f);
                 lbl->setPosition(self->m_list->getPosition());
                 self->m_mainLayer->addChild(lbl, 10);
                 self->m_status = lbl;
@@ -131,15 +132,15 @@ void StaffActivityPopup::load(int mode) {
                 auto row = CCNode::create();
                 row->setContentSize({ kListSize.width, 26.f });
 
-                auto name = CCLabelBMFont::create(s["username"].asString().unwrapOrDefault().c_str(), "bigFont.fnt");
+                auto name = geode::Label::create(s["username"].asString().unwrapOrDefault().c_str(), "bigFont.fnt");
                 name->setScale(0.42f);
-                name->limitLabelWidth(200.f, 0.42f, 0.15f);
+                name->setLimitLabelWidth(200.f, 0.42f, 0.15f);
                 name->setAnchorPoint({ 0.f, 0.5f });
                 name->setPosition({ 12.f, 13.f });
                 row->addChild(name);
 
                 int amount = static_cast<int>(s[notes ? "notes" : "votes"].asInt().unwrapOr(0));
-                auto count = CCLabelBMFont::create(fmt::format("{} {}", amount, notes ? (amount == 1 ? "note" : "notes") : (amount == 1 ? "vote" : "votes")).c_str(), "goldFont.fnt");
+                auto count = geode::Label::create(fmt::format("{} {}", amount, notes ? (amount == 1 ? "note" : "notes") : (amount == 1 ? "vote" : "votes")).c_str(), "goldFont.fnt");
                 count->setScale(0.42f);
                 count->setAnchorPoint({ 1.f, 0.5f });
                 count->setPosition({ kListSize.width - 12.f, 13.f });

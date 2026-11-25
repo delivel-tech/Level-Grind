@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/ui/TextInput.hpp>
 #include <Geode/utils/web.hpp>
 #include "../BasePopup.hpp"
@@ -17,7 +18,7 @@ private:
     void find();
 
     TextInput* m_input = nullptr;
-    CCLabelBMFont* m_status = nullptr;
+    geode::Label* m_status = nullptr;
     bool m_busy = false;
     TaskHolder<web::WebResponse> m_task;
 

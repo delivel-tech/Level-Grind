@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <cue/ListNode.hpp>
 #include "../BasePopup.hpp"
 #include "../../managers/AchievementsManager.hpp"
@@ -21,7 +22,7 @@ private:
     std::string m_category = "levels";
     cue::ListNode* m_tabs = nullptr;
     cue::ListNode* m_list = nullptr;
-    CCLabelBMFont* m_summary = nullptr;
+    geode::Label* m_summary = nullptr;
     CCNode* m_spinner = nullptr;
 };
 

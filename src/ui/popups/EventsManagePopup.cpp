@@ -1,6 +1,6 @@
 #include "EventsManagePopup.hpp"
 #include "../../managers/DataManager.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/loader/Log.hpp"
 #include "Geode/ui/NineSlice.hpp"
@@ -61,7 +61,7 @@ bool EventsManagePopup::init() {
         this->onClose(nullptr);
     }
 
-    Build(CCLabelBMFont::create("Queue the next level for each event (classic + platformer).", "chatFont.fnt"))
+    Build(geode::Label::create("Queue the next level for each event (classic + platformer).", "chatFont.fnt"))
         .scale(0.55f)
         .pos(fromTop(40.f))
         .opacity(170)
@@ -119,14 +119,14 @@ void EventsManagePopup::addEventCard(int mode, float y) {
         textX = 44.f;
     }
 
-    Build(CCLabelBMFont::create(def.name, "goldFont.fnt"))
+    Build(geode::Label::create(def.name, "goldFont.fnt"))
         .scale(0.6f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ textX, midY + 8.f })
         .color(def.color)
         .parent(cardNode);
 
-    card.dateLabel = Build(CCLabelBMFont::create("Last queued: ...", "chatFont.fnt"))
+    card.dateLabel = Build(geode::Label::create("Last queued: ...", "chatFont.fnt"))
         .scale(0.55f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ textX, midY - 9.f })

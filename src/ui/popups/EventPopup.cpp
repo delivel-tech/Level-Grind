@@ -1,7 +1,7 @@
 #include "EventPopup.hpp"
 #include "Geode/cocos/CCDirector.h"
 #include "Geode/cocos/cocoa/CCGeometry.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/General.hpp"
@@ -183,7 +183,7 @@ bool EventPopup::init(EventType type) {
 
     m_platCell->setVisible(false);
 
-    m_timer = CCLabelBMFont::create("Resets in: --:--:--:--", "goldFont.fnt");
+    m_timer = geode::Label::create("Resets in: --:--:--:--", "goldFont.fnt");
     m_timer->setPosition(centerX(), 20);
     m_timer->setScale(0.6f);
     m_mainLayer->addChild(m_timer);

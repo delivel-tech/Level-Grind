@@ -1,4 +1,5 @@
 #include "NotesManagerPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../../managers/APIClient.hpp"
 #include "../../managers/Auth.hpp"
 #include "../../managers/DataManager.hpp"
@@ -68,7 +69,7 @@ bool NotesManagerPopup::init(Target target, int id, std::string const& name) {
     m_list->setAutoUpdate(false);
     m_mainLayer->addChild(m_list);
 
-    m_empty = CCLabelBMFont::create("No notes", "bigFont.fnt");
+    m_empty = geode::Label::create("No notes", "bigFont.fnt");
     m_empty->setScale(0.45f);
     m_empty->setOpacity(160);
     m_empty->setPosition(m_list->getPosition());
@@ -101,16 +102,16 @@ void NotesManagerPopup::build() {
         cell->ignoreAnchorPointForPosition(false);
         cell->setContentSize({ w, kCellH });
 
-        auto text = CCLabelBMFont::create(preview(e.note).c_str(), "chatFont.fnt");
+        auto text = geode::Label::create(preview(e.note).c_str(), "chatFont.fnt");
         text->setAnchorPoint({ 0.f, 0.5f });
         text->setPosition({ 12.f, kCellH / 2.f + 7.f });
-        text->limitLabelWidth(w - 90.f, 0.7f, 0.3f);
+        text->setLimitLabelWidth(w - 90.f, 0.7f, 0.3f);
         cell->addChild(text);
 
-        auto by = CCLabelBMFont::create(fmt::format("by {}", e.by).c_str(), "bigFont.fnt");
+        auto by = geode::Label::create(fmt::format("by {}", e.by).c_str(), "bigFont.fnt");
         by->setAnchorPoint({ 0.f, 0.5f });
         by->setPosition({ 12.f, kCellH / 2.f - 9.f });
-        by->limitLabelWidth(w - 90.f, 0.28f, 0.1f);
+        by->setLimitLabelWidth(w - 90.f, 0.28f, 0.1f);
         by->setOpacity(170);
         cell->addChild(by);
 

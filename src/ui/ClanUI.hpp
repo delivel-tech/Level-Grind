@@ -1,10 +1,13 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/EmoteDef.hpp>
 #include <Geode/binding/EmoteSprite.hpp>
 #include <Geode/binding/EmoteToken.hpp>
+#include <Geode/binding/GJAccountManager.hpp>
+#include <Geode/binding/GameStatsManager.hpp>
 #include <Geode/binding/TextArea.hpp>
 #include <Geode/ui/NineSlice.hpp>
 #include <cue/PlayerIcon.hpp>
@@ -12,7 +15,6 @@
 
 #include "../managers/GrindClansManager.hpp"
 #include "components/RainbowLabel.hpp"
-#include "components/ClanLogo.hpp"
 
 using namespace geode::prelude;
 
@@ -62,7 +64,7 @@ inline Panel makePanel(CCNode* parent, CCPoint pos, CCSize size, GLubyte opacity
 inline CCNode* gpAmount(long long gp, float scale = 0.5f, const char* font = "goldFont.fnt") {
     auto node = CCNode::create();
     auto icon = gpIcon(scale * 0.9f);
-    auto label = CCLabelBMFont::create(GrindClansManager::formatGP(gp).c_str(), font);
+    auto label = geode::Label::create(GrindClansManager::formatGP(gp).c_str(), font);
     label->setScale(scale);
     float w = icon->getScaledContentWidth() + 3.f + label->getScaledContentWidth();
     float h = std::max(icon->getScaledContentHeight(), label->getScaledContentHeight());
@@ -76,68 +78,53 @@ inline CCNode* gpAmount(long long gp, float scale = 0.5f, const char* font = "go
     return node;
 }
 
-inline CCNode* emblemBase(int colorId, float size, float* innerDiameter = nullptr) {
+struct ClanBadge {
+    int background;
+    int symbol;
+    int ink;
+
+    static constexpr ccColor3B inks[] = {
+        {255,255,255}, {48,52,65}, {255,205,90}, {110,210,255}, {245,115,125}, {140,235,155}
+    };
+    static ClanBadge decode(int id) {
+        int index = (std::clamp(id, 1, 1000) - 1) % (70 * std::size(inks));
+        return {index % 10 + 1, index / 10 % 7 + 1, index / 70};
+    }
+    int encode() const { return background + 10 * (symbol - 1) + 70 * ink; }
+};
+
+inline int rgbValue(ccColor3B c) { return (c.r << 16) | (c.g << 8) | c.b; }
+
+inline ccColor3B badgeColor(long long rgb) {
+    return {static_cast<GLubyte>(rgb >> 16), static_cast<GLubyte>(rgb >> 8), static_cast<GLubyte>(rgb)};
+}
+
+enum class EmblemPart { Both, Background, Symbol };
+
+inline CCNode* emblem(int emblemId, int colorId, float size, long long colors, EmblemPart part = EmblemPart::Both) {
+    auto badge = ClanBadge::decode(emblemId);
     auto node = CCNode::create();
-    node->setContentSize({ size, size });
-    node->setAnchorPoint({ 0.5f, 0.5f });
-
-    auto ring = CCSprite::createWithSpriteFrameName("d_circle_02_001.png");
-    if (ring) {
-        ring->setScale(size / ring->getContentWidth() * 1.25f);
-        ring->setColor(GrindClansManager::clanColor(colorId));
-        ring->setOpacity(70);
-        ring->setPosition({ size / 2.f, size / 2.f });
-        node->addChild(ring, -1);
-
-        float const r = ring->getScaledContentWidth() / 2.f;
-        if (innerDiameter) *innerDiameter = r * 2.f;
-        auto c3 = GrindClansManager::clanColor(colorId);
-        std::vector<CCPoint> pts;
-        for (int i = 0; i < 40; i++) {
-            float a = static_cast<float>(i) / 40.f * 6.2831853f;
-            pts.push_back({ size / 2.f + std::cos(a) * r, size / 2.f + std::sin(a) * r });
+    node->setContentSize({size, size});
+    node->setAnchorPoint({0.5f, 0.5f});
+    auto addPart = [&](const char* prefix, int id, ccColor3B color, GLubyte highlight) {
+        for (std::string_view suffix : {"", "_extra", "_highlight"}) {
+            auto name = fmt::format("{}_{}{}.png"_spr, prefix, id, suffix);
+            auto frame = CCSpriteFrameCache::get()->spriteFrameByName(name.c_str());
+            if (!frame) continue;
+            auto sprite = CCSprite::createWithSpriteFrame(frame);
+            sprite->setScale(size / 125.f);
+            sprite->setPosition({size / 2.f, size / 2.f});
+            if (suffix.empty()) sprite->setColor(color);
+            else if (suffix == "_extra") sprite->setBlendFunc({GL_DST_COLOR, GL_ONE});
+            else {
+                sprite->setBlendFunc({GL_ONE, GL_ONE});
+                sprite->setOpacity(highlight);
+            }
+            node->addChild(sprite);
         }
-        auto outline = CCDrawNode::create();
-        outline->drawPolygon(pts.data(), static_cast<unsigned>(pts.size()), { 0.f, 0.f, 0.f, 0.f },
-            std::max(0.6f, size / 30.f), { c3.r / 255.f, c3.g / 255.f, c3.b / 255.f, 0.95f });
-        node->addChild(outline, 2);
-    }
-    return node;
-}
-
-inline CCNode* emblemWithTexture(CCTexture2D* texture, int colorId, float size) {
-    float inner = size * 1.25f;
-    auto node = emblemBase(colorId, size, &inner);
-    auto pic = clanlogo::circle(texture, inner);
-    pic->setPosition({ size / 2.f, size / 2.f });
-    node->addChild(pic, 1);
-    return node;
-}
-
-inline CCNode* emblem(int iconId, int colorId, float size, long long logoId = 0) {
-    float inner = size * 1.25f;
-    auto node = emblemBase(colorId, size, &inner);
-
-    auto c = GrindClansManager::clanColor(colorId);
-    auto icon = cue::PlayerIcon::create(cue::Icons{ IconType::Cube, std::max(1, iconId), 0, 12, -1 });
-    icon->setColor(c);
-    icon->setSecondColor({ 255, 255, 255 });
-    icon->setScale(size / 38.f);
-    icon->setPosition({ size / 2.f, size / 2.f });
-    node->addChild(icon);
-
-    if (logoId > 0) {
-        WeakRef<CCNode> weak = node;
-        Ref<CCNode> cube = icon;
-        clanlogo::load(logoId, [weak, cube, inner, size](CCTexture2D* texture) {
-            auto n = weak.lock();
-            if (!n) return;
-            cube->setVisible(false);
-            auto pic = clanlogo::circle(texture, inner);
-            pic->setPosition({ size / 2.f, size / 2.f });
-            n->addChild(pic, 1);
-        });
-    }
+    };
+    if (part != EmblemPart::Symbol) addPart("bg", badge.background, colors < 0 ? GrindClansManager::clanColor(colorId) : badgeColor(colors >> 24), 90);
+    if (part != EmblemPart::Background) addPart("icon", badge.symbol, colors < 0 ? ClanBadge::inks[badge.ink] : badgeColor(colors), 127);
     return node;
 }
 
@@ -188,7 +175,7 @@ inline CCNode* coloredLine(std::string const& rich, float scale, float maxWidth,
     float x = 0.f, h = 0.f;
     auto add = [&](std::string const& text, ccColor3B color) {
         if (text.empty()) return;
-        auto l = CCLabelBMFont::create(text.c_str(), font);
+        auto l = geode::Label::create(text, font);
         l->setScale(scale);
         l->setColor(color);
         l->setAnchorPoint({ 0.f, 0.5f });
@@ -283,10 +270,10 @@ inline CCNode* chatText(std::string const& raw, float scale, float maxWidth, Cha
         pos = close + 1;
     }
 
-    auto probe = CCLabelBMFont::create("Ag", font);
+    auto probe = geode::Label::create("Ag", font);
     float const lineH = probe->getContentHeight() * scale;
-    auto spaced = CCLabelBMFont::create("a a", font);
-    auto tight = CCLabelBMFont::create("aa", font);
+    auto spaced = geode::Label::create("a a", font);
+    auto tight = geode::Label::create("aa", font);
     float const spaceW = std::max(1.f, (spaced->getContentWidth() - tight->getContentWidth()) * scale);
     float const emoteH = lineH * 1.05f;
 
@@ -310,7 +297,7 @@ inline CCNode* chatText(std::string const& raw, float scale, float maxWidth, Cha
     };
 
     auto link = [&](std::string const& text, ccColor3B color, geode::Function<void()> cb) {
-        auto l = CCLabelBMFont::create(text.c_str(), font);
+        auto l = geode::Label::create(text, font);
         l->setScale(scale);
         l->setColor(color);
         auto holder = CCNode::create();
@@ -354,19 +341,20 @@ inline CCNode* chatText(std::string const& raw, float scale, float maxWidth, Cha
                 continue;
             }
             while (!word.empty()) {
-                auto l = CCLabelBMFont::create(word.c_str(), font);
+                auto l = geode::Label::create(word, font);
                 l->setScale(scale);
                 if (l->getScaledContentWidth() <= maxWidth || word.size() == 1) {
                     place(l, l->getScaledContentWidth());
                     break;
                 }
-                size_t fit = word.size() - 1;
-                while (fit > 1) {
-                    auto probeLbl = CCLabelBMFont::create(word.substr(0, fit).c_str(), font);
-                    if (probeLbl->getContentWidth() * scale <= maxWidth) break;
-                    fit--;
-                }
-                l->setString(word.substr(0, fit).c_str());
+                size_t fit = word.size();
+                do {
+                    size_t prev = fit - 1;
+                    while (prev && (static_cast<unsigned char>(word[prev]) & 0xc0) == 0x80) --prev;
+                    if (!prev) break;
+                    fit = prev;
+                    l->setText(word.substr(0, fit));
+                } while (l->getScaledContentWidth() > maxWidth);
                 if (x > 0.f) { line++; x = 0.f; }
                 place(l, l->getScaledContentWidth());
                 word = word.substr(fit);
@@ -422,7 +410,7 @@ inline void addPrestige(CCNode* row, CCSize size, ccColor3B color) {
     #endif
 }
 
-inline void makeRainbow(CCLabelBMFont* name, const char* font = "bigFont.fnt") {
+inline void makeRainbow(geode::Label* name, const char* font = "bigFont.fnt") {
     if (!name || !name->getParent()) return;
     auto rainbow = RainbowLabel::create(name->getString(), font);
     rainbow->setScale(name->getScale());

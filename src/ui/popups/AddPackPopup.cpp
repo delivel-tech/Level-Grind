@@ -1,4 +1,5 @@
 #include "AddPackPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../../managers/DataManager.hpp"
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
@@ -83,7 +84,7 @@ CCNode* makePanel(CCNode* parent, CCPoint pos, CCSize size, const char* title) {
         .parent(panel);
 
     if (title) {
-        Build(CCLabelBMFont::create(title, "goldFont.fnt"))
+        Build(geode::Label::create(title, "goldFont.fnt"))
             .scale(0.55f)
             .anchorPoint({ 0.f, 0.5f })
             .pos({ 10.f, size.height - 13.f })
@@ -107,8 +108,8 @@ CCMenu* makePanelMenu(CCNode* panel) {
         .collect();
 }
 
-CCLabelBMFont* rowLabel(CCNode* panel, const char* text, float y) {
-    return Build(CCLabelBMFont::create(text, "goldFont.fnt"))
+geode::Label* rowLabel(CCNode* panel, const char* text, float y) {
+    return Build(geode::Label::create(text, "goldFont.fnt"))
         .scale(0.45f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 10.f, y })
@@ -165,7 +166,7 @@ void AddPackPopup::buildPreview() {
         .parent(strip)
         .collect();
 
-    m_previewTitle = Build(CCLabelBMFont::create("Pack Title", "bigFont.fnt"))
+    m_previewTitle = Build(geode::Label::create("Pack Title", "bigFont.fnt"))
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 46.f, size.height / 2.f + 1.f })
         .parent(strip)
@@ -202,7 +203,7 @@ void AddPackPopup::buildInfoPanel(CCNode* panel) {
         .parent(panel)
         .collect();
 
-    m_diffLabel = Build(CCLabelBMFont::create(difficultyName(m_difficulty), "chatFont.fnt"))
+    m_diffLabel = Build(geode::Label::create(difficultyName(m_difficulty), "chatFont.fnt"))
         .scale(0.45f)
         .pos({ diffX, diffY - 13.f })
         .parent(panel)
@@ -271,7 +272,7 @@ void AddPackPopup::buildLevelsPanel(CCNode* panel) {
     for (int i = 0; i < 3; i++) {
         float const y = 100.f - 32.f * i;
 
-        Build(CCLabelBMFont::create(numToString(i + 1).c_str(), "goldFont.fnt"))
+        Build(geode::Label::create(numToString(i + 1).c_str(), "goldFont.fnt"))
             .scale(0.55f)
             .pos({ 15.f, y })
             .parent(panel);
@@ -311,7 +312,7 @@ void AddPackPopup::updatePreview() {
     m_previewTitle->setString(title.empty() ? "Pack Title" : title.c_str());
     m_previewTitle->setOpacity(title.empty() ? 110 : 255);
     m_previewTitle->setColor(m_color);
-    m_previewTitle->limitLabelWidth(240.f, 0.6f, 0.2f);
+    m_previewTitle->setLimitLabelWidth(240.f, 0.6f, 0.2f);
 
     setFrame(m_previewDiff, difficultyFrame(m_difficulty));
     setFrame(m_previewType, m_star ? "GJ_bigStar_noShadow_001.png" : "GJ_bigMoon_noShadow_001.png");

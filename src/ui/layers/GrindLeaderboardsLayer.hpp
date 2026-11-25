@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/utils/web.hpp>
 #include <cue/ListNode.hpp>
 #include <map>
@@ -45,8 +46,8 @@ private:
     CCMenu* m_typeMenu = nullptr;
     cue::ListNode* m_list = nullptr;
     CCNode* m_spinner = nullptr;
-    CCLabelBMFont* m_status = nullptr;
-    CCLabelBMFont* m_timer = nullptr;
+    geode::Label* m_status = nullptr;
+    geode::Label* m_timer = nullptr;
     std::map<std::string, Board> m_cache;
     long long m_resetsAt = 0;
     long long m_serverOffset = 0;

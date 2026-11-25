@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include <Geode/ui/Label.hpp>
 #include <Geode/ui/TextInput.hpp>
 #include <Geode/binding/EmotePickerDelegate.hpp>
 #include <Geode/binding/EmotePickerPopup.hpp>
@@ -82,7 +83,7 @@ private:
     std::string m_search;
     int m_page = 0;
     cue::ListNode* m_list = nullptr;
-    CCLabelBMFont* m_pageLabel = nullptr;
+    geode::Label* m_pageLabel = nullptr;
     CCMenuItemSpriteExtra* m_prevBtn = nullptr;
     CCMenuItemSpriteExtra* m_nextBtn = nullptr;
     TextInput* m_searchInput = nullptr;

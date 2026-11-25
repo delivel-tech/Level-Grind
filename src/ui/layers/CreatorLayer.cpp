@@ -4,7 +4,7 @@
 #include "CreatorLayer.hpp"
 #include "Geode/cocos/actions/CCActionEase.h"
 #include "Geode/cocos/actions/CCActionInterval.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/menu_nodes/CCMenu.h"
 #include "Geode/cocos/particle_nodes/CCParticleExamples.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
@@ -42,8 +42,81 @@
 #include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GameManager.hpp>
 #include "../../managers/Consent.hpp"
+#include "alphalaneous.alphas-ui-pack/nodes/scroll/AdvancedScrollLayer.hpp"
+#include "alphalaneous.alphas-ui-pack/nodes/scroll/ScrollBarStyles.hpp"
+#include "alphalaneous.alphas-ui-pack/nodes/scroll/elements/RoundedScrollHandle.hpp"
 
 namespace levelgrind {
+
+namespace {
+
+CCGLProgram* createCategoryFade(float left, float right, float fadeWidth, float screenWidth) {
+    constexpr auto vertex = R"(
+        #ifndef GL_ES
+        #define mediump
+        #define lowp
+        #endif
+        attribute vec4 a_position;
+        attribute vec2 a_texCoord;
+        attribute vec4 a_color;
+        varying mediump vec2 v_texCoord;
+        varying lowp vec4 v_color;
+        varying mediump float v_screenX;
+
+        void main() {
+            gl_Position = CC_MVPMatrix * a_position;
+            v_texCoord = a_texCoord;
+            v_color = a_color;
+            v_screenX = gl_Position.x / gl_Position.w;
+        }
+    )";
+    constexpr auto fragment = R"(
+        #ifdef GL_ES
+        precision mediump float;
+        #else
+        #define mediump
+        #define lowp
+        #endif
+        varying mediump vec2 v_texCoord;
+        varying lowp vec4 v_color;
+        varying mediump float v_screenX;
+        uniform sampler2D CC_Texture0;
+        uniform vec2 u_edges;
+        uniform float u_fadeWidth;
+
+        void main() {
+            float distanceToEdge = min(v_screenX - u_edges.x, u_edges.y - v_screenX);
+            float opacity = smoothstep(0.0, u_fadeWidth, distanceToEdge);
+            gl_FragColor = texture2D(CC_Texture0, v_texCoord) * v_color * opacity;
+        }
+    )";
+
+    auto program = new CCGLProgram();
+    program->autorelease();
+    if (!program->initWithVertexShaderByteArray(vertex, fragment)) return nullptr;
+    program->addAttribute("a_position", kCCVertexAttrib_Position);
+    program->addAttribute("a_texCoord", kCCVertexAttrib_TexCoords);
+    program->addAttribute("a_color", kCCVertexAttrib_Color);
+    if (!program->link()) return nullptr;
+    program->updateUniforms();
+    program->use();
+    float toClip = 2.f / screenWidth;
+    program->setUniformLocationWith2f(program->getUniformLocationForName("u_edges"),
+        left * toClip - 1.f, right * toClip - 1.f);
+    program->setUniformLocationWith1f(program->getUniformLocationForName("u_fadeWidth"), fadeWidth * toClip);
+    return program;
+}
+
+void applyCategoryFade(CCNode* node, CCGLProgram* program) {
+    if (typeinfo_cast<CCSprite*>(node) || typeinfo_cast<CCParticleSystemQuad*>(node) || typeinfo_cast<geode::Label*>(node)) {
+        node->setShaderProgram(program);
+    }
+    for (auto child : CCArrayExt<CCNode*>(node->getChildren())) {
+        applyCategoryFade(child, program);
+    }
+}
+
+}
 
 CreatorLayer* CreatorLayer::create() {
     auto ret = new CreatorLayer;
@@ -78,20 +151,8 @@ bool CreatorLayer::init() {
         false
     );
 
-    // cat - category
-    // petCat lol
-
-    auto catMenu = Build(CCMenu::create())
-        .pos(
-            centerX(), centerY() - 10
-        )
-        .scale(0.83f)
-        .contentSize({
-            400, 240
-        })
-        .layout(RowLayout::create()->setGap(5)->setGrowCrossAxis(true)->setCrossAxisOverflow(false))
-        .parent(this)
-        .collect();
+    auto catMenu = CCMenu::create();
+    m_catMenu = catMenu;
 
     auto searchCat = Build(CCSprite::createWithSpriteFrameName("search_cat.png"_spr))
         .intoMenuItem([] {
@@ -157,8 +218,9 @@ bool CreatorLayer::init() {
         petCatSpr->getContentHeight() / 2 + 8
     });
 
+    CCMenuItemSpriteExtra* petCat = nullptr;
     if (!Mod::get()->getSavedValue<bool>("disable-pet")) {
-        auto petCat = Build(petCatSpr)
+        petCat = Build(petCatSpr)
             .intoMenuItem([] {
             if (!consent::guard()) return;
                 PetLayer::create()->open();
@@ -204,7 +266,6 @@ bool CreatorLayer::init() {
         .id("clans-cat")
         .collect();
 
-    // page 2
     auto helperSuggestionsCat = Build(CCSprite::createWithSpriteFrameName("helper_suggestions_cat.png"_spr))
         .intoMenuItem([] {
             SuggestionsLayer::create()->open();
@@ -237,33 +298,10 @@ bool CreatorLayer::init() {
         currentCat->m_scaleMultiplier = 1.1f;
         m_cats.push_back(currentCat);
     }
-    m_catMenu = catMenu;
-
-    auto arrowMenu = Build<CCMenu>::create()
-        .pos({ 0.f, 0.f })
-        .contentSize(winSize)
-        .zOrder(2)
-        .id("cat-page-menu")
-        .parent(this)
-        .collect();
-
-    auto makeArrow = [&](bool next) {
-        auto spr = CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png");
-        spr->setFlipX(next);
-        spr->setScale(0.8f);
-        auto btn = CCMenuItemExt::createSpriteExtra(spr, [this, next](CCObject*) {
-            this->showCatPage(m_catPage + (next ? 1 : -1));
-        });
-        float half = catMenu->getScaledContentWidth() / 2.f + 18.f;
-        btn->setPosition({ catMenu->getPositionX() + (next ? half : -half), catMenu->getPositionY() });
-        btn->setID(next ? "next-cat-page" : "prev-cat-page");
-        arrowMenu->addChild(btn);
-        return btn;
-    };
-    m_prevPageBtn = makeArrow(false);
-    m_nextPageBtn = makeArrow(true);
-
-    this->showCatPage(0);
+    if (!this->initCategoryScroll(
+        { searchCat, packsCat, weeklyAchCat, petCat, calendarCat, leaderboardsCat },
+        { dailyCat, weeklyCat, monthlyCat, clansCat, helperSuggestionsCat }
+    )) return false;
 
     achievements::check();
 
@@ -345,38 +383,104 @@ void CreatorLayer::updateBadges() {
     };
     for (auto const& b : buttons) {
         if (auto item = typeinfo_cast<CCMenuItemSpriteExtra*>(m_catMenu->getChildByID(b.id))) {
-            badges::setMark(item->getNormalImage(), badges::isNew(b.kind));
+            auto image = item->getNormalImage();
+            badges::setMark(image, badges::isNew(b.kind));
+            if (m_categoryFade) {
+                if (auto mark = image->getChildByID("new-mark"_spr)) mark->setShaderProgram(m_categoryFade);
+            }
         }
     }
 }
 
-int CreatorLayer::catPageCount() const {
-    return std::max<int>(1, static_cast<int>((m_cats.size() + kCatsPerPage - 1) / kCatsPerPage));
-}
+bool CreatorLayer::initCategoryScroll(std::initializer_list<CCMenuItemSpriteExtra*> topRow,
+    std::initializer_list<CCMenuItemSpriteExtra*> bottomRow) {
+    using namespace alpha::ui;
 
-void CreatorLayer::showCatPage(int page) {
-    int pages = this->catPageCount();
-    page = std::clamp(page, 0, pages - 1);
-    m_catPage = page;
-
-    m_catMenu->removeAllChildrenWithCleanup(false);
-    size_t first = static_cast<size_t>(page) * kCatsPerPage;
-    size_t last = std::min(first + kCatsPerPage, m_cats.size());
-    for (size_t i = first; i < last; i++) {
-        m_catMenu->addChild(m_cats[i]);
+    constexpr float gap = 5.f;
+    constexpr float inset = 10.f;
+    constexpr float fadeWidth = 20.f;
+    constexpr float sideClearance = 55.f;
+    float buttonWidth = 0.f;
+    float buttonHeight = 0.f;
+    for (auto const& cat : m_cats) {
+        buttonWidth = std::max(buttonWidth, cat->getContentWidth());
+        buttonHeight = std::max(buttonHeight, cat->getContentHeight());
     }
-    m_catMenu->updateLayout();
 
-    auto setArrow = [](CCMenuItemSpriteExtra* btn, bool active) {
-        if (!btn) return;
-        btn->setEnabled(active);
-        if (auto spr = typeinfo_cast<CCSprite*>(btn->getNormalImage())) {
-            spr->setColor(active ? ccColor3B{ 255, 255, 255 } : ccColor3B{ 90, 90, 90 });
-            spr->setOpacity(active ? 255 : 150);
+    float availableWidth = right() - 2.f * sideClearance;
+    float scale = 0.9f * std::min({ 0.83f, availableWidth / (4.4f * (buttonWidth + gap)),
+        180.f / (2.f * buttonHeight + gap) });
+    float columnStep = buttonWidth * scale + gap;
+    float rowStep = buttonHeight * scale + gap;
+    auto countButtons = [](auto const& row) {
+        return std::count_if(row.begin(), row.end(), [](auto* button) { return button != nullptr; });
+    };
+    auto columns = std::max(countButtons(topRow), countButtons(bottomRow));
+    CCSize contentSize = { columns * columnStep - gap + 2.f * fadeWidth,
+        2.f * rowStep - gap + 2.f * inset };
+    CCSize viewport = { std::min({ availableWidth, 4.35f * columnStep + fadeWidth, contentSize.width }),
+        contentSize.height };
+
+    auto scroll = AdvancedScrollLayer::create(viewport);
+    if (!scroll) return false;
+    scroll->setID("category-scroll");
+    scroll->setPosition({ centerX(), centerY() - 10.f });
+    scroll->setHorizontalScroll(true);
+    scroll->setVerticalScroll(false);
+    scroll->setVerticalScrollForHorizontal(true);
+    scroll->setOvershoot(0.f);
+    addChild(scroll);
+
+    m_catMenu->setID("category-menu");
+    m_catMenu->setAnchorPoint({ 0.f, 0.f });
+    m_catMenu->ignoreAnchorPointForPosition(false);
+    m_catMenu->setPosition({ 0.f, 0.f });
+    m_catMenu->setContentSize(contentSize);
+
+    float viewportLeft = scroll->getPositionX() - viewport.width / 2.f;
+    m_categoryFade = createCategoryFade(viewportLeft, viewportLeft + viewport.width, fadeWidth, right());
+
+    auto placeRow = [&](auto const& row, float y) {
+        float x = fadeWidth + buttonWidth * scale / 2.f;
+        for (auto* cat : row) {
+            if (!cat) continue;
+            cat->setScale(scale);
+            cat->m_baseScale = scale;
+            cat->setPosition({ x, y });
+            if (m_categoryFade) applyCategoryFade(cat, m_categoryFade);
+            x += columnStep;
         }
     };
-    setArrow(m_prevPageBtn, page > 0);
-    setArrow(m_nextPageBtn, page < pages - 1);
+    float bottomY = inset + buttonHeight * scale / 2.f;
+    placeRow(topRow, bottomY + rowStep);
+    placeRow(bottomRow, bottomY);
+    scroll->getContentLayer()->addChild(m_catMenu);
+    scroll->setInnerContentSize(contentSize);
+    scroll->setScrollX(0.f);
+
+    if (contentSize.width > viewport.width) {
+        auto bar = AdvancedScrollBar::create(scroll, ScrollOrientation::Horizontal);
+        if (!bar) return false;
+        constexpr float barThickness = 8.f;
+        auto style = RoundedScrollStyle();
+        style.m_scrollBarWidth = barThickness;
+        style.m_showArrowButtons = true;
+        bar->setStyle(style);
+        bar->setPadding(2.f, 2.f, 2.f, 2.f);
+        bar->setMargins(0.f, 0.f, 0.f, 0.f);
+        bar->setMinHandleHeight(20.f);
+        auto handle = RoundedScrollHandle::create();
+        handle->setBackgroundColor({ 125, 125, 125, 255 });
+        handle->setHoverColor({ 140, 140, 140, 255 });
+        handle->setClickColor({ 150, 150, 150, 255 });
+        bar->setHandle(handle);
+        bar->setID("category-scrollbar");
+        bar->setContentSize({ barThickness, (viewport.width - 2.f * fadeWidth) - 90 });
+        bar->setPosition({ centerX(), scroll->getPositionY() - viewport.height / 2.f - 9.f });
+        addChild(bar);
+    }
+
+    return true;
 }
 
 bool CreatorLayer::initFarMenus() {
@@ -540,16 +644,16 @@ bool CreatorLayer::initMd() {
         row->setContentSize({ boxSize.width - 10.f, 14.f });
         row->setAnchorPoint({ 0.5f, 0.5f });
         row->setPosition({ boxSize.width / 2.f, y });
-        auto k = CCLabelBMFont::create(key, "bigFont.fnt");
+        auto k = geode::Label::create(key, "bigFont.fnt");
         k->setScale(0.32f);
         row->addChild(k);
-        auto v = CCLabelBMFont::create("Checking...", "bigFont.fnt");
+        auto v = geode::Label::create("Checking...", "bigFont.fnt");
         v->setScale(0.32f);
         v->setColor({ 200, 200, 200 });
         row->addChild(v);
         row->updateLayout();
         statusBox->addChild(row);
-        return std::make_pair(Ref<CCNode>(row), Ref<CCLabelBMFont>(v));
+        return std::make_pair(Ref<CCNode>(row), Ref<geode::Label>(v));
     };
 
     auto [statusRow, statusValue] = makeLine("Status:", boxSize.height - 12.f);

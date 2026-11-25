@@ -1,4 +1,5 @@
 #include "SuggestionsFilterPopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../../managers/DataManager.hpp"
 #include "Geode/ui/NineSlice.hpp"
 #include "Geode/ui/Notification.hpp"
@@ -60,7 +61,7 @@ bool SuggestionsFilterPopup::init(SuggestionsLayer* owner) {
     else if (pos == GrindPosition::Admin) setTitle("Grind Admin: Filter");
     else if (pos == GrindPosition::Owner) setTitle("Grind Coordinator: Filter");
 
-    Build(CCLabelBMFont::create("Show suggestions by their point total.", "chatFont.fnt"))
+    Build(geode::Label::create("Show suggestions by their point total.", "chatFont.fnt"))
         .scale(0.55f)
         .pos(fromTop(40.f))
         .opacity(170)
@@ -97,7 +98,7 @@ bool SuggestionsFilterPopup::init(SuggestionsLayer* owner) {
 
     float const modeY = panelSize.height - 24.f;
 
-    Build(CCLabelBMFont::create("Levels", "goldFont.fnt"))
+    Build(geode::Label::create("Levels", "goldFont.fnt"))
         .scale(0.55f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 16.f, modeY })
@@ -145,7 +146,7 @@ bool SuggestionsFilterPopup::init(SuggestionsLayer* owner) {
 
     float const valueY = panelSize.height - 114.f;
 
-    Build(CCLabelBMFont::create("Points", "goldFont.fnt"))
+    Build(geode::Label::create("Points", "goldFont.fnt"))
         .scale(0.55f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 16.f, valueY })
@@ -179,7 +180,7 @@ bool SuggestionsFilterPopup::init(SuggestionsLayer* owner) {
         .parent(panel);
 
     float const diffY = 18.f;
-    Build(CCLabelBMFont::create("Difficulty", "goldFont.fnt"))
+    Build(geode::Label::create("Difficulty", "goldFont.fnt"))
         .scale(0.55f)
         .anchorPoint({ 0.f, 0.5f })
         .pos({ 16.f, diffY })
@@ -195,14 +196,14 @@ bool SuggestionsFilterPopup::init(SuggestionsLayer* owner) {
     diffBtn->setPosition({ stepperX + 38.f, diffY });
     panelMenu->addChild(diffBtn);
 
-    m_diffLabel = Build(CCLabelBMFont::create("All", "bigFont.fnt"))
+    m_diffLabel = Build(geode::Label::create("All", "bigFont.fnt"))
         .scale(0.4f)
         .anchorPoint({ 1.f, 0.5f })
         .pos({ stepperX + 18.f, diffY })
         .parent(panel)
         .collect();
 
-    m_preview = Build(CCLabelBMFont::create("", "bigFont.fnt"))
+    m_preview = Build(geode::Label::create("", "bigFont.fnt"))
         .scale(0.32f)
         .pos({ centerX(), 47.f })
         .color({ 255, 230, 140 })
@@ -274,7 +275,7 @@ void SuggestionsFilterPopup::refreshDifficulty() {
     }
     if (m_diffLabel) {
         m_diffLabel->setString(names[d]);
-        m_diffLabel->limitLabelWidth(110.f, 0.4f, 0.15f);
+        m_diffLabel->setLimitLabelWidth(110.f, 0.4f, 0.15f);
         m_diffLabel->setColor(d == 0 ? ccColor3B{ 200, 200, 200 } : ccColor3B{ 255, 255, 255 });
     }
 }
@@ -285,7 +286,7 @@ void SuggestionsFilterPopup::updatePreview() {
     auto value = numFromString<int>(m_input->getString());
     if (!value) {
         m_preview->setString("Enter a number");
-        m_preview->limitLabelWidth(270.f, 0.32f, 0.15f);
+        m_preview->setLimitLabelWidth(270.f, 0.32f, 0.15f);
         m_preview->setColor({ 255, 120, 120 });
         return;
     }
@@ -295,7 +296,7 @@ void SuggestionsFilterPopup::updatePreview() {
 
     if (!m_owner) {
         m_preview->setString(fmt::format("Points {} {}", symbolFor(op), value.unwrap()).c_str());
-        m_preview->limitLabelWidth(270.f, 0.32f, 0.15f);
+        m_preview->setLimitLabelWidth(270.f, 0.32f, 0.15f);
         return;
     }
 
@@ -303,7 +304,7 @@ void SuggestionsFilterPopup::updatePreview() {
         m_preview->setString(fmt::format(
             "Points {} {} (list reloads on Apply)", symbolFor(op), value.unwrap()
         ).c_str());
-        m_preview->limitLabelWidth(270.f, 0.32f, 0.15f);
+        m_preview->setLimitLabelWidth(270.f, 0.32f, 0.15f);
         return;
     }
 
@@ -312,7 +313,7 @@ void SuggestionsFilterPopup::updatePreview() {
     m_preview->setString(fmt::format(
         "Points {} {}: {} of {} suggestions", symbolFor(op), value.unwrap(), matching, total
     ).c_str());
-    m_preview->limitLabelWidth(270.f, 0.32f, 0.15f);
+    m_preview->setLimitLabelWidth(270.f, 0.32f, 0.15f);
 }
 
 void SuggestionsFilterPopup::onApply() {

@@ -4,7 +4,7 @@
 #include "../BaseLayer.hpp"
 #include "../../managers/PetManager.hpp"
 #include "Geode/cocos/cocoa/CCObject.h"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/ui/NineSlice.hpp"
 
 using namespace geode::prelude;
@@ -37,7 +37,7 @@ private:
 
     NineSlice* m_mainPanel = nullptr;
     cocos2d::CCNode* m_content = nullptr;
-    CCLabelBMFont* m_petLabel = nullptr;
+    geode::Label* m_petLabel = nullptr;
 
     TaskHolder<web::WebResponse> m_feedTask;
     TaskHolder<web::WebResponse> m_listener;

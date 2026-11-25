@@ -1,4 +1,5 @@
 #include "MainLayer.hpp"
+#include <Geode/ui/Label.hpp>
 
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
@@ -84,7 +85,7 @@ void MainLayer::initListsMode() {
     m_listsToggle->setID("lists-toggle"_spr);
     toggleMenu->addChild(m_listsToggle);
 
-    auto toggleLabel = CCLabelBMFont::create("Lists (Beta)", "bigFont.fnt");
+    auto toggleLabel = geode::Label::create("Lists (Beta)", "bigFont.fnt");
     toggleLabel->setScale(0.34f);
     toggleLabel->setID("lists-toggle-label"_spr);
     toggleMenu->addChild(toggleLabel);
@@ -204,7 +205,7 @@ void MainLayer::buildListsPanel() {
             .parent(demonsMenu->getParent())
             .collect();
         Build(CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png")).scale(0.6f).parent(hint);
-        Build(CCLabelBMFont::create("only", "chatFont.fnt")).color({ 200, 200, 200 }).scale(0.7f).parent(hint);
+        Build(geode::Label::create("only", "chatFont.fnt")).color({ 200, 200, 200 }).scale(0.7f).parent(hint);
         hint->updateLayout();
     }
 

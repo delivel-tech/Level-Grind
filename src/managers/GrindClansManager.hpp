@@ -28,6 +28,7 @@ struct ClanInfo {
     int ownerId = 0;
     int colorId = 0;
     int emblemId = 1;
+    long long badgeColors = -1;
     int joinType = 0;
     int minGp = 0;
     long long xp = 0;
@@ -41,7 +42,6 @@ struct ClanInfo {
     int gpBonus = 0;
     bool featured = false;
     int rank = 0;
-    long long logoId = 0;
     bool golden = false;
     int warWins = 0;
 };
@@ -95,6 +95,8 @@ struct ClanJoinRequestInfo {
 };
 
 struct ClanChatMessage {
+    long long replyTo = 0;
+    std::string replyName, replyText;
     long long id = 0;
     int accountId = 0;
     std::string username;
@@ -104,8 +106,8 @@ struct ClanChatMessage {
 };
 
 struct ClanDetails {
+    std::string rules;
     ClanInfo info;
-    bool logoPending = false;
     std::vector<ClanMemberInfo> members;
     std::vector<ClanTaskInfo> tasks;
     int weekRank = 0;

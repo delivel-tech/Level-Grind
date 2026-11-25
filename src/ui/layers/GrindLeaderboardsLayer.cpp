@@ -1,4 +1,6 @@
 #include "GrindLeaderboardsLayer.hpp"
+#include "../popups/GuidePopup.hpp"
+#include <Geode/ui/Label.hpp>
 #include "../ClanUI.hpp"
 #include "../popups/GrindProfilePopup.hpp"
 #include "../../managers/APIClient.hpp"
@@ -74,6 +76,7 @@ GrindLeaderboardsLayer* GrindLeaderboardsLayer::create() {
 
 bool GrindLeaderboardsLayer::init() {
     if (!BaseLayer::init()) return false;
+    GuidePopup::addInfoButton(this, GuidePage::LeaderboardsGuide, { 25.f, 25.f });
 
     m_period = std::clamp(Mod::get()->getSavedValue<int>("leaderboards-period", 0), 0, 2);
     m_type = std::clamp(Mod::get()->getSavedValue<int>("leaderboards-type", 0), 0, 4);
@@ -109,7 +112,7 @@ bool GrindLeaderboardsLayer::init() {
     this->addChild(m_typeMenu, 6);
     this->buildTypeButtons();
 
-    m_timer = CCLabelBMFont::create("", "bigFont.fnt");
+    m_timer = geode::Label::create("", "bigFont.fnt");
     m_timer->setScale(0.32f);
     m_timer->setOpacity(190);
     m_timer->setAnchorPoint({ 1.f, 0.f });
@@ -118,7 +121,7 @@ bool GrindLeaderboardsLayer::init() {
 
     addSideArt(this, SideArt::Bottom, SideArtStyle::LayerGray, false);
 
-    m_status = CCLabelBMFont::create("", "bigFont.fnt");
+    m_status = geode::Label::create("", "bigFont.fnt");
     m_status->setScale(0.4f);
     m_status->setPosition({ cx, cy });
     this->addChild(m_status, 8);
@@ -266,8 +269,8 @@ CCNode* GrindLeaderboardsLayer::makeRow(Entry const& e, bool mine) {
         trophy->setPosition({ 22.f, kRowH / 2.f });
         cell->addChild(trophy);
     } else {
-        auto rank = CCLabelBMFont::create(numToString(e.rank).c_str(), "bigFont.fnt");
-        rank->limitLabelWidth(30.f, 0.4f, 0.15f);
+        auto rank = geode::Label::create(numToString(e.rank).c_str(), "bigFont.fnt");
+        rank->setLimitLabelWidth(30.f, 0.4f, 0.15f);
         rank->setPosition({ 22.f, kRowH / 2.f });
         cell->addChild(rank);
     }
@@ -282,8 +285,8 @@ CCNode* GrindLeaderboardsLayer::makeRow(Entry const& e, bool mine) {
     iconBtn->setPosition({ 54.f, kRowH / 2.f });
     cell->addChild(iconBtn);
 
-    auto nameLbl = CCLabelBMFont::create(name.empty() ? "Player" : name.c_str(), "goldFont.fnt");
-    nameLbl->limitLabelWidth(170.f, 0.6f, 0.2f);
+    auto nameLbl = geode::Label::create(name.empty() ? "Player" : name.c_str(), "goldFont.fnt");
+    nameLbl->setLimitLabelWidth(170.f, 0.6f, 0.2f);
     auto nameBtn = CCMenuItemExt::createSpriteExtra(nameLbl, open);
     nameBtn->setAnchorPoint({ 0.f, 0.5f });
     nameBtn->setPosition({ 74.f, kRowH / 2.f });
@@ -292,9 +295,9 @@ CCNode* GrindLeaderboardsLayer::makeRow(Entry const& e, bool mine) {
     auto metric = typeIcon(m_type, 15.f);
     metric->setPosition({ w - 18.f, kRowH / 2.f });
     cell->addChild(metric);
-    auto value = CCLabelBMFont::create(numToString(e.value).c_str(), "bigFont.fnt");
+    auto value = geode::Label::create(numToString(e.value).c_str(), "bigFont.fnt");
     value->setAnchorPoint({ 1.f, 0.5f });
-    value->limitLabelWidth(80.f, 0.42f, 0.15f);
+    value->setLimitLabelWidth(80.f, 0.42f, 0.15f);
     value->setPosition({ w - 30.f, kRowH / 2.f });
     cell->addChild(value);
 

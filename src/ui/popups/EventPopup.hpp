@@ -3,7 +3,7 @@
 #include <Geode/binding/LevelCell.hpp>
 #include "../BasePopup.hpp"
 #include "../../utils/globals.hpp"
-#include "Geode/cocos/label_nodes/CCLabelBMFont.h"
+#include <Geode/ui/Label.hpp>
 #include "Geode/cocos/layers_scenes_transitions_nodes/CCLayer.h"
 #include "Geode/cocos/sprite_nodes/CCSprite.h"
 #include "Geode/ui/LoadingSpinner.hpp"
@@ -25,7 +25,7 @@ public:
     CCLayer* m_levelContainer = nullptr;
     LevelCell* m_levelCell = nullptr;
 
-    CCLabelBMFont* m_timer = nullptr;
+    geode::Label* m_timer = nullptr;
     NineSlice* m_eventContainer = nullptr;
     LevelCell* m_classicCell = nullptr;
     LevelCell* m_platCell = nullptr;
